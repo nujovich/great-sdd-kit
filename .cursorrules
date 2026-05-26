@@ -1,0 +1,9 @@
+Lee AGENTS.md antes de generar cualquier código. Este proyecto usa Specification-Driven Development: las reglas de negocio están en great_dspy/specs/ como datos verificables.
+
+Siempre corre `pytest tests/ -v` después de generar código para validar que cumple las reglas.
+
+Referencia rápida:
+- specs/ → reglas de negocio (74 reglas en 6 vistas)
+- modules/ → lógica pura (30 módulos, Python sin dependencias)
+- pipeline/ → blueprint de endpoints (6 pipelines)
+- tests/ → 216 tests que verifican las reglas

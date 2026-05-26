@@ -1,111 +1,134 @@
-# GREAT System — IA Agent Instructions
+# SDD Kit — Universal Agent Instructions
 
-Eres un agente de IA ayudando a desarrollar el sistema GREAT. Este repositorio contiene **las reglas de negocio como especificaciones ejecutables** — no documentación, no prompts, sino código verificable que define cómo debe comportarse el sistema.
+Eres un agente de IA generando código para un proyecto que usa **Specification-Driven Development (SDD)**.
 
-## Cómo usar este repositorio
+## Qué es este repositorio
 
-### 1. Lee las reglas desde `great_dspy/specs/`
+Este repositorio es un **SDD Kit**: las reglas de negocio están codificadas como especificaciones ejecutables (no prompts, no documentación, no tickets de Jira). Cada regla tiene un ID, está en un archivo de `specs/`, implementada en un módulo de `modules/`, y verificada por tests en `tests/`.
 
-Cada archivo en `specs/` contiene reglas de negocio como estructuras de datos:
+## Estructura
 
-- `pre_estimation_specs.py` → 17 reglas, state machine, 6 métiers, fórmulas de estimación
-- `estimation_review_specs.py` → 10 reglas, flujo HVT, columnas de aprobación, CSV export
-- `allocation_specs.py` → 16 reglas, tasas K€, societes, split allocation, routing H-PROJECT
-- `final_review_specs.py` → 10 reglas, Stage 3, niveles de agregación
-- `management_view_specs.py` → 8 reglas, dashboard con charts
-- `transversal_specs.py` → 13 reglas, ciclos, versiones de workload, tablas, emails
+```
+├── AGENTS.md              ← Este archivo. CÁRGALO SIEMPRE.
+├── CLAUDE.md              ← Entry point para Claude Code
+├── .cursorrules           ← Entry point para Cursor IDE
+├── .github/copilot-instructions.md  ← Entry point para GitHub Copilot
+│
+├── sdd/                   ← SDD Core Framework (reutilizable)
+│   ├── base_spec.py       ← Base class para definir specs
+│   ├── base_module.py     ← Base class para módulos
+│   └── base_pipeline.py   ← Base class para pipelines
+│
+├── great_dspy/            ← Dominio: Sistema GREAT
+│   ├── specs/             ← 6 archivos, 74 reglas de negocio
+│   ├── modules/           ← 30 módulos con lógica pura
+│   ├── pipeline/          ← 6 pipelines (uno por vista)
+│   └── signatures/        ← Contratos input/output
+│
+└── tests/                 ← 216 tests que verifican las 74 reglas
+```
 
-No adivines reglas de negocio. Léelas de estos archivos.
+## Cómo usar este kit
 
-### 2. Entiende la lógica desde `great_dspy/modules/`
+### 1. Siempre carga AGENTS.md primero
 
-Cada módulo implementa una operación atómica del negocio. La mayoría son Python puro sin IA:
+Antes de generar CUALQUIER código, lee este archivo completo. Contiene las reglas de negocio que tu código debe cumplir.
 
-- `SelectionValidator` → validación de compatibilidad multi-línea (4 campos)
-- `PermissionChecker` → permisos por rol (Admin/Engineer/PMO/RCRC/CPO)
-- `StatusTransitionValidator` → máquina de estados (ToDo→Draft→Estimated→Sent→Approved)
-- `EstimationCalculator` → fórmula Total = (Variable × Occurrence) + Fixed
-- `SaveValidator` → precondiciones para guardar (SP date, Draft gate, inductores)
-- `SendEligibilityChecker` → solo status=Estimated es elegible para enviar a HVT
-- `KECalculator` → K€ = FTE × Rate(societe, year)
-- `CSVExporter` → exportación plana con columnas por año
+### 2. Las reglas están en `great_dspy/specs/`
 
-Los módulos con IA (InductorSelector, SummaryGenerator) usan un LM client OpenAI-compatible — puedes reemplazarlo por el modelo que prefieras.
+No adivines reglas de negocio. No las inventes. No las saques de tu training data. Están aquí:
 
-### 3. Valida contra `tests/`
+| Archivo | Contenido |
+|---------|-----------|
+| `great_dspy/specs/pre_estimation_specs.py` | 17 reglas, state machine, 6 métiers, fórmulas |
+| `great_dspy/specs/estimation_review_specs.py` | 10 reglas, flujo HVT, columnas de aprobación |
+| `great_dspy/specs/allocation_specs.py` | 16 reglas, tasas K€, societes, split allocation |
+| `great_dspy/specs/final_review_specs.py` | 10 reglas, Stage 3 HVT, agregación |
+| `great_dspy/specs/management_view_specs.py` | 8 reglas, dashboard con charts |
+| `great_dspy/specs/transversal_specs.py` | 13 reglas, ciclos, versiones, emails |
 
-Hay 216 tests. Si tu código los pasa, cumple las 74 reglas de negocio.
+### 3. La lógica está en `great_dspy/modules/`
 
-Siempre corre los tests después de generar código:
+Cada módulo es Python puro. Úsalos como librería desde cualquier backend:
+
+```python
+from great_dspy.specs.allocation_specs import calculate_fte_ke
+ke = calculate_fte_ke(fte=1.0, societe_site="Horse Spain S.L.-Valladolid", year="2024")
+# → 107.0
+
+from great_dspy.modules.pre_estimation import StatusTransitionValidator
+v = StatusTransitionValidator()
+assert v.forward("approved", "draft")["is_valid"] is False  # Approved es terminal
+```
+
+Los módulos que usan IA (InductorSelector, SummaryGenerator) tienen un LM client intercambiable.
+
+### 4. Los pipelines son el blueprint de endpoints
+
+Cada pipeline orquesta módulos en el orden correcto. Cada etapa del pipeline es un paso en tu endpoint:
+
+```
+Pre-Estimation endpoint:
+  POST /api/pre-estimation/save-draft
+  Pipeline: SelectionValidator → PermissionChecker → InductorSelector
+            → EstimationCalculator → SaveValidator → MonthDistributor → SummaryGenerator
+  Reglas: BR-02 (Draft gate), BR-08 (SP date), BR-11 (Custom JUs)
+  Tests: test_todo_to_draft_valid_transition, test_missing_sp_date_blocks_save
+```
+
+### 5. Los tests verifican las reglas
+
+216 tests. Si tu código los pasa, cumples las 74 reglas de negocio.
 
 ```bash
-pytest tests/ -v
+pytest tests/ -v              # Todos los tests
+pytest tests/test_allocation.py -v  # Solo Allocation
 ```
 
-Si algún test falla, NO es un bug del test — es que tu código viola una regla de negocio.
+### 6. Cuando una regla cambie
 
-### 4. Sigue los pipelines en `great_dspy/pipeline/`
+Si el negocio cambia una regla, el flujo es:
 
-Cada vista tiene un pipeline que orquesta los módulos en orden. Son tu blueprint para implementar los endpoints:
+1. Editas el spec en `great_dspy/specs/`
+2. Corres `pytest tests/ -v` para ver qué se rompe
+3. Arreglas los módulos y tests afectados
+4. Vuelves a correr pytest hasta que todo pase
+5. Commit
 
-```
-Pre-Estimation:    SelectionValidator → PermissionChecker → InductorSelector → EstimationCalculator → SaveValidator → MonthDistributor → SummaryGenerator
-Estimation Review: PermissionChecker → ApprovalColumnDeriver → SendEligibilityChecker → HVTPayloadGenerator → CSVExporter
-Allocation:        PermissionChecker → EligibilityFilter → RuleMatcher → HProjectRouter → DiversityHandler → KECalculator → SaveValidator
-Final Review:      PermissionChecker → EligibilityFilter → AggregationEngine → CSVExporter → Stage3Sender
-Management View:   AccessChecker → MetierFilter → PieChartBuilder → TimelineBuilder
-```
+No implementes un cambio de regla sin pasar por este flujo. Si el test no existe, la regla no está cubierta.
 
 ## Reglas que NUNCA debes violar
 
-Estas reglas están codificadas en los specs y verificadas por tests. Si tu código las viola, los tests fallarán:
+Estas son las reglas más críticas. Si tu código las viola, los tests fallarán:
 
 1. **No deletion** (BR-01): Las estimaciones nunca se borran
 2. **Draft gate** (BR-02): No existe "Save as Definitive" sin "Save as Draft" antes
 3. **Estimated = locked** (BR-03): status=Estimated es read-only hasta que CPO actúe
-4. **Approved = terminal** (BR-04): Approved no puede cambiar por ninguna acción en GREAT
-5. **Multi-select compatibility** (BR-06): 4 campos deben coincidir (Organ Type, Energy, Ranking, Injection)
+4. **Approved = terminal** (BR-04): Approved no cambia por ninguna acción en GREAT
+5. **Multi-select compatibility** (BR-06): 4 campos deben coincidir para selección múltiple
 6. **null vs null = compatible; null vs value = no** (BR-07)
-7. **SP date mandatory** (BR-08): No se puede guardar sin fecha SP
-8. **Assignment read-only** (BR-10): Las asignaciones engineer→línea vienen de HVT
-9. **Sent = irreversible** (ERev-BR-02): Una vez enviado a HVT, no se puede cancelar
-10. **Solo Estimated se envía** (ERev-BR-04): Los demás status se ignoran silenciosamente
-11. **Approved lines only** (ALLOC-BR-01): Solo Approved aparecen en Allocation
-12. **Auto-rules NO sobrescriben** (ALLOC-BR-02): Las reglas saltan rows ya asignadas
-13. **TSA/TC sin societe: bloquea save** (ALLOC-BR-06)
-14. **Split: 100% obligatorio** (ALLOC-BR-11)
-15. **Stage 3 no bloquea** (FR-BR-06): Se envía con warning, no bloqueado
-16. **One active cycle** (CYCLE-BR-01): Solo un ciclo activo a la vez
-17. **No reactivation** (CYCLE-BR-02): Ciclos inactivos no se reactivan
+7. **SP date mandatory** (BR-08): No se guarda sin fecha SP
+8. **Sent = irreversible** (ERev-BR-02): Una vez enviado a HVT, no se cancela
+9. **Solo Estimated se envía** (ERev-BR-04): Los demás status se ignoran
+10. **Approved lines only** (ALLOC-BR-01): Solo Approved aparecen en Allocation
+11. **Auto-rules NO sobrescriben** (ALLOC-BR-02): Rules saltan rows ya asignadas
+12. **TSA/TC sin societe: bloquea save** (ALLOC-BR-06)
+13. **Split: 100% obligatorio** (ALLOC-BR-11)
+14. **Stage 3 no bloquea** (FR-BR-06): Se envía con warning
+15. **One active cycle** (CYCLE-BR-01): Solo un ciclo activo
+16. **No reactivation** (CYCLE-BR-02): Ciclos inactivos no se reactivan
 
-## Formato de respuesta esperado
+## Para extender este kit a otro dominio
 
-Cuando generes código para una vista, incluye:
+Si quieres aplicar SDD a otro sistema (no GREAT):
 
-1. **Endpoint**: qué método HTTP y ruta
-2. **Validación**: qué módulo del pipeline usar para validar antes de escribir en DB
-3. **Reglas aplicadas**: qué BR/ERev-BR/ALLOC-BR/FR-BR aplican a este endpoint
-4. **Tests**: qué test verifica esta funcionalidad
-
-Ejemplo:
-
-```python
-# POST /api/pre-estimation/save-draft
-# Pipeline: SaveValidator.forward(line, "draft")
-# Reglas: BR-02 (Draft gate), BR-08 (SP date), BR-11 (Custom JUs)
-# Tests: test_todo_to_draft_valid_transition, test_missing_sp_date_blocks_save
-```
+1. Copia `sdd/` a tu proyecto
+2. Crea `domains/tu_dominio/specs/` con tus reglas
+3. Crea `domains/tu_dominio/modules/` con tu lógica
+4. Crea `domains/tu_dominio/pipeline/` con tu orquestación
+5. Crea `tests/` que verifiquen tus reglas
+6. Copia AGENTS.md, CLAUDE.md, .cursorrules, copilot-instructions.md
 
 ## Stack
 
-El stack técnico debes inferirlo del contexto del proyecto. Este repositorio es agnóstico del stack — los módulos son Python puro sin dependencias externas.
-
-## Archivos clave
-
-| Archivo | Propósito |
-|---------|-----------|
-| `great_dspy/specs/` | Reglas de negocio como datos (la fuente de verdad) |
-| `great_dspy/modules/` | Lógica atómica del negocio (importable desde cualquier backend) |
-| `great_dspy/pipeline/` | Orquestación por vista (blueprint para endpoints) |
-| `great_dspy/signatures/` | Contratos input/output (para cuando uses DSPy real) |
-| `tests/` | 216 tests que verifican las 74 reglas |
+Los módulos son Python puro sin dependencias externas. El stack técnico (backend, DB, UI) lo defines tú como desarrollador.
