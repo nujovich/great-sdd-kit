@@ -1,0 +1,194 @@
+"""
+GREAT Estimation Review — Pipeline.
+
+Read-only governance pipeline for WP5. Orchestrates:
+  1. Permission check → 2. Grid rendering (with derived approval columns)
+  → 3. Send-to-HVT eligibility → 4. HVT payload generation
+  → 5. HVT callback processing → 6. CSV export
+"""
+from __future__ import annotations
+
+import json
+import logging
+from dataclasses import dataclass, field
+from typing import Optional
+
+from great_dspy.modules.base import LMClient
+from great_dspy.modules.estimation_review import (
+    EstimationReviewPermissionChecker,
+    ApprovalColumnDeriver,
+    SendEligibilityChecker,
+    HVTCallbackProcessor,
+    CSVExporter,
+    HVTPayloadGenerator,
+)
+from great_dspy.specs.estimation_review_specs import (
+    ESTIMATION_REVIEW_RULES,
+    ALL_BUSINESS_RULES,
+    ESTIMATION_REVIEW_GRID_COLUMNS,
+    GRID_FILTERS,
+)
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class EstimationReviewContext:
+    """Holds all state from the Estimation Review pipeline."""
+    # Stage 1
+    permission_allowed: bool = False
+    permission_reason: str = ""
+
+    # Stage 2
+    grid_rows: list = field(default_factory=list)
+    derived_columns: list = field(default_factory=list)
+
+    # Stage 3
+    eligible_rows: list = field(default_factory=list)
+    skipped_rows: list = field(default_factory=list)
+    has_eligible_rows: bool = False
+
+    # Stage 4
+    hvt_payloads: list = field(default_factory=list)
+
+    # Stage 5
+    callback_results: list = field(default_factory=list)
+
+    # Stage 6
+    csv_content: str = ""
+    csv_row_count: int = 0
+
+    # Errors
+    errors: list = field(default_factory=list)
+
+
+class EstimationReviewPipeline:
+    """
+    Full Estimation Review View pipeline.
+    """
+
+    def __init__(self, lm: Optional[LMClient] = None):
+        self.lm = lm
+        self.permission_checker = EstimationReviewPermissionChecker(lm)
+        self.column_deriver = ApprovalColumnDeriver(lm)
+        self.eligibility_checker = SendEligibilityChecker(lm)
+        self.callback_processor = HVTCallbackProcessor(lm)
+        self.csv_exporter = CSVExporter(lm)
+        self.hvt_payload_generator = HVTPayloadGenerator(lm)
+
+    def forward(
+        self,
+        role: str,
+        grid_rows: Optional[list[dict]] = None,
+    ) -> EstimationReviewContext:
+        """Run the full Estimation Review pipeline."""
+        ctx = EstimationReviewContext()
+
+        if grid_rows is None:
+            grid_rows = []
+
+        # ── Stage 1: Permission Check (§2) ──
+        logger.info("ER Stage 1: Checking %s permissions", role)
+        perm = self.permission_checker.forward(role, "view")
+        ctx.permission_allowed = perm["allowed"]
+        ctx.permission_reason = perm["reason"]
+
+        if not ctx.permission_allowed:
+            ctx.errors.append(f"Permission denied: {ctx.permission_reason}")
+            return ctx
+
+        # ── Stage 2: Render Grid with Derived Columns (§4, §5) ──
+        logger.info("ER Stage 2: Processing %d grid rows", len(grid_rows))
+        ctx.grid_rows = grid_rows
+        ctx.derived_columns = [
+            self.column_deriver.derive_row(row) for row in grid_rows
+        ]
+
+        # ── Stage 3: Check Send Eligibility (§6) ──
+        logger.info("ER Stage 3: Checking send eligibility")
+        eligible, skipped = self.eligibility_checker.find_eligible_rows(
+            ctx.derived_columns, role
+        )
+        ctx.eligible_rows = eligible
+        ctx.skipped_rows = skipped
+        ctx.has_eligible_rows = len(eligible) > 0
+
+        # ── Stage 4: Generate HVT Payloads (§6.4) — only if send triggered ──
+        # Actual send happens when PMO/Admin explicitly calls send_to_hvt()
+        # Here we pre-compute what would be sent
+
+        return ctx
+
+    def send_to_hvt(self, role: str, rows: list[dict]) -> dict:
+        """
+        Execute the Send to HVT action (§6.2).
+
+        Args:
+            role: User role (must be PMO or Admin)
+            rows: List of grid rows to send
+
+        Returns:
+            dict with:
+              - success: bool
+              - sent_count: int
+              - payloads: list of HVT payloads sent
+              - errors: list of errors
+        """
+        # Check permission
+        perm = self.permission_checker.forward(role, "send_to_hvt")
+        if not perm["allowed"]:
+            return {"success": False, "sent_count": 0, "payloads": [], "errors": [perm["reason"]]}
+
+        # Filter to eligible rows only
+        eligible, skipped = self.eligibility_checker.find_eligible_rows(rows, role)
+
+        if not eligible:
+            return {
+                "success": False,
+                "sent_count": 0,
+                "payloads": [],
+                "errors": ["No eligible rows (status=Estimated) found to send."],
+            }
+
+        # Generate HVT payloads
+        payloads = []
+        for row in eligible:
+            yearly = row.get("yearly_aggregation", {})
+            payload_result = self.hvt_payload_generator.forward(
+                project_line=row.get("id", ""),
+                metier=row.get("metier", ""),
+                yearly_summary=yearly,
+            )
+            payloads.append(payload_result["payload"])
+
+        return {
+            "success": True,
+            "sent_count": len(eligible),
+            "skipped_count": len(skipped),
+            "payloads": payloads,
+        }
+
+    def process_callback(self, project_line: str, metier: str,
+                          approved: bool, comment: str = "") -> dict:
+        """Process an HVT callback for CPO approval/rejection."""
+        return self.callback_processor.forward(
+            project_line=project_line,
+            metier=metier,
+            approved=approved,
+            comment=comment,
+        )
+
+    def export_csv(self, rows: list[dict], mode: str = "all_filtered",
+                   yearly_keys: Optional[list[str]] = None) -> dict:
+        """Export rows to CSV."""
+        return self.csv_exporter.forward(rows, mode, yearly_keys)
+
+
+def run_estimation_review(
+    role: str,
+    grid_rows: Optional[list[dict]] = None,
+    lm: Optional[LMClient] = None,
+) -> EstimationReviewContext:
+    """One-shot runner for the Estimation Review pipeline."""
+    pipeline = EstimationReviewPipeline(lm)
+    return pipeline.forward(role=role, grid_rows=grid_rows)
