@@ -2,6 +2,25 @@
 
 Eres un agente de IA generando código para un proyecto que usa **Specification-Driven Development (SDD)**.
 
+## Cómo integrarlo en tu proyecto
+
+Este repositorio NO es el proyecto raíz del desarrollador. Es una **dependencia** que se carga en el agente via git submodule:
+
+```bash
+cd tu-backend-o-frontend
+git submodule add https://github.com/nujovich/great-dspy-pipeline.git sdd-kit
+```
+
+Luego en tu `CLAUDE.md` / `.cursorrules` del proyecto principal:
+
+```
+Carga sdd-kit/AGENTS.md antes de generar cualquier código.
+```
+
+Ver `INTEGRATION.md` para más detalles.
+
+---
+
 ## Qué es este repositorio
 
 Este repositorio es un **SDD Kit**: las reglas de negocio están codificadas como especificaciones ejecutables (no prompts, no documentación, no tickets de Jira). Cada regla tiene un ID, está en un archivo de `specs/`, implementada en un módulo de `modules/`, y verificada por tests en `tests/`.
