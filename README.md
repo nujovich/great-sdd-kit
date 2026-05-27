@@ -231,7 +231,53 @@ cd sdd-kit && python -m pytest tests/ -v
 
 Ver `INTEGRATION.md` para la guía detallada con troubleshooting.
 
-## Integración con GitHub Spec Kit
+## Cómo actualizar el SDD Kit en tu proyecto
+
+Cuando el SDD Kit se actualiza en el repo principal (nuevas reglas, fixes, nuevos módulos), así lo actualizás en tu proyecto:
+
+```bash
+# Opción 1: Pull del último commit en la rama main
+cd tu-proyecto/sdd-kit
+git checkout main
+git pull origin main
+cd ..
+git add sdd-kit
+git commit -m "chore: update SDD Kit submodule"
+
+# Opción 2: Comando único desde la raíz del proyecto
+git submodule update --remote sdd-kit
+git add sdd-kit
+git commit -m "chore: update SDD Kit submodule"
+
+# Opción 3: Actualizar todos los submodules a la vez
+git submodule update --remote
+git add .
+git commit -m "chore: update all submodules"
+```
+
+**Importante:** Después de actualizar, corré los tests para verificar que tu código sigue cumpliendo las reglas:
+
+```bash
+cd sdd-kit && python -m pytest tests/ -q
+# Si algún test falla, es porque una regla cambió o se añadió una nueva.
+# Editá los módulos afectados hasta que todo pase.
+```
+
+**Qué hacer si un test falla después de actualizar:**
+
+1. Leyendo el nombre del test que falla, identificá qué regla cambió
+2. Revisá el spec correspondiente en `great_dspy/specs/` para ver el cambio
+3. Actualizá tu código o los tests del proyecto (no los del kit) para cumplir la nueva regla
+4. Corré `pytest tests/ -v` hasta que todo pase
+5. Commit
+
+**Versionado:** El SDD Kit usa tags semánticos (`v1.0.0`, `v1.1.0`, etc.). Para mantener estabilidad, podés pinchar a una versión específica:
+
+```bash
+git submodule add -b v1.0.0 https://github.com/nujovich/great-dspy-pipeline.git sdd-kit
+# O si ya lo tenés agregado:
+cd sdd-kit && git checkout v1.0.0
+```
 
 El SDD Kit de GREAT es complementario con [GitHub Spec Kit](https://github.com/github/spec-kit):
 
