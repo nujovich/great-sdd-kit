@@ -32,6 +32,19 @@ tests/                ← 216 tests (pytest)
 pytest tests/ -v      ← ¿Cumple las 78 reglas? Sí → Merge.
 ```
 
+## 6 Formas de Usar el SDD Kit
+
+| # | Uso | Cuándo | Stack |
+|---|-----|--------|-------|
+| **1** | **Como librería** | Necesitás lógica de negocio importable en tu código | Python puro. `from great_dspy.modules.pre_estimation import StatusTransitionValidator` |
+| **2** | **Como pipeline** | Necesitás orquestar validaciones en orden (blueprint de endpoints) | DSPy modules. `run_pipeline(selected_lines, role, metier)` |
+| **3** | **Como agente de IA** | Querés que Claude/Copilot/Cursor cumpla reglas sin adivinar | AGENTS.md + CLAUDE.md + .cursorrules → specs |
+| **4** | **Como documentación** | Querés docs versionadas y testeables (no PDFs que se pudren) | YAML + Markdown + tests como documentación ejecutable |
+| **5** | **Como auditoría** | Necesitás verificar compliance en CI/CD o revisar un PR | pytest + 216 tests. Resultado en segundos |
+| **6** | **Como framework extensible** | Querés aplicar SDD a otro dominio (no GREAT) | Copiás `sdd/` (base_spec, base_module, base_pipeline) y creás tus reglas |
+
+Cada uso es independiente: podés usar solo la librería sin tocar los pipelines, o solo los tests sin el agente.
+
 ## Arquitectura
 
 ```plaintext
