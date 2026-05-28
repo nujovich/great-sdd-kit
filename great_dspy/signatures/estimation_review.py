@@ -58,12 +58,13 @@ PROCESS_HVT_CALLBACK_SIG = Signature(
         Field("project_line", "PL Number"),
         Field("metier", "Métier of the estimation"),
         Field("approved", "boolean: true if CPO approved", field_type="boolean"),
-        Field("comment", "Rejection reason from CPO (empty if approved)"),
+        Field("comment", "Rejection reason from CPO (empty if approved)", optional=True),
     ],
     outputs=[
         Field("target_status", "New status: approved or rejected"),
         Field("transition_valid", "boolean", field_type="boolean", is_output=True),
         Field("error_message", "error if transition invalid", is_output=True),
+        Field("notify_engineer", "bool: true if engineer should be notified (rejection)", field_type="boolean", is_output=True),
     ],
 )
 
@@ -89,6 +90,7 @@ EXPORT_CSV = Signature(
     inputs=[
         Field("mode", "'selected' or 'all_filtered'"),
         Field("rows_json", "JSON array of rows to export"),
+        Field("yearly_keys_json", "JSON array of year strings for yearly columns", optional=True),
     ],
     outputs=[
         Field("csv_content", "CSV-formatted string with all columns"),

@@ -1,12 +1,13 @@
 """
-GREAT Pre-Estimation — Pipeline Modules.
+GREAT Pre-Estimation — Signature-Driven Modules.
 
-Each module wraps business logic from the spec registry.
-Pure Python for deterministic rules (state machine, compatibility, formulas).
-LM calls for reasoning tasks (inductor selection, summary generation).
+Each module now inherits from SignatureModule and honors a Signature contract.
+The module's forward() is split into:
+  - forward()      → handled by SignatureModule (input/output validation)
+  - forward_impl() → actual business logic (replaces old forward())
 
-This is the core idea of DSPy+SDD: you decide what the LM does and what
-code does. The LM handles ambiguity; code handles math and state.
+This makes the connection explicit: Signature declares WHAT goes in and out,
+Module declares HOW. The tests verify that both match.
 """
 from __future__ import annotations
 
@@ -14,7 +15,8 @@ import json
 import logging
 from typing import Optional
 
-from great_dspy.modules.base import Module, LMClient
+from great_dspy.modules.base import LMClient
+from great_dspy.modules.signature_module import SignatureModule
 from great_dspy.specs.pre_estimation_specs import (
     LineStatus,
     Role,
@@ -32,19 +34,34 @@ from great_dspy.specs.pre_estimation_specs import (
     aggregate_yearly,
     MAN_DAY_FTE_DIVISOR,
 )
+from great_dspy.signatures.pre_estimation import (
+    VALIDATE_LINE_SELECTION,
+    CHECK_ROLE_PERMISSION,
+    VALIDATE_STATUS_TRANSITION,
+    SELECT_INDUCTOR_CRAN,
+    GENERATE_ESTIMATE,
+    VALIDATE_BEFORE_SAVE,
+    DISTRIBUTE_BY_MONTH,
+    GENERATE_PRE_SAVE_SUMMARY,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class SelectionValidator(Module):
+class SelectionValidator(SignatureModule):
     """
     Validates multi-line selection compatibility.
+    Signature: VALIDATE_LINE_SELECTION
 
-    Pure Python: are_lines_compatible() from specs.
-    LM: generates human-readable explanation for incompatibilities.
+    Pure Python for compatibility check. LM for human-readable explanation.
     """
 
-    def forward(self, lines: list[dict]) -> dict:
+    signature = VALIDATE_LINE_SELECTION
+
+    def forward_impl(self, lines_json: str) -> dict:
+        # Parse input
+        lines = json.loads(lines_json) if isinstance(lines_json, str) else lines_json
+
         compatible = are_lines_compatible(lines)
 
         if compatible:
@@ -75,13 +92,16 @@ class SelectionValidator(Module):
         return {"is_compatible": False, "incompatibility_reason": explanation or details}
 
 
-class PermissionChecker(Module):
+class PermissionChecker(SignatureModule):
     """
     Checks role-based access. Pure Python — permission matrix from specs.
+    Signature: CHECK_ROLE_PERMISSION
     """
 
-    def forward(self, role: str, line_assignee: str, current_user: str,
-                action: str = "view") -> dict:
+    signature = CHECK_ROLE_PERMISSION
+
+    def forward_impl(self, role: str, line_assignee: str, current_user: str,
+                     action: str = "view") -> dict:
         try:
             role_enum = Role(role)
         except ValueError:
@@ -108,18 +128,22 @@ class PermissionChecker(Module):
         return {"allowed": True, "reason": f"{role} is authorized to {action} this line"}
 
 
-class StatusTransitionValidator(Module):
+class StatusTransitionValidator(SignatureModule):
     """
     Validates state machine transitions. Pure Python — transition table from specs.
+    Signature: VALIDATE_STATUS_TRANSITION
     """
 
-    def forward(self, current_status: str, target_status: str,
-                has_saved_draft_in_session: bool = False) -> dict:
+    signature = VALIDATE_STATUS_TRANSITION
+
+    def forward_impl(self, current_status: str, target_status: str,
+                     has_saved_draft_in_session: bool = False) -> dict:
         try:
             current = LineStatus(current_status)
             target = LineStatus(target_status)
         except ValueError:
-            return {"is_valid": False, "error_message": f"Invalid status: {current_status} or {target_status}"}
+            return {"is_valid": False,
+                    "error_message": f"Invalid status: {current_status} or {target_status}"}
 
         # Check transition table
         allowed_targets = STATUS_TRANSITIONS.get(current, [])
@@ -148,27 +172,27 @@ class StatusTransitionValidator(Module):
         return {"is_valid": True, "error_message": ""}
 
 
-class InductorSelector(Module):
+class InductorSelector(SignatureModule):
     """
     Selects inductors and crans for a project line.
+    Signature: SELECT_INDUCTOR_CRAN
 
     Python: loads workload standard from specs registry.
     LM: matches line description to inductors and selects appropriate crans.
     """
 
-    def forward(self, line_description: str, metier: str,
-                available_inductors: Optional[list] = None) -> dict:
-        if available_inductors is None:
+    signature = SELECT_INDUCTOR_CRAN
+
+    def forward_impl(self, line_description: str, metier: str,
+                     available_inductors_json: str = "[]") -> dict:
+        try:
+            available = json.loads(available_inductors_json) if isinstance(available_inductors_json, str) else available_inductors_json
+        except (json.JSONDecodeError, TypeError):
             available = WORKLOAD_STANDARDS.get(metier, [])
-        else:
-            available = available_inductors
 
         if not available:
             return {
-                "inductor_selections": [],
-                "no_standard_found": True,
-                "message": "No workload standard found for this combination. "
-                           "Estimation via Custom JUs only (BR-11)."
+                "inductor_selections_json": "[]",
             }
 
         # Build prompt for LM
@@ -176,7 +200,8 @@ class InductorSelector(Module):
             {
                 "name": ind.name,
                 "group": ind.group_name,
-                "crans": [{"name": c.name, "variable": c.variable_coeff, "fixed": c.fixed_coeff} for c in ind.crans],
+                "crans": [{"name": c.name, "variable": c.variable_coeff, "fixed": c.fixed_coeff}
+                          for c in ind.crans],
                 "j_us": [
                     {"name": ju.short_name, "desc": ju.description, "unit_type": ju.unit_type}
                     for ju in ind.job_units
@@ -209,16 +234,24 @@ class InductorSelector(Module):
             logger.warning(f"Failed to parse LM response: {response[:200]}")
             selections = []
 
-        return {"inductor_selections": selections, "no_standard_found": False, "message": ""}
+        return {"inductor_selections_json": json.dumps(selections)}
 
 
-class EstimationCalculator(Module):
+class EstimationCalculator(SignatureModule):
     """
     Calculates estimation totals. Pure Python formula engine.
-    Total = (Variable × Occurrence) + Fixed
+    Signature: GENERATE_ESTIMATE
+    Formula: Total = (Variable × Occurrence) + Fixed
     """
 
-    def forward(self, job_units: list[dict]) -> dict:
+    signature = GENERATE_ESTIMATE
+
+    def forward_impl(self, job_units_json: str) -> dict:
+        try:
+            job_units = json.loads(job_units_json) if isinstance(job_units_json, str) else job_units_json
+        except (json.JSONDecodeError, TypeError):
+            job_units = []
+
         total_man_days = 0.0
         total_bh = 0.0
         total_km = 0.0
@@ -252,26 +285,32 @@ class EstimationCalculator(Module):
         total_fte = calculate_fte(total_man_days)
 
         return {
-            "total_fte": round(total_fte, 2),
-            "total_bh": round(total_bh, 2),
-            "total_km": round(total_km, 2),
-            "total_man_days": round(total_man_days, 2),
-            "breakdown": breakdown,
+            "total_fte": str(round(total_fte, 2)),
+            "total_bh": str(round(total_bh, 2)),
+            "total_km": str(round(total_km, 2)),
+            "breakdown_json": json.dumps(breakdown),
         }
 
 
-class SaveValidator(Module):
+class SaveValidator(SignatureModule):
     """
-    Validates pre-save conditions. Pure Python for deterministic checks
-    (SP date, status, Draft gate, inductors/cran presence).
+    Validates pre-save conditions. Pure Python for deterministic checks.
+    Signature: VALIDATE_BEFORE_SAVE
     """
+
+    signature = VALIDATE_BEFORE_SAVE
 
     def __init__(self, lm=None):
         super().__init__(lm)
         self.status_validator = StatusTransitionValidator(lm)
 
-    def forward(self, line: dict, save_type: str,
-                has_saved_draft_in_session: bool = False) -> dict:
+    def forward_impl(self, line_json: str, save_type: str,
+                     has_saved_draft_in_session: bool = False) -> dict:
+        try:
+            line = json.loads(line_json) if isinstance(line_json, str) else line_json
+        except (json.JSONDecodeError, TypeError):
+            line = {}
+
         errors = []
 
         # BR-08: SP date mandatory
@@ -298,23 +337,30 @@ class SaveValidator(Module):
             errors.append("No inductors with selected cran or Custom JUs found. "
                          "Add at least one.")
 
-        can_save = len(errors) == 0
-        return {"can_save": can_save, "validation_errors": errors}
+        return {"can_save": len(errors) == 0, "validation_errors_json": json.dumps(errors)}
 
 
-class MonthDistributor(Module):
+class MonthDistributor(SignatureModule):
     """
     Distributes totals across months from SP date. Pure Python.
+    Signature: DISTRIBUTE_BY_MONTH
     """
 
-    def forward(self, total_fte: float, total_bh: float, total_km: float,
-                sp_date: str, project_duration_months: int = 12) -> dict:
-        monthly_fte = distribute_monthly(total_fte, sp_date, project_duration_months)
-        monthly_bh = distribute_monthly(total_bh, sp_date, project_duration_months)
-        monthly_km = distribute_monthly(total_km, sp_date, project_duration_months)
+    signature = DISTRIBUTE_BY_MONTH
+
+    def forward_impl(self, total_fte: str, total_bh: str, total_km: str,
+                     sp_date: str, project_duration_months: str = "12") -> dict:
+        fte = float(total_fte) if total_fte else 0.0
+        bh = float(total_bh) if total_bh else 0.0
+        km = float(total_km) if total_km else 0.0
+        duration = int(project_duration_months) if project_duration_months else 12
+
+        monthly_fte = distribute_monthly(fte, sp_date, duration)
+        monthly_bh = distribute_monthly(bh, sp_date, duration)
+        monthly_km = distribute_monthly(km, sp_date, duration)
 
         monthly = []
-        for i in range(12):
+        for i in range(duration):
             monthly.append({
                 "month": i + 1,
                 "fte": round(monthly_fte[i], 2) if i < len(monthly_fte) else 0.0,
@@ -323,24 +369,34 @@ class MonthDistributor(Module):
             })
 
         return {
-            "monthly_distribution": monthly,
-            "yearly_aggregation": aggregate_yearly(
+            "monthly_distribution_json": json.dumps(monthly),
+            "yearly_aggregation_json": json.dumps(aggregate_yearly(
                 [m["fte"] for m in monthly],
                 int(sp_date[:4]) if sp_date else 2026,
-            ),
+            )),
         }
 
 
-class SummaryGenerator(Module):
+class SummaryGenerator(SignatureModule):
     """
-    Generates pre-save summary content using LM for human-readable text.
+    Generates pre-save summary content.
+    Signature: GENERATE_PRE_SAVE_SUMMARY
     """
 
-    def forward(self, estimation: dict, lines_count: int = 1) -> dict:
+    signature = GENERATE_PRE_SAVE_SUMMARY
+
+    def forward_impl(self, estimation_json: str, lines_count: str = "1") -> dict:
+        try:
+            estimation = json.loads(estimation_json) if isinstance(estimation_json, str) else estimation_json
+        except (json.JSONDecodeError, TypeError):
+            estimation = {}
+
+        lines = int(lines_count) if lines_count else 1
+
         prompt = (
             f"Generate a pre-save summary for this estimation:\n\n"
             f"{json.dumps(estimation, indent=2)}\n\n"
-            f"Lines count: {lines_count}\n\n"
+            f"Lines count: {lines}\n\n"
             f"Include: Total FTE, Total BH, Total KM, "
             f"and annual breakdown per calendar year."
         )
@@ -354,5 +410,5 @@ class SummaryGenerator(Module):
 
         return {
             "summary_text": summary_text or "Summary generation unavailable.",
-            "summary_json": estimation,
+            "summary_json": estimation_json,
         }

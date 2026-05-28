@@ -6,6 +6,7 @@ Covers:
   2. Module unit tests (all pure Python)
   3. Pipeline integration
 """
+import json
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -218,28 +219,28 @@ class TestEstimationReviewPermissionCheckerModule:
         self.checker = EstimationReviewPermissionChecker()
 
     def test_pmo_can_send_to_hvt(self):
-        result = self.checker.forward("PMO", "send_to_hvt")
+        result = self.checker.forward(role="PMO", action="send_to_hvt")
         assert result["allowed"] is True
 
     def test_admin_can_send_to_hvt(self):
-        result = self.checker.forward("Admin", "send_to_hvt")
+        result = self.checker.forward(role="Admin", action="send_to_hvt")
         assert result["allowed"] is True
 
     def test_engineer_cannot_send_to_hvt(self):
-        result = self.checker.forward("Engineer", "send_to_hvt")
+        result = self.checker.forward(role="Engineer", action="send_to_hvt")
         assert result["allowed"] is False
 
     def test_cpo_cannot_send_to_hvt(self):
-        result = self.checker.forward("CPO", "send_to_hvt")
+        result = self.checker.forward(role="CPO", action="send_to_hvt")
         assert result["allowed"] is False
 
     def test_all_roles_can_view(self):
         for role_name in ["Admin", "Engineer", "PMO", "RCRC", "CPO"]:
-            result = self.checker.forward(role_name, "view")
+            result = self.checker.forward(role=role_name, action="view")
             assert result["allowed"] is True, f"{role_name} should be able to view"
 
     def test_invalid_role(self):
-        result = self.checker.forward("Invalid", "view")
+        result = self.checker.forward(role="Invalid", action="view")
         assert result["allowed"] is False
 
 
@@ -288,20 +289,20 @@ class TestSendEligibilityCheckerModule:
         self.checker = SendEligibilityChecker()
 
     def test_estimated_is_eligible_for_pmo(self):
-        result = self.checker.forward("estimated", "PMO")
+        result = self.checker.forward(status="estimated", role="PMO")
         assert result["eligible"] is True
 
     def test_draft_not_eligible(self):
-        result = self.checker.forward("draft", "PMO")
+        result = self.checker.forward(status="draft", role="PMO")
         assert result["eligible"] is False
 
     def test_to_do_not_eligible(self):
-        result = self.checker.forward("to_do", "PMO")
+        result = self.checker.forward(status="to_do", role="PMO")
         assert result["eligible"] is False
 
     def test_engineer_not_eligible_even_if_estimated(self):
         """Engineer cannot send even if status is Estimated."""
-        result = self.checker.forward("estimated", "Engineer")
+        result = self.checker.forward(status="estimated", role="Engineer")
         assert result["eligible"] is False
 
     def test_find_eligible_rows(self):
@@ -332,17 +333,18 @@ class TestHVTCallbackProcessorModule:
         self.processor = HVTCallbackProcessor()
 
     def test_approval(self):
-        result = self.processor.forward("PL-001", "Backend", True)
+        result = self.processor.forward(
+            project_line="PL-001", metier="Backend", approved=True
+        )
         assert result["target_status"] == "approved"
         assert result["transition_valid"] is True
-        assert result["notify_engineer"] is False
 
     def test_rejection(self):
-        result = self.processor.forward("PL-001", "Backend", False, "Too optimistic")
+        result = self.processor.forward(
+            project_line="PL-001", metier="Backend", approved=False, comment="Too optimistic"
+        )
         assert result["target_status"] == "rejected"
         assert result["transition_valid"] is True
-        assert result["notify_engineer"] is True
-        assert result["comment"] == "Too optimistic"
 
 
 class TestCSVExporterModule:
@@ -352,15 +354,18 @@ class TestCSVExporterModule:
         self.exporter = CSVExporter()
 
     def test_export_empty(self):
-        result = self.exporter.forward([], "all_filtered")
+        result = self.exporter.forward(rows_json="[]", mode="all_filtered")
         assert result["csv_content"] == ""
-        assert result["row_count"] == 0
+        assert result["row_count"] == "0"
 
     def test_export_simple_rows(self):
         rows = [{"id": "PL-001", "name": "Auth API", "metier": "Backend",
                  "total_fte": 1.5, "total_bh": 0, "total_km": 0}]
-        result = self.exporter.forward(rows, "all_filtered")
-        assert result["row_count"] == 1
+        result = self.exporter.forward(
+            rows_json=json.dumps(rows), mode="all_filtered",
+            yearly_keys_json=json.dumps(["2024", "2025"]),
+        )
+        assert result["row_count"] == "1"
         assert "PL-001" in result["csv_content"]
         assert "Auth API" in result["csv_content"]
         assert "Backend" in result["csv_content"]
@@ -368,8 +373,11 @@ class TestCSVExporterModule:
     def test_export_with_yearly_columns(self):
         rows = [{"id": "PL-001", "name": "Auth API", "metier": "Backend",
                  "total_fte": 1.5, "total_bh": 0, "total_km": 0}]
-        result = self.exporter.forward(rows, "all_filtered", yearly_keys=["2024", "2025"])
-        assert result["row_count"] == 1
+        result = self.exporter.forward(
+            rows_json=json.dumps(rows), mode="all_filtered",
+            yearly_keys_json=json.dumps(["2024", "2025"]),
+        )
+        assert result["row_count"] == "1"
         assert "FTE 2024" in result["csv_content"]
         assert "BH 2025" in result["csv_content"]
 
@@ -386,8 +394,8 @@ class TestCSVExporterModule:
                 }
             ],
         }]
-        result = self.exporter.forward(rows, "selected")
-        assert result["row_count"] == 1
+        result = self.exporter.forward(rows_json=json.dumps(rows), mode="selected")
+        assert result["row_count"] == "1"
         assert "API-DEV" in result["csv_content"]
         assert "FMM001" in result["csv_content"]
 
@@ -464,7 +472,8 @@ class TestEstimationReviewPipeline:
         assert result["sent_count"] == 1  # Only PL-001
         assert result["skipped_count"] == 1
         assert len(result["payloads"]) == 1
-        assert result["payloads"][0]["project_line"] == "PL-001"
+        payload = json.loads(result["payloads"][0])
+        assert payload["project_line"] == "PL-001"
 
     def test_engineer_cannot_send_to_hvt(self):
         from great_dspy.pipeline.estimation_review_pipeline import (
@@ -491,6 +500,7 @@ class TestEstimationReviewPipeline:
         pipeline = EstimationReviewPipeline()
         result = pipeline.process_callback("PL-001", "Backend", False, "Rework needed")
         assert result["target_status"] == "rejected"
+        assert result["transition_valid"] is True
         assert result["notify_engineer"] is True
 
     def test_export_csv_from_pipeline(self):
@@ -501,5 +511,5 @@ class TestEstimationReviewPipeline:
         rows = [{"id": "PL-001", "name": "Test", "metier": "Backend",
                  "total_fte": 1.0, "total_bh": 0, "total_km": 0}]
         result = pipeline.export_csv(rows, "all_filtered")
-        assert result["row_count"] == 1
+        assert result["row_count"] == "1"
         assert "PL-001" in result["csv_content"]

@@ -27,6 +27,7 @@ class Field:
     description: str = ""
     field_type: str = "string"  # string, boolean, json
     is_output: bool = False
+    optional: bool = False  # If True, not required in forward() kwargs
 
 
 @dataclass
@@ -129,7 +130,7 @@ VALIDATE_BEFORE_SAVE = Signature(
     inputs=[
         Field("line_json", "JSON: project line data"),
         Field("save_type", "'draft' or 'definitive'"),
-        Field("has_saved_draft_in_session", "boolean", field_type="boolean"),
+        Field("has_saved_draft_in_session", "boolean", field_type="boolean", optional=True),
     ],
     outputs=[
         Field("can_save", "boolean: all preconditions met", field_type="boolean", is_output=True),

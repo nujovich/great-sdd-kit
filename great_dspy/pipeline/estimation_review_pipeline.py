@@ -89,7 +89,7 @@ class EstimationReviewPipeline:
 
         # ── Stage 1: Permission Check (§2) ──
         logger.info("ER Stage 1: Checking %s permissions", role)
-        perm = self.permission_checker.forward(role, "view")
+        perm = self.permission_checker.forward(role=role, action="view")
         ctx.permission_allowed = perm["allowed"]
         ctx.permission_reason = perm["reason"]
 
@@ -135,7 +135,7 @@ class EstimationReviewPipeline:
               - errors: list of errors
         """
         # Check permission
-        perm = self.permission_checker.forward(role, "send_to_hvt")
+        perm = self.permission_checker.forward(role=role, action="send_to_hvt")
         if not perm["allowed"]:
             return {"success": False, "sent_count": 0, "payloads": [], "errors": [perm["reason"]]}
 
@@ -157,9 +157,9 @@ class EstimationReviewPipeline:
             payload_result = self.hvt_payload_generator.forward(
                 project_line=row.get("id", ""),
                 metier=row.get("metier", ""),
-                yearly_summary=yearly,
+                yearly_summary_json=json.dumps(yearly),
             )
-            payloads.append(payload_result["payload"])
+            payloads.append(payload_result["payload_json"])
 
         return {
             "success": True,
@@ -181,7 +181,10 @@ class EstimationReviewPipeline:
     def export_csv(self, rows: list[dict], mode: str = "all_filtered",
                    yearly_keys: Optional[list[str]] = None) -> dict:
         """Export rows to CSV."""
-        return self.csv_exporter.forward(rows, mode, yearly_keys)
+        return self.csv_exporter.forward(
+            rows_json=json.dumps(rows), mode=mode,
+            yearly_keys_json=json.dumps(yearly_keys) if yearly_keys else "[]",
+        )
 
 
 def run_estimation_review(
