@@ -68,6 +68,27 @@ WORKLOAD_RULES: list[dict] = [
 
 
 # ──────────────────────────────────────────────
+# 2b. Bulk Inductor Deletion (§3b)
+# ──────────────────────────────────────────────
+
+# Who can delete inductors (same roles that can upload)
+WORKLOAD_DELETERS = {Role.ADMIN, Role.RCRC}
+
+BULK_DELETION_RULES: list[dict] = [
+    {"id": "DEL-BR-01", "rule": "Admin + RCRC only — No other role can bulk-delete inductors"},
+    {"id": "DEL-BR-02", "rule": "Show loaded only — Deletion view shows only already-loaded inductors"},
+    {"id": "DEL-BR-03", "rule": "Select all shortcut — Header checkbox selects/deselects all visible rows"},
+    {"id": "DEL-BR-04", "rule": "Confirm before delete — Modal confirmation required before批量删除 executes"},
+    {"id": "DEL-BR-05", "rule": "Active version protected — Cannot delete inductors from the active version if it is the only version"},
+    {"id": "DEL-BR-06", "rule": "Deletion is permanent — Deleted inductors are not recoverable from the UI"},
+    {"id": "DEL-BR-07", "rule": "Superseded version cascade — Deleting from a superseded version does not affect the active version"},
+    {"id": "DEL-BR-08", "rule": "Filter preserves selection — Changing filters preserves current selection state"},
+    {"id": "DEL-BR-09", "rule": "Empty selection blocked — Delete button disabled when no rows selected"},
+    {"id": "DEL-BR-10", "rule": "Deletion summary — After delete, show count of deleted vs skipped inductors"},
+]
+
+
+# ──────────────────────────────────────────────
 # 3. Filterable/Sortable/Resizable Tables (§4)
 # ──────────────────────────────────────────────
 
@@ -167,5 +188,6 @@ TRANSVERSAL_PENDING = [
 TRANSVERSAL_RULES: list[dict] = []
 TRANSVERSAL_RULES.extend(CYCLE_RULES)
 TRANSVERSAL_RULES.extend(WORKLOAD_RULES)
+TRANSVERSAL_RULES.extend(BULK_DELETION_RULES)
 TRANSVERSAL_RULES.extend(TABLE_RULES)
 TRANSVERSAL_RULES.extend(EMAIL_RULES)
