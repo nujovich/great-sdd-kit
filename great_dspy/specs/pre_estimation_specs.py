@@ -137,11 +137,116 @@ BUSINESS_RULES: list[dict] = [
     {"id": "BR-15", "rule": "Draft is always the first step — 'Save as Definitive' disabled until 'Save as Draft' clicked in current session"},
     {"id": "BR-16", "rule": "Sent = locked — awaiting CPO response; cannot be cancelled or edited from GREAT"},
     {"id": "BR-17", "rule": "Re-save overwrites — each 'Save as Draft' overwrites the previous Draft in the database"},
+    {"id": "BR-18", "rule": "Prototype data separate — prototype quantities are stored separately from engineering estimation; do not affect FTE/BH/KM"},
+    {"id": "BR-19", "rule": "Prototype categories pending — category names and count are pending definition (PRE-01)"},
 ]
 
 
 # ──────────────────────────────────────────────
-# 5. Inductor & Cran Model
+# 5. Prototype Estimation
+# ──────────────────────────────────────────────
+# Sección 5.2 del documento funcional:
+# "The engineer also fills the information necessary for the prototype estimation.
+#  This form allows the estimator to input prototype-related quantities for the project line.
+#  The form contains numeric inputs (number of prototypes by category) and a free-text comment field.
+#  This data is stored separately from the engineering estimation and surfaces in the Final Review
+#  as a distinct line item. It does not affect FTE, BH, or KM calculations."
+
+@dataclass
+class PrototypeCategory:
+    """A category of prototype (e.g., 'Greenfield', 'Refactor', 'Integration', 'Maintenance').
+    Categories are administered from the Admin page (AdminPage → Categorías tab).
+    Pending: exact category names and count (📋 PRE-01)."""
+    id: str
+    name: str
+    description: str = ""
+
+
+@dataclass
+class PrototypeEstimation:
+    """Prototype estimation data for a single project line.
+    Stored separately from engineering estimation (inductors/JUs).
+    Does not affect FTE, BH, or KM calculations.
+    Surfaces in Final Review as a distinct line item."""
+    line_id: str
+    categories: dict[str, float] = field(default_factory=dict)  # category_id → quantity
+    comment: str = ""
+    saved: bool = False
+
+    def total_units(self) -> float:
+        return sum(self.categories.values())
+
+    def is_empty(self) -> bool:
+        return all(q == 0 for q in self.categories.values())
+
+
+# Default prototype categories (pending formal definition PRE-01)
+DEFAULT_PROTOTYPE_CATEGORIES: list[PrototypeCategory] = [
+    PrototypeCategory("proto-cat-1", "Greenfield", "Producto nuevo desde cero"),
+    PrototypeCategory("proto-cat-2", "Refactor", "Reescritura de módulo existente"),
+    PrototypeCategory("proto-cat-3", "Integration", "Conexión con sistemas externos"),
+    PrototypeCategory("proto-cat-4", "Maintenance", "Bugfixes y mejoras menores"),
+]
+
+
+# ──────────────────────────────────────────────
+# 5b. Parent-Child Line Relationships
+# ──────────────────────────────────────────────
+# Sección 5.2 del documento funcional:
+# "Parent-Child Line Relationships — Pre-Estimation View will display these relationships
+#  alongside the project line data. If a related line's HVT attributes are modified,
+#  the system will show a warning to alert the estimator."
+
+@dataclass
+class LineRelationship:
+    """Represents a parent-child relationship between project lines."""
+    parent_line_id: str
+    child_line_id: str
+    relationship_type: str = "parent_child"  # parent_child | sibling
+
+
+def get_related_line_ids(line_id: str, relationships: list[LineRelationship]) -> list[str]:
+    """Get all line IDs related to a given line (both directions)."""
+    related = []
+    for rel in relationships:
+        if rel.parent_line_id == line_id:
+            related.append(rel.child_line_id)
+        elif rel.child_line_id == line_id:
+            related.append(rel.parent_line_id)
+    return related
+
+
+def check_hvt_attribute_changed(line: dict, original_attributes: dict) -> dict | None:
+    """Check if HVT attributes on a related line have changed.
+    Returns a warning dict if changed, None if unchanged.
+
+    HVT attributes monitored for changes:
+    - organ_type, energy_fuel_type, project_ranking, injection_system
+    - start_of_project (SP), alliance_code, vehicle_code
+    - standard_emissions, client, market"""
+    HVT_MONITORED_FIELDS = [
+        "organ_type", "energy_fuel_type", "project_ranking", "injection_system",
+        "sp_date", "alliance_code", "vehicle_code", "standard_emissions",
+        "client", "market"
+    ]
+    changes = {}
+    for field_name in HVT_MONITORED_FIELDS:
+        old_val = original_attributes.get(field_name)
+        new_val = line.get(field_name)
+        if old_val != new_val:
+            changes[field_name] = {"old": old_val, "new": new_val}
+    if changes:
+        return {
+            "changed": True,
+            "line_id": line.get("id"),
+            "fields": changes,
+            "message": f"HVT attributes changed on related line {line.get('id')}: "
+                       f"{', '.join(changes.keys())}"
+        }
+    return None
+
+# ──────────────────────────────────────────────
+# 6. Inductor & Cran Model
 # ──────────────────────────────────────────────
 
 @dataclass

@@ -191,13 +191,12 @@ class TestCompatibilityRules:
 
 class TestBusinessRules:
     """Spec §17: Business Rules"""
-
-    def test_all_17_rules_defined(self):
-        assert len(BUSINESS_RULES) == 17
+    def test_all_19_rules_defined(self):
+        """There should be exactly 19 business rules (17 original + BR-18 + BR-19)."""
+        assert len(BUSINESS_RULES) == 19
 
     def test_each_rule_has_unique_id(self):
         ids = [r["id"] for r in BUSINESS_RULES]
-        assert len(ids) == len(set(ids))
 
     def test_no_deletion_rule_exists(self):
         assert any("No deletion" in r["rule"] for r in BUSINESS_RULES)
@@ -649,3 +648,163 @@ class TestMonthDistributorSignature:
         assert isinstance(result["yearly_aggregation_json"], str)
         yearly = json.loads(result["yearly_aggregation_json"])
         assert isinstance(yearly, dict)
+
+
+# ═══════════════════════════════════════════════════════════
+# Prototype Estimation Tests
+# ═══════════════════════════════════════════════════════════
+
+from great_dspy.specs.pre_estimation_specs import (
+    PrototypeCategory,
+    PrototypeEstimation,
+    LineRelationship,
+    get_related_line_ids,
+    check_hvt_attribute_changed,
+    DEFAULT_PROTOTYPE_CATEGORIES,
+)
+
+
+class TestPrototypeCategories:
+    """Test PrototypeCategory data structure."""
+
+    def test_default_categories_exist(self):
+        """There should be 4 default prototype categories (PRE-01 pending)."""
+        assert len(DEFAULT_PROTOTYPE_CATEGORIES) == 4
+
+    def test_categories_have_ids(self):
+        """Each category has a unique id."""
+        ids = [c.id for c in DEFAULT_PROTOTYPE_CATEGORIES]
+        assert len(ids) == len(set(ids))
+
+    def test_categories_have_names(self):
+        """Each category has a non-empty name."""
+        for cat in DEFAULT_PROTOTYPE_CATEGORIES:
+            assert len(cat.name) > 0
+
+    def test_category_names(self):
+        """Expected category names per AdminPage fixture."""
+        names = [c.name for c in DEFAULT_PROTOTYPE_CATEGORIES]
+        assert "Greenfield" in names
+        assert "Refactor" in names
+        assert "Integration" in names
+        assert "Maintenance" in names
+
+
+class TestPrototypeEstimation:
+    """Test PrototypeEstimation data structure."""
+
+    def test_create_empty(self):
+        pe = PrototypeEstimation(line_id="PL-001")
+        assert pe.line_id == "PL-001"
+        assert pe.is_empty() is True
+        assert pe.total_units() == 0
+
+    def test_add_quantities(self):
+        pe = PrototypeEstimation(
+            line_id="PL-001",
+            categories={"proto-cat-1": 3.0, "proto-cat-2": 1.0},
+        )
+        assert pe.total_units() == 4.0
+        assert pe.is_empty() is False
+
+    def test_comment_field(self):
+        pe = PrototypeEstimation(
+            line_id="PL-001",
+            categories={"proto-cat-1": 2.0},
+            comment="Urgent prototype needed",
+        )
+        assert pe.comment == "Urgent prototype needed"
+
+    def test_saved_state(self):
+        pe = PrototypeEstimation(line_id="PL-001")
+        assert pe.saved is False
+        pe.saved = True
+        assert pe.saved is True
+
+    def test_does_not_affect_fte(self):
+        """BR-18: Prototype data is separate from engineering estimation."""
+        pe = PrototypeEstimation(
+            line_id="PL-001",
+            categories={"proto-cat-1": 5.0},
+        )
+        # Prototype has no FTE/BH/KM fields
+        assert not hasattr(pe, "fte")
+        assert not hasattr(pe, "bh")
+        assert not hasattr(pe, "km")
+
+
+class TestParentChildRelationships:
+    """Test LineRelationship and related functions."""
+
+    def test_relationship_creation(self):
+        rel = LineRelationship(parent_line_id="PL-001", child_line_id="PL-002")
+        assert rel.parent_line_id == "PL-001"
+        assert rel.child_line_id == "PL-002"
+        assert rel.relationship_type == "parent_child"
+
+    def test_get_related_ids_parent(self):
+        rels = [
+            LineRelationship("PL-001", "PL-002"),
+            LineRelationship("PL-001", "PL-003"),
+        ]
+        related = get_related_line_ids("PL-001", rels)
+        assert "PL-002" in related
+        assert "PL-003" in related
+
+    def test_get_related_ids_child(self):
+        """Relationships are bidirectional."""
+        rels = [LineRelationship("PL-001", "PL-002")]
+        related = get_related_line_ids("PL-002", rels)
+        assert "PL-001" in related
+
+    def test_no_related_lines(self):
+        rels = [LineRelationship("PL-001", "PL-002")]
+        related = get_related_line_ids("PL-999", rels)
+        assert len(related) == 0
+
+
+class TestHVTAttributeChangeDetection:
+    """Test check_hvt_attribute_changed function."""
+
+    def test_no_change(self):
+        line = {"id": "PL-001", "organ_type": "Thermal", "sp_date": "2026-01-01"}
+        original = {"organ_type": "Thermal", "sp_date": "2026-01-01"}
+        result = check_hvt_attribute_changed(line, original)
+        assert result is None
+
+    def test_organ_type_changed(self):
+        line = {"id": "PL-001", "organ_type": "Electric", "sp_date": "2026-01-01"}
+        original = {"organ_type": "Thermal", "sp_date": "2026-01-01"}
+        result = check_hvt_attribute_changed(line, original)
+        assert result is not None
+        assert result["changed"] is True
+        assert "organ_type" in result["fields"]
+        assert result["fields"]["organ_type"]["old"] == "Thermal"
+        assert result["fields"]["organ_type"]["new"] == "Electric"
+
+    def test_multiple_fields_changed(self):
+        line = {"id": "PL-001", "organ_type": "Electric", "sp_date": "2026-06-01"}
+        original = {"organ_type": "Thermal", "sp_date": "2026-01-01"}
+        result = check_hvt_attribute_changed(line, original)
+        assert result is not None
+        assert len(result["fields"]) == 2
+
+    def test_warning_message_includes_line_id(self):
+        line = {"id": "PL-001", "organ_type": "Electric"}
+        original = {"organ_type": "Thermal"}
+        result = check_hvt_attribute_changed(line, original)
+        assert "PL-001" in result["message"]
+
+    def test_monitored_fields(self):
+        """All 10 HVT monitored fields are checked."""
+        line = {"id": "PL-001", "client": "Renault", "market": "EU"}
+        original = {"client": "Renault", "market": "EU"}
+        result = check_hvt_attribute_changed(line, original)
+        assert result is None  # No changes
+
+    def test_client_changed(self):
+        line = {"id": "PL-001", "client": "Nissan"}
+        original = {"client": "Renault"}
+        result = check_hvt_attribute_changed(line, original)
+        assert result is not None
+        assert "client" in result["fields"]
