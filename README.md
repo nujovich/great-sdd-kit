@@ -2,7 +2,11 @@
 
 **Specification-Driven Development** para el sistema GREAT, construido sobre [DSPy](https://github.com/stanfordnlp/dspy) (Stanford NLP).
 
-Las 78 reglas de negocio del sistema GREAT están codificadas como **especificaciones ejecutables** — no como documentación, no como prompts, no como tickets de Jira. Los agentes de IA (Claude, Codex, Copilot, Cursor) leen estas specs y generan código que las cumple, validado por 216 tests.
+Las reglas de negocio del sistema GREAT están codificadas como **especificaciones ejecutables** — no como documentación, no como prompts, no como tickets de Jira. Los agentes de IA (Claude, Codex, Copilot, Cursor) leen estas specs y generan código que las cumple, validado por tests.
+
+> **Última actualización:** 29 mayo 2026 — 257 tests, 7 módulos, 6 vistas.
+> En progreso: auditoría de schema DB v2 (19 tablas PostgreSQL) vs contrato API (OpenAPI + TypeScript).
+> Ver abajo sección "Auditoría DB v2".
 
 ## ¿Qué es esto?
 
@@ -107,15 +111,17 @@ great-dspy-pipeline/
 
 ## Las 6 Vistas del Sistema GREAT
 
-| Vista | Archivo de Specs | Reglas | Módulos | Pipeline | Tests |
-|-------|-----------------|--------|---------|----------|-------|
-| **Pre-Estimation** | `pre_estimation_specs.py` | 17 | 8 | 7 etapas | 68 |
-| **Estimation Review** | `estimation_review_specs.py` | 10 | — | — | — |
-| **Allocation** | `allocation_specs.py` | 16 | — | — | — |
-| **Final Review** | `final_review_specs.py` | 10 | — | — | — |
-| **Management View** | `management_view_specs.py` | 8 | — | — | — |
-| **Transversal** | `transversal_specs.py` | 13 | — | — | — |
-| **TOTAL** | | **78** | **~30** | **6** | **216** |
+|| Vista | Archivo de Specs | Reglas | Módulos | Pipeline | Tests |
+||-------|-----------------|--------|---------|----------|-------|
+|| **Pre-Estimation** | `pre_estimation_specs.py` | 17 | 7 | 7 etapas | 68 |
+|| **Estimation Review** | `estimation_review_specs.py` | 10 | — | — | — |
+|| **Allocation** | `allocation_specs.py` | 16 | — | — | — |
+|| **Final Review** | `final_review_specs.py` | 10 | — | — | — |
+|| **Management View** | `management_view_specs.py` | 8 | — | — | — |
+|| **Transversal** | `transversal_specs.py` | 13 | — | — | — |
+|| **Signature** `signature_module.py` | — | — | 1 | — | — |
+|| **Bulk Deletion** `bulk_inductor_deleter.py` | — | 10 | 1 | — | — |
+|| **TOTAL** | | **~84** | **~7** | **6** | **257** |
 
 ## Pipeline: Pre-Estimation (ejemplo)
 
@@ -358,3 +364,59 @@ Para extender a otro dominio:
 - Piskala, D.B. (2026) — *Spec-Driven Development: From Code to Contract* (AIWare 2026)
 - Taghavi, P. & Bhavani, S. (2026) — *Spec Kit Agents: Context-Grounded Agentic Workflows*
 - Marri, S.R. (2026) — *Constitutional Spec-Driven Development* (security-by-construction)
+
+---
+
+## Auditoría DB v2 — Schema SQL vs Contrato API
+
+**Estado:** En progreso (pendiente revisión con responsable del schema)
+
+**Source of truth declarada:** `schema.sql` + `schema.md` (19 tablas PostgreSQL, Greenfield v2).
+
+**Archivos bajo auditoría:**
+- `pev-openapi.yaml` — Contrato OpenAPI 3.1.0 ("PEV API", Pre-Estimation Validation)
+- `pev.ts` — Tipos TypeScript auto-generados por openapi-typescript
+
+### Discrepancias detectadas (borrador)
+
+**1. Campos en DB sin cobertura API**
+- `project_line`: 15+ columnas sin exponer (HVT attributes, milestone dates, assignee). Solo `id`, `name`, `metier`, `status`, `updated_at` en el listado.
+- `job_unit`: sin `unit_type` (Man Day / Bench Hours / Kilometres / Kiloeuros), sin coeficientes (`variable`, `fixed`), sin perfiles FMM/SMM/DMM.
+- `job_unit_allocation`: sin endpoints CRUD completos (solo existe prototype y estimation).
+- Tablas sin endpoint alguno: `keuro_rate`, `allocation_rule_version`, `allocation_rule`, `metier_distribution_config`, `hvt_audit_log`, `email_send_log`, `status_change_log`.
+
+**2. `project_id` vs `pl_number`**
+- API usa `project_id`, DB usa `pl_number`. Nadie sabe si son lo mismo.
+
+**3. Prototipo: estructura incompatible**
+- DB: columnas fijas `proto_1`, `proto_2`, `proto_3`
+- API: array genérico `categories: [{id, quantity}]`
+- Pregunta abierta: ¿la API viene de versión anterior?
+
+**4. `H-TESTING` inconsistente**
+- `allocation_rule_version.metier` incluye `H-TESTING`, pero ningún otro CHECK ni el enum `Metier` del OpenAPI lo incluyen.
+
+**5. `energy` vs `fuel_type`**
+- `project_line.energy` y `ws_n2_entry.fuel_type` — posible mismatch de naming para el mismo concepto.
+
+**6. `cpo_comment` ubicación**
+- API lo muestra en `EstimationPayload`. En la DB vive en `status_change_log.comment` (fila Sent→Rejected).
+
+### Pendiente con responsable del schema
+
+1. ¿Schema SQL congelado o pueden cambiar NOT NULL constraints (HVT-02)?
+2. ¿`H-TESTING` es metier real o futuro?
+3. ¿`project_id` API = `pl_number` DB?
+4. ¿Prototipo API se actualizará al modelo de columnas fijas?
+5. ¿El OpenAPI es solo fase 1 (Pre-Estimation)?
+6. ¿Dónde está el generador de `pev.ts`?
+7. ¿`energy` = `fuel_type`?
+8. ¿Para cuándo se necesita el análisis finalizado? (¿compliance en CI? ¿migraciones? ¿documentación?)
+
+### Plan de implementación SDD Kit
+
+Una vez resueltas las preguntas:
+1. `great_dspy/specs/db_schema_specs.py` — reglas por tabla (types, constraints, relaciones)
+2. `great_dspy/specs/api_contract_specs.py` — reglas de coherencia API↔DB
+3. `great_dspy/modules/db_api_consistency.py` — validador cross YAML↔SQL
+4. Tests que verifiquen coherencia bidireccional API vs DB
