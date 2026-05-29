@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "great-sdd-kit"
+version = "1.0.0"
+description = "Specification-Driven Development Kit for the GREAT System — 78 business rules as executable specs, 257 tests, zero LLM dependencies"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Nadia Ujovich", email = "nujovich@gmail.com"},
+]
+keywords = ["sdd", "specification-driven-development", "business-rules", "great-system"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Testing",
+]
+
+[project.urls]
+Repository = "https://github.com/nujovich/great-dspy-pipeline"
+Issues = "https://github.com/nujovich/great-dspy-pipeline/issues"
+
+[tool.setuptools.packages.find]
+include = ["great_sdd*", "sdd*"]
+
+[tool.setuptools.package-data]
+great_sdd = ["**/*.py"]
+sdd = ["**/*.py"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
