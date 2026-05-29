@@ -38,8 +38,7 @@ class BaseLMModule(BaseModule):
     """
     Base class for modules that may use an LLM.
 
-    The LM client is swappable. By default, uses an OpenAI-compatible API.
-    When Stanford DSPy is available, swap the LM client for dspy.LM.
+    The LM client is swappable. Uses OpenAI-compatible API by default.
 
     Usage:
         class MyAnalyzer(BaseLMModule):

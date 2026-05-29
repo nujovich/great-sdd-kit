@@ -10,9 +10,9 @@ import io
 import logging
 from typing import Optional
 
-from great_dspy.modules.base import Module
-from great_dspy.specs.pre_estimation_specs import LineStatus, Role
-from great_dspy.specs.final_review_specs import (
+from great_sdd.modules.base import Module
+from great_sdd.specs.pre_estimation_specs import LineStatus, Role
+from great_sdd.specs.final_review_specs import (
     FINAL_REVIEW_PERMISSIONS,
     FINAL_REVIEW_ELIGIBLE_STATUSES,
     AGGREGATION_LEVELS,

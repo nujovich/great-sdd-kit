@@ -9,9 +9,9 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from great_dspy.modules.base import Module
-from great_dspy.specs.pre_estimation_specs import LineStatus, Role
-from great_dspy.specs.allocation_specs import (
+from great_sdd.modules.base import Module
+from great_sdd.specs.pre_estimation_specs import LineStatus, Role
+from great_sdd.specs.allocation_specs import (
     ALLOCATION_PERMISSIONS,
     ALLOCATION_ELIGIBLE_STATUSES,
     AVAILABLE_SOCIETES,

@@ -16,8 +16,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
-from great_dspy.modules.base import LMClient
-from great_dspy.modules.allocation import (
+from great_sdd.modules.base import LMClient
+from great_sdd.modules.allocation import (
     AllocationPermissionChecker,
     AllocationEligibilityFilter,
     AllocationRuleMatcher,

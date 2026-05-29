@@ -7,7 +7,7 @@ El SDD Kit no es el repo raíz del desarrollador. Es una **dependencia que el ag
 ```bash
 # En el repo del backend o frontend:
 cd tu-proyecto
-git submodule add https://github.com/nujovich/great-dspy-pipeline.git sdd-kit
+git submodule add https://github.com/nujovich/great-sdd-kit.git sdd-kit
 git commit -m "feat: add SDD Kit as submodule"
 ```
 
@@ -28,9 +28,9 @@ Este proyecto usa Specification-Driven Development. Las reglas de negocio están
 
 **SIEMPRE carga `sdd-kit/AGENTS.md` antes de generar cualquier código.**
 
-Las reglas están en `sdd-kit/great_dspy/specs/` (78 reglas en 6 vistas).
-La lógica está en `sdd-kit/great_dspy/modules/` (30 módulos Python puros).
-Los pipelines están en `sdd-kit/great_dspy/pipeline/` (6 pipelines).
+Las reglas están en `sdd-kit/great_sdd/specs/` (78 reglas en 6 vistas).
+La lógica está en `sdd-kit/great_sdd/modules/` (30 módulos Python puros).
+Los pipelines están en `sdd-kit/great_sdd/pipeline/` (6 pipelines).
 Los tests están en `sdd-kit/tests/` (216 tests).
 
 Siempre corre `pytest sdd-kit/tests/ -v` después de generar código para validar que cumple las reglas.
@@ -39,7 +39,7 @@ Siempre corre `pytest sdd-kit/tests/ -v` después de generar código para valida
 ### .cursorrules (raíz del proyecto)
 
 ```
-Carga sdd-kit/AGENTS.md antes de generar codigo. Las reglas de negocio estan en sdd-kit/great_dspy/specs/.
+Carga sdd-kit/AGENTS.md antes de generar codigo. Las reglas de negocio estan en sdd-kit/great_sdd/specs/.
 
 Siempre corre pytest sdd-kit/tests/ -v para validar.
 ```
@@ -47,7 +47,7 @@ Siempre corre pytest sdd-kit/tests/ -v para validar.
 ### .github/copilot-instructions.md (raíz del proyecto)
 
 ```markdown
-Before generating code, load sdd-kit/AGENTS.md. Business rules are in sdd-kit/great_dspy/specs/.
+Before generating code, load sdd-kit/AGENTS.md. Business rules are in sdd-kit/great_sdd/specs/.
 Always run pytest sdd-kit/tests/ -v to validate compliance.
 ```
 
@@ -59,9 +59,9 @@ tu-backend/
 ├── tests/                  ← Tests del backend
 ├── sdd-kit/                ← Git submodule del SDD Kit
 │   ├── AGENTS.md
-│   ├── great_dspy/specs/   ← 78 reglas de negocio
-│   ├── great_dspy/modules/ ← 30 módulos
-│   ├── great_dspy/pipeline/← 6 pipelines
+│   ├── great_sdd/specs/   ← 78 reglas de negocio
+│   ├── great_sdd/modules/ ← 30 módulos
+│   ├── great_sdd/pipeline/← 6 pipelines
 │   └── tests/              ← 216 tests
 ├── CLAUDE.md               ← Apunta a sdd-kit/AGENTS.md
 ├── .cursorrules            ← Apunta a sdd-kit/AGENTS.md
@@ -72,7 +72,7 @@ tu-backend/
 
 ```python
 # En tu backend (FastAPI, Django, etc.)
-from sdd-kit.great_dspy.modules.pre_estimation import SaveValidator
+from sdd-kit.great_sdd.modules.pre_estimation import SaveValidator
 
 @app.post("/api/pre-estimation/save-draft")
 def save_draft(line: dict):
@@ -94,7 +94,7 @@ pip install -e sdd-kit/
 Si no quieres submodules, copia estos directorios mínimos:
 
 ```bash
-cp -r sdd-kit/great_dspy/specs/ tu-proyecto/sdd-specs/
+cp -r sdd-kit/great_sdd/specs/ tu-proyecto/sdd-specs/
 cp -r sdd-kit/sdd/ tu-proyecto/sdd/
 ```
 
@@ -117,7 +117,7 @@ El agente, la próxima vez que cargue el proyecto, ya tendrá las nuevas reglas.
 Si quieres aplicar este patrón a otro sistema (no GREAT):
 
 1. Clona este repo como template
-2. Borra `great_dspy/`
+2. Borra `great_sdd/`
 3. Crea `tu_dominio/specs/` con tus reglas
 4. Crea `tu_dominio/modules/` con tu lógica
 5. Crea `tu_dominio/pipeline/` con tu orquestación

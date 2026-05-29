@@ -7,8 +7,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
-from great_dspy.modules.base import LMClient
-from great_dspy.modules.final_review import (
+from great_sdd.modules.base import LMClient
+from great_sdd.modules.final_review import (
     FinalReviewPermissionChecker,
     FinalReviewEligibilityFilter,
     AggregationEngine,

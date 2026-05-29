@@ -7,8 +7,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
-from great_dspy.modules.base import LMClient
-from great_dspy.modules.management_view import (
+from great_sdd.modules.base import LMClient
+from great_sdd.modules.management_view import (
     ManagementAccessChecker,
     PieChartBuilder,
     TimelineBuilder,

@@ -1,6 +1,6 @@
-# GREAT DSPy Pipeline — SDD Kit
+# GREAT SDD Kit — SDD Kit
 
-**Specification-Driven Development** para el sistema GREAT, construido sobre [DSPy](https://github.com/stanfordnlp/dspy) (Stanford NLP).
+Specification-Driven Development para el sistema GREAT.
 
 Las reglas de negocio del sistema GREAT están codificadas como **especificaciones ejecutables** — no como documentación, no como prompts, no como tickets de Jira. Los agentes de IA (Claude, Codex, Copilot, Cursor) leen estas specs y generan código que las cumple, validado por tests.
 
@@ -13,7 +13,7 @@ Las reglas de negocio del sistema GREAT están codificadas como **especificacion
 Un kit SDD (Spec-Driven Development) que convierte documentos de negocio (PRDs, épicas, historias) en:
 
 1. **Specs estructuradas** — Reglas de negocio con ID, severity, criterios de aceptación
-2. **Módulos DSPy** — Lógica pura importable como librería
+2. **Módulos SDD** — Lógica pura importable como librería
 3. **Pipelines** — Orquestación de módulos como blueprint de endpoints
 4. **Tests ejecutables** — 216 tests que verifican las 78 reglas
 
@@ -21,13 +21,13 @@ Un kit SDD (Spec-Driven Development) que convierte documentos de negocio (PRDs, 
 Documento (PRD/Épica/Story)
         │
         ▼
-great_dspy/specs/     ← 78 reglas estructuradas (6 archivos)
+great_sdd/specs/     ← 78 reglas estructuradas (6 archivos)
         │
         ▼
-great_dspy/modules/   ← 30 módulos DSPy (lógica pura)
+great_sdd/modules/   ← 30 módulos SDD (lógica pura)
         │
         ▼
-great_dspy/pipeline/  ← 6 pipelines (blueprint de endpoints)
+great_sdd/pipeline/  ← 6 pipelines (blueprint de endpoints)
         │
         ▼
 tests/                ← 216 tests (pytest)
@@ -40,8 +40,8 @@ pytest tests/ -v      ← ¿Cumple las 78 reglas? Sí → Merge.
 
 | # | Uso | Cuándo | Stack |
 |---|-----|--------|-------|
-| **1** | **Como librería** | Necesitás lógica de negocio importable en tu código | Python puro. `from great_dspy.modules.pre_estimation import StatusTransitionValidator` |
-| **2** | **Como pipeline** | Necesitás orquestar validaciones en orden (blueprint de endpoints) | DSPy modules. `run_pipeline(selected_lines, role, metier)` |
+| **1** | **Como librería** | Necesitás lógica de negocio importable en tu código | Python puro. `from great_sdd.modules.pre_estimation import StatusTransitionValidator` |
+| **2** | **Como pipeline** | Necesitás orquestar validaciones en orden (blueprint de endpoints) | SDD modules. `run_pipeline(selected_lines, role, metier)` |
 | **3** | **Como agente de IA** | Querés que Claude/Copilot/Cursor cumpla reglas sin adivinar | AGENTS.md + CLAUDE.md + .cursorrules → specs |
 | **4** | **Como documentación** | Querés docs versionadas y testeables (no PDFs que se pudren) | YAML + Markdown + tests como documentación ejecutable |
 | **5** | **Como auditoría** | Necesitás verificar compliance en CI/CD o revisar un PR | pytest + 216 tests. Resultado en segundos |
@@ -52,7 +52,7 @@ Cada uso es independiente: podés usar solo la librería sin tocar los pipelines
 ## Arquitectura
 
 ```plaintext
-great-dspy-pipeline/
+great-sdd-kit/
 ├── AGENTS.md                        ← Instrucciones para agentes de IA (ENTRY POINT)
 ├── CLAUDE.md                        ← Entry point para Claude Code
 ├── .cursorrules                     ← Entry point para Cursor IDE
@@ -66,7 +66,7 @@ great-dspy-pipeline/
 │   ├── base_module.py               ← Base class para módulos
 │   └── base_pipeline.py             ← Base class para pipelines
 │
-├── great_dspy/                      ← Dominio: Sistema GREAT
+├── great_sdd/                      ← Dominio: Sistema GREAT
 │   ├── __init__.py
 │   ├── demo.py                      ← Demo runner
 │   ├── specs/                       ← 6 archivos, 78 reglas de negocio
@@ -77,7 +77,7 @@ great-dspy-pipeline/
 │   │   ├── management_view_specs.py     ← 8 reglas (vista Management)
 │   │   └── transversal_specs.py         ← 13 reglas (ciclos, versiones, emails)
 │   │
-│   ├── signatures/                  ← DSPy Signatures (contratos input/output)
+│   ├── signatures/                  ← SDD Signatures (contratos input/output)
 │   │   ├── pre_estimation.py            ← 8 signatures
 │   │   └── estimation_review.py         ← Signatures para Estimation Review
 │   │
@@ -186,13 +186,13 @@ Reglas de ciclos, versiones, emails, y workload.
 ### Como librería (módulos)
 
 ```python
-from great_dspy.modules.pre_estimation import StatusTransitionValidator
+from great_sdd.modules.pre_estimation import StatusTransitionValidator
 
 v = StatusTransitionValidator()
 result = v.forward("approved", "draft")
 assert result["is_valid"] is False  # Approved es terminal
 
-from great_dspy.specs.allocation_specs import calculate_fte_ke
+from great_sdd.specs.allocation_specs import calculate_fte_ke
 ke = calculate_fte_ke(fte=1.0, societe_site="Horse Spain S.L.-Valladolid", year="2024")
 assert ke == 107.0
 ```
@@ -200,7 +200,7 @@ assert ke == 107.0
 ### Como pipeline
 
 ```python
-from great_dspy.pipeline.pre_estimation_pipeline import run_pipeline
+from great_sdd.pipeline.pre_estimation_pipeline import run_pipeline
 
 ctx = run_pipeline(
     selected_lines=[line_1, line_2],
@@ -237,7 +237,7 @@ Cada test verifica una o más reglas de negocio. Si tu código pasa los 216 test
 ```bash
 # 1. Agregar como git submodule
 cd tu-proyecto
-git submodule add https://github.com/nujovich/great-dspy-pipeline.git sdd-kit
+git submodule add https://github.com/nujovich/great-sdd-kit.git sdd-kit
 
 # 2. Configurar agentes de IA (3 archivos, 1 línea cada uno)
 echo "Carga sdd-kit/AGENTS.md antes de generar cualquier código" >> CLAUDE.md
@@ -285,7 +285,7 @@ cd sdd-kit && python -m pytest tests/ -q
 **Qué hacer si un test falla después de actualizar:**
 
 1. Leyendo el nombre del test que falla, identificá qué regla cambió
-2. Revisá el spec correspondiente en `great_dspy/specs/` para ver el cambio
+2. Revisá el spec correspondiente en `great_sdd/specs/` para ver el cambio
 3. Actualizá tu código o los tests del proyecto (no los del kit) para cumplir la nueva regla
 4. Corré `pytest tests/ -v` hasta que todo pase
 5. Commit
@@ -293,7 +293,7 @@ cd sdd-kit && python -m pytest tests/ -q
 **Versionado:** El SDD Kit usa tags semánticos (`v1.0.0`, `v1.1.0`, etc.). Para mantener estabilidad, podés pinchar a una versión específica:
 
 ```bash
-git submodule add -b v1.0.0 https://github.com/nujovich/great-dspy-pipeline.git sdd-kit
+git submodule add -b v1.0.0 https://github.com/nujovich/great-sdd-kit.git sdd-kit
 # O si ya lo tenés agregado:
 cd sdd-kit && git checkout v1.0.0
 ```
@@ -302,8 +302,8 @@ El SDD Kit de GREAT es complementario con [GitHub Spec Kit](https://github.com/g
 
 | Dimensión | GitHub Spec Kit | SDD Kit de GREAT |
 |-----------|----------------|-----------------|
-| **Enfoque** | Desarrollo (agente) | Pipeline declarativo (DSPy) |
-| **Motor** | Agentes IA | DSPy + pytest |
+| **Enfoque** | Desarrollo (agente) | Pipeline declarativo (SDD) |
+| **Motor** | Agentes IA | SDD + pytest |
 | **Input** | Requirements (lenguaje natural) | PRDs, épicas, reglas de negocio |
 | **Output** | Código funcional | Specs estructuradas + 216 tests |
 | **Validación** | ¿El código hace lo que dice la spec? | ¿Cumple las 78 reglas de negocio? |
@@ -313,7 +313,7 @@ El SDD Kit de GREAT es complementario con [GitHub Spec Kit](https://github.com/g
 ```plaintext
 GitHub Spec Kit              SDD Kit de GREAT
 ─────────────────            ─────────────────
-specify init              →  git submodule add great-dspy-pipeline
+specify init              →  git submodule add great-sdd-kit
 specify plan              →  Cargar reglas aplicables
 specify tasks             →  Tests de compliance adjuntos
 specify implement         →  Agente escribe código
@@ -345,7 +345,7 @@ Para extender a otro dominio:
 
 | Componente | Tecnología |
 |-----------|-----------|
-| **Framework SDD** | DSPy (Stanford NLP) — Declarative Self-improving Python |
+| **Framework SDD** | SDD Kit propio — specs ejecutables + modules + tests |
 | **Lenguaje** | Python 3.11+ (backend), TypeScript (frontend del proyecto consumidor) |
 | **Tests** | pytest (216 tests) |
 | **Agentes IA** | Claude Code, GitHub Copilot, Cursor, Codex |
@@ -355,12 +355,11 @@ Para extender a otro dominio:
 
 ## Repositorio
 
-[https://github.com/nujovich/great-dspy-pipeline](https://github.com/nujovich/great-dspy-pipeline)
+[https://github.com/nujovich/great-sdd-kit](https://github.com/nujovich/great-sdd-kit)
 
 ## Referencias
 
-- [DSPy](https://github.com/stanfordnlp/dspy) — Stanford NLP framework
-- [GitHub Spec Kit](https://github.com/github/spec-kit) — SDD con agentes (106k ⭐)
+- [GitHub Spec Kit](https://github.com/github/spec-kit) — Spec-driven development con agentes
 - Piskala, D.B. (2026) — *Spec-Driven Development: From Code to Contract* (AIWare 2026)
 - Taghavi, P. & Bhavani, S. (2026) — *Spec Kit Agents: Context-Grounded Agentic Workflows*
 - Marri, S.R. (2026) — *Constitutional Spec-Driven Development* (security-by-construction)

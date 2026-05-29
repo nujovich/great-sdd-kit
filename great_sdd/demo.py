@@ -1,17 +1,16 @@
 """
 GREAT Pre-Estimation — Demo Runner.
 
-Shows the full pipeline in action with real LM calls.
-Run with: python -m great_dspy.demo
+Shows the full pipeline in action.
+Run with: python -m great_sdd.demo
 """
 import json
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-import dspy
-
-from great_dspy.pipeline.pre_estimation_pipeline import PreEstimationPipeline
+from great_sdd.modules.base import LMClient
+from great_sdd.pipeline.pre_estimation_pipeline import PreEstimationPipeline
 from tests.sample_data import (
     SAMPLE_PROJECT_LINES,
     INCOMPATIBLE_LINE,
@@ -41,12 +40,12 @@ def print_result(label: str, data: dict):
 def demo_specs():
     """Demo: Show the spec registry (no LM needed)."""
     print_section("SPEC REGISTRY — Business Rules")
-    from great_dspy.specs.pre_estimation_specs import BUSINESS_RULES, STATUS_TRANSITIONS
+    from great_sdd.specs.pre_estimation_specs import BUSINESS_RULES, STATUS_TRANSITIONS
     for rule in BUSINESS_RULES:
         print(f"  {rule['id']}: {rule['rule']}")
 
     print("\n  State Machine:")
-    from great_dspy.specs.pre_estimation_specs import LineStatus
+    from great_sdd.specs.pre_estimation_specs import LineStatus
     for status, targets in STATUS_TRANSITIONS.items():
         target_names = [t.value for t in targets] if targets else ["(terminal)"]
         print(f"    {status.value:12s} → {', '.join(target_names)}")
@@ -58,7 +57,7 @@ def demo_compatibility():
 
     # Compatible lines (same organ type + energy + ranking + injection)
     print("\n  ✅ Compatible selection (same fields):")
-    from great_dspy.modules.pre_estimation import SelectionValidator
+    from great_sdd.modules.pre_estimation import SelectionValidator
     validator = SelectionValidator()
     result = validator.forward(SAMPLE_PROJECT_LINES[:2])  # PL-001 + PL-002
     print(f"     Compatible: {result['is_compatible']}")
@@ -75,7 +74,7 @@ def demo_permissions():
     """Demo: Check role permissions (pure Python)."""
     print_section("STAGE 2: ROLE PERMISSIONS")
 
-    from great_dspy.modules.pre_estimation import PermissionChecker
+    from great_sdd.modules.pre_estimation import PermissionChecker
     checker = PermissionChecker()
 
     scenarios = [
@@ -97,7 +96,7 @@ def demo_state_machine():
     """Demo: Validate status transitions (pure Python)."""
     print_section("STAGE 3: STATE MACHINE TRANSITIONS")
 
-    from great_dspy.modules.pre_estimation import StatusTransitionValidator
+    from great_sdd.modules.pre_estimation import StatusTransitionValidator
     validator = StatusTransitionValidator()
 
     transitions = [
@@ -120,12 +119,11 @@ def demo_estimation_calculation():
     """Demo: Calculate estimation from JUs (pure Python)."""
     print_section("STAGE 4: ESTIMATION CALCULATION")
 
-    from great_dspy.modules.pre_estimation import EstimationCalculator
+    from great_sdd.modules.pre_estimation import EstimationCalculator
     calculator = EstimationCalculator()
 
     result = calculator.forward(SAMPLE_JOB_UNITS)
     print(f"\n  Job Units: 3 (API-DEV, API-TEST, DB-DESIGN)")
-    print(f"  Total MD:   {result['total_man_days']}")
     print(f"  Total FTE:  {result['total_fte']}")
     print(f"  Total BH:   {result['total_bh']}")
     print(f"  Total KM:   {result['total_km']}")
@@ -138,7 +136,7 @@ def demo_save_validation():
     """Demo: Validate pre-save conditions (pure Python)."""
     print_section("STAGE 5: SAVE VALIDATION")
 
-    from great_dspy.modules.pre_estimation import SaveValidator
+    from great_sdd.modules.pre_estimation import SaveValidator
     validator = SaveValidator()
 
     # Valid save
@@ -175,7 +173,7 @@ def demo_monthly_distribution():
     """Demo: Monthly distribution (pure Python)."""
     print_section("STAGE 6: MONTHLY DISTRIBUTION")
 
-    from great_dspy.modules.pre_estimation import MonthDistributor
+    from great_sdd.modules.pre_estimation import MonthDistributor
     distributor = MonthDistributor()
 
     result = distributor.forward(
@@ -199,11 +197,9 @@ def demo_full_pipeline():
     """Demo: Run the full pipeline (requires LM)."""
     print_section("FULL PIPELINE (with LM)")
 
-    # Configure LM (uses DEEPSEEK_API_KEY from env or configured provider)
-    lm = dspy.LM("openai/deepseek-chat", api_key=os.environ.get("DEEPSEEK_API_KEY"))
-    dspy.settings.configure(lm=lm)
+    lm = LMClient(model="deepseek/deepseek-chat", api_key=os.environ.get("DEEPSEEK_API_KEY"))
 
-    pipeline = PreEstimationPipeline()
+    pipeline = PreEstimationPipeline(lm=lm)
 
     # Select two compatible lines
     selected = SAMPLE_PROJECT_LINES[:2]  # PL-001 + PL-002 (both compatible)
@@ -237,7 +233,7 @@ def demo_full_pipeline():
 if __name__ == "__main__":
     print("""
 ╔══════════════════════════════════════════════════════════╗
-║   GREAT System — Pre-Estimation DSPy Pipeline Demo       ║
+║   GREAT System — Pre-Estimation SDD Pipeline Demo        ║
 ║   Specification-Driven Development (SDD)                 ║
 ╚══════════════════════════════════════════════════════════╝
     """)
@@ -253,5 +249,5 @@ if __name__ == "__main__":
 
     print(f"\n{'='*60}")
     print("  Pipeline ready for LM-powered execution.")
-    print("  Run: python -m great_dspy.demo")
+    print("  Set DEEPSEEK_API_KEY and run demo_full_pipeline()")
     print(f"{'='*60}\n")

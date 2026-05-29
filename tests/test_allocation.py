@@ -5,14 +5,14 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pytest
 
-from great_dspy.specs.allocation_specs import (
+from great_sdd.specs.allocation_specs import (
     ALLOCATION_PERMISSIONS, ALLOCATION_ELIGIBLE_STATUSES,
     AVAILABLE_SOCIETES, FTE_RATES, TSA_RATES,
     calculate_fte_ke, calculate_tsa_ke, distribute_tc_ke,
     apply_split, route_hproject_hnp,
     ALLOCATION_RULES_LIST,
 )
-from great_dspy.modules.allocation import (
+from great_sdd.modules.allocation import (
     AllocationPermissionChecker, AllocationEligibilityFilter,
     AllocationRuleMatcher, HProjectRouter, KECalculator,
     TCPopupHandler, SplitAllocationHandler, BulkAssigner,
@@ -20,7 +20,7 @@ from great_dspy.modules.allocation import (
 )
 
 def test_permissions():
-    from great_dspy.specs.pre_estimation_specs import Role
+    from great_sdd.specs.pre_estimation_specs import Role
     p = ALLOCATION_PERMISSIONS
     assert p[Role.ADMIN].can_edit is True
     assert p[Role.PMO].can_edit is True
@@ -196,4 +196,4 @@ def test_split_handler():
     assert result[0]["fte_yearly"]["2024"] == 0.6
 
 
-from great_dspy.specs.pre_estimation_specs import LineStatus, Role
+from great_sdd.specs.pre_estimation_specs import LineStatus, Role

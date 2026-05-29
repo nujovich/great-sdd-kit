@@ -8,10 +8,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from great_dspy.specs.pre_estimation_specs import (
+from great_sdd.specs.pre_estimation_specs import (
     LineStatus, Role, STATUS_TRANSITIONS,
 )
-from great_dspy.specs.estimation_review_specs import ALL_BUSINESS_RULES
+from great_sdd.specs.estimation_review_specs import ALL_BUSINESS_RULES
 
 
 # ──────────────────────────────────────────────

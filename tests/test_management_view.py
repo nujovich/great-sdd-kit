@@ -5,14 +5,14 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pytest
 
-from great_dspy.specs.management_view_specs import (
+from great_sdd.specs.management_view_specs import (
     MANAGEMENT_ACCESS, MGMT_EXCLUDED_METIERS, MANAGEMENT_RULES,
     compute_pie_chart, PieChartSlice,
 )
-from great_dspy.modules.management_view import (
+from great_sdd.modules.management_view import (
     ManagementAccessChecker, PieChartBuilder, TimelineBuilder, MetierFilter,
 )
-from great_dspy.specs.pre_estimation_specs import LineStatus, Role
+from great_sdd.specs.pre_estimation_specs import LineStatus, Role
 
 # ── Spec tests ──
 

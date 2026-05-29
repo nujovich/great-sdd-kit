@@ -11,9 +11,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
-from great_dspy.modules.base import Module
-from great_dspy.specs.pre_estimation_specs import Role, LineStatus
-from great_dspy.specs.transversal_specs import (
+from great_sdd.modules.base import Module
+from great_sdd.specs.pre_estimation_specs import Role, LineStatus
+from great_sdd.specs.transversal_specs import (
     EstimationCycle,
     WorkloadStandardVersion,
     CYCLE_MANAGERS,

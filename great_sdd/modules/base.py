@@ -1,9 +1,8 @@
 """
-GREAT Pre-Estimation — Lightweight LM Module Base.
+GREAT SDD Kit — Module Base.
 
-Provides a DSPy-compatible module pattern that works with any
-OpenAI-compatible API provider. When dspy-ai is available, switch
-to real DSPy by changing the base class.
+Lightweight LM client and base Module class for the SDD Kit.
+Uses OpenAI-compatible API calls directly — no DSPy dependency.
 """
 from __future__ import annotations
 
@@ -17,13 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class LMClient:
-    """
-    Lightweight OpenAI-compatible LM client.
-
-    Can be swapped for DSPy's LM class when available:
-        import dspy
-        lm = dspy.LM(model="openai/deepseek-chat")
-    """
+    """Lightweight OpenAI-compatible LM client."""
 
     def __init__(self, model: str = "deepseek/deepseek-chat",
                  api_key: Optional[str] = None,
@@ -72,14 +65,9 @@ class LMClient:
 
 
 class Module:
-    """
-    Base class for pipeline modules.
+    """Base class for pipeline modules.
 
-    In DSPy, this becomes:
-        class MyModule(dspy.Module):
-            def __init__(self):
-                super().__init__()
-                self.predict = dspy.ChainOfThought(MySignature)
+    Provides LM access via composition. Subclasses override forward_impl().
     """
 
     def __init__(self, lm: Optional[LMClient] = None):

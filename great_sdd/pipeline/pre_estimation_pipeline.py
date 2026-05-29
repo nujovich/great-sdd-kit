@@ -20,9 +20,9 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
-from great_dspy.modules.base import LMClient
-from great_dspy.modules.signature_module import SignatureModule, SignatureContractError
-from great_dspy.modules.pre_estimation import (
+from great_sdd.modules.base import LMClient
+from great_sdd.modules.signature_module import SignatureModule, SignatureContractError
+from great_sdd.modules.pre_estimation import (
     SelectionValidator,
     PermissionChecker,
     StatusTransitionValidator,
@@ -32,7 +32,7 @@ from great_dspy.modules.pre_estimation import (
     MonthDistributor,
     SummaryGenerator,
 )
-from great_dspy.signatures.pre_estimation import (
+from great_sdd.signatures.pre_estimation import (
     VALIDATE_LINE_SELECTION,
     CHECK_ROLE_PERMISSION,
     VALIDATE_STATUS_TRANSITION,

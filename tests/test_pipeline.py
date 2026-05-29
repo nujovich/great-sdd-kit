@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from great_dspy.specs.pre_estimation_specs import (
+from great_sdd.specs.pre_estimation_specs import (
     LineStatus,
     Role,
     ROLE_PERMISSIONS,
@@ -35,7 +35,7 @@ from great_dspy.specs.pre_estimation_specs import (
     aggregate_yearly,
     MAN_DAY_FTE_DIVISOR,
 )
-from great_dspy.modules.pre_estimation import (
+from great_sdd.modules.pre_estimation import (
     SelectionValidator,
     PermissionChecker,
     StatusTransitionValidator,
@@ -43,8 +43,8 @@ from great_dspy.modules.pre_estimation import (
     SaveValidator,
     MonthDistributor,
 )
-from great_dspy.modules.signature_module import SignatureModule, SignatureContractError
-from great_dspy.signatures.pre_estimation import (
+from great_sdd.modules.signature_module import SignatureModule, SignatureContractError
+from great_sdd.signatures.pre_estimation import (
     VALIDATE_LINE_SELECTION,
     CHECK_ROLE_PERMISSION,
     VALIDATE_STATUS_TRANSITION,
@@ -654,7 +654,7 @@ class TestMonthDistributorSignature:
 # Prototype Estimation Tests
 # ═══════════════════════════════════════════════════════════
 
-from great_dspy.specs.pre_estimation_specs import (
+from great_sdd.specs.pre_estimation_specs import (
     PrototypeCategory,
     PrototypeEstimation,
     LineRelationship,

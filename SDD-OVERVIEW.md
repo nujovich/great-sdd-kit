@@ -2,7 +2,7 @@
 
 **Este repositorio NO es documentación para humanos. Es fuel para agentes de IA.**
 
-Las 74 reglas de negocio del sistema GREAT están codificadas como **especificaciones ejecutables** en `great_dspy/specs/`. Los agentes de IA (Claude, Codex, Copilot, Cursor) leen estos archivos, entienden las reglas, y generan código que las cumple — validado por 216 tests.
+Las 74 reglas de negocio del sistema GREAT están codificadas como **especificaciones ejecutables** en `great_sdd/specs/`. Los agentes de IA (Claude, Codex, Copilot, Cursor) leen estos archivos, entienden las reglas, y generan código que las cumple — validado por 216 tests.
 
 ## Cómo funciona
 
@@ -31,16 +31,16 @@ Desarrollador → Pasa el repo a un agente de IA
 | Archivo | Qué contiene |
 |---------|-------------|
 | `AGENTS.md` | Instrucciones para el agente de IA |
-| `great_dspy/specs/pre_estimation_specs.py` | 17 reglas, state machine, 6 métiers, fórmulas |
-| `great_dspy/specs/estimation_review_specs.py` | 10 reglas, HVT flow, approval columns |
-| `great_dspy/specs/allocation_specs.py` | 16 reglas, K€ rates, societes, split |
-| `great_dspy/specs/final_review_specs.py` | 10 reglas, Stage 3, aggregation |
-| `great_dspy/specs/management_view_specs.py` | 8 reglas, pie chart, timeline |
-| `great_dspy/specs/transversal_specs.py` | 13 reglas, cycles, workload, tables, email |
-| `great_dspy/modules/` | Lógica pura del negocio (importable) |
-| `great_dspy/pipeline/` | Blueprint de endpoints por vista |
+| `great_sdd/specs/pre_estimation_specs.py` | 17 reglas, state machine, 6 métiers, fórmulas |
+| `great_sdd/specs/estimation_review_specs.py` | 10 reglas, HVT flow, approval columns |
+| `great_sdd/specs/allocation_specs.py` | 16 reglas, K€ rates, societes, split |
+| `great_sdd/specs/final_review_specs.py` | 10 reglas, Stage 3, aggregation |
+| `great_sdd/specs/management_view_specs.py` | 8 reglas, pie chart, timeline |
+| `great_sdd/specs/transversal_specs.py` | 13 reglas, cycles, workload, tables, email |
+| `great_sdd/modules/` | Lógica pura del negocio (importable) |
+| `great_sdd/pipeline/` | Blueprint de endpoints por vista |
 | `tests/` | 216 tests que verifican todo |
 
 ## Repositorio
 
-https://github.com/nujovich/great-dspy-pipeline
+https://github.com/nujovich/great-sdd-kit

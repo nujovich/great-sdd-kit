@@ -13,8 +13,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
-from great_dspy.modules.base import LMClient
-from great_dspy.modules.estimation_review import (
+from great_sdd.modules.base import LMClient
+from great_sdd.modules.estimation_review import (
     EstimationReviewPermissionChecker,
     ApprovalColumnDeriver,
     SendEligibilityChecker,
@@ -22,7 +22,7 @@ from great_dspy.modules.estimation_review import (
     CSVExporter,
     HVTPayloadGenerator,
 )
-from great_dspy.specs.estimation_review_specs import (
+from great_sdd.specs.estimation_review_specs import (
     ESTIMATION_REVIEW_RULES,
     ALL_BUSINESS_RULES,
     ESTIMATION_REVIEW_GRID_COLUMNS,

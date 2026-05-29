@@ -5,16 +5,16 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pytest
 
-from great_dspy.specs.final_review_specs import (
+from great_sdd.specs.final_review_specs import (
     FINAL_REVIEW_PERMISSIONS, FINAL_REVIEW_ELIGIBLE_STATUSES,
     AGGREGATION_LEVELS, STAGE3_SEND_CONFIG, FINAL_REVIEW_RULES,
     aggregate_at_level, calculate_subtotals,
 )
-from great_dspy.modules.final_review import (
+from great_sdd.modules.final_review import (
     FinalReviewPermissionChecker, FinalReviewEligibilityFilter,
     AggregationEngine, CSVGlobalExporter, Stage3Sender,
 )
-from great_dspy.specs.pre_estimation_specs import LineStatus, Role
+from great_sdd.specs.pre_estimation_specs import LineStatus, Role
 
 # ── Spec tests ──
 

@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
-from great_dspy.specs.pre_estimation_specs import LineStatus, Role
+from great_sdd.specs.pre_estimation_specs import LineStatus, Role
 
 
 # ──────────────────────────────────────────────

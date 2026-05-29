@@ -1,11 +1,11 @@
 """
 GREAT System — Estimation Review Signatures.
 
-DSPy-style input/output contracts for the Estimation Review pipeline.
+SDD-style input/output contracts for the Estimation Review pipeline.
 """
 from __future__ import annotations
 
-from great_dspy.signatures.pre_estimation import Signature, Field
+from great_sdd.signatures.pre_estimation import Signature, Field
 
 
 CHECK_ESTIMATION_REVIEW_PERMISSION = Signature(

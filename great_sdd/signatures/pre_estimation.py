@@ -1,8 +1,8 @@
 """
-GREAT Pre-Estimation — DSPy-style Signatures.
+GREAT Pre-Estimation — SDD-style Signatures.
 
-NOTE: The real Stanford DSPy (dspy-ai) cannot be installed in this environment
-due to corporate proxy restrictions. We implement a lightweight DSPy-compatible
+NOTE: The real Stanford DSPy (sdd-kit) cannot be installed in this environment
+due to corporate proxy restrictions. We implement a lightweight SDD-compatible
 layer using OpenAI-compatible API calls directly.
 
 Each Signature defines the input/output contract for one step of the pipeline.
@@ -11,8 +11,8 @@ In DSPy, a Signature IS the specification — it declares:
   - What comes out (OutputField)
   - Constraints via descriptions
 
-When DSPy is available (pip install dspy-ai), these can be trivially converted
-to real dspy.Signature subclasses.
+When DSPy is available (pip install sdd-kit), these can be trivially converted
+to real Signature subclasses.
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ class Signature:
     A specification contract: inputs → outputs.
 
     In Stanford DSPy, this becomes:
-        class MySig(dspy.Signature):
+        class MySig(Signature):
             input = dspy.InputField(desc="...")
             output = dspy.OutputField(desc="...")
     """

@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 
-from great_dspy.specs.pre_estimation_specs import Role
+from great_sdd.specs.pre_estimation_specs import Role
 
 # Pending definitions count at the bottom
 

@@ -5,18 +5,18 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pytest
 
-from great_dspy.specs.transversal_specs import (
+from great_sdd.specs.transversal_specs import (
     EstimationCycle, WorkloadStandardVersion,
     CYCLE_MANAGERS, WORKLOAD_UPLOADERS, WORKLOAD_DELETERS,
     CYCLE_RULES, WORKLOAD_RULES, BULK_DELETION_RULES,
     TABLE_RULES, EMAIL_RULES,
     TRANSVERSAL_RULES,
 )
-from great_dspy.modules.transversal import (
+from great_sdd.modules.transversal import (
     CycleManager, WorkloadStandardManager, BulkInductorDeleter,
     TableStateManager, EmailAlertService,
 )
-from great_dspy.specs.pre_estimation_specs import Role
+from great_sdd.specs.pre_estimation_specs import Role
 
 # ── Spec tests ──
 

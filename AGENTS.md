@@ -8,7 +8,7 @@ Este repositorio NO es el proyecto raíz del desarrollador. Es una **dependencia
 
 ```bash
 cd tu-backend-o-frontend
-git submodule add https://github.com/nujovich/great-dspy-pipeline.git sdd-kit
+git submodule add https://github.com/nujovich/great-sdd-kit.git sdd-kit
 ```
 
 Luego en tu `CLAUDE.md` / `.cursorrules` del proyecto principal:
@@ -38,7 +38,7 @@ Este repositorio es un **SDD Kit**: las reglas de negocio están codificadas com
 │   ├── base_module.py     ← Base class para módulos
 │   └── base_pipeline.py   ← Base class para pipelines
 │
-├── great_dspy/            ← Dominio: Sistema GREAT
+├── great_sdd/            ← Dominio: Sistema GREAT
 │   ├── specs/             ← 6 archivos, 74 reglas de negocio
 │   ├── modules/           ← 30 módulos con lógica pura
 │   ├── pipeline/          ← 6 pipelines (uno por vista)
@@ -53,29 +53,29 @@ Este repositorio es un **SDD Kit**: las reglas de negocio están codificadas com
 
 Antes de generar CUALQUIER código, lee este archivo completo. Contiene las reglas de negocio que tu código debe cumplir.
 
-### 2. Las reglas están en `great_dspy/specs/`
+### 2. Las reglas están en `great_sdd/specs/`
 
 No adivines reglas de negocio. No las inventes. No las saques de tu training data. Están aquí:
 
 | Archivo | Contenido |
 |---------|-----------|
-| `great_dspy/specs/pre_estimation_specs.py` | 17 reglas, state machine, 6 métiers, fórmulas |
-| `great_dspy/specs/estimation_review_specs.py` | 10 reglas, flujo HVT, columnas de aprobación |
-| `great_dspy/specs/allocation_specs.py` | 16 reglas, tasas K€, societes, split allocation |
-| `great_dspy/specs/final_review_specs.py` | 10 reglas, Stage 3 HVT, agregación |
-| `great_dspy/specs/management_view_specs.py` | 8 reglas, dashboard con charts |
-| `great_dspy/specs/transversal_specs.py` | 13 reglas, ciclos, versiones, emails |
+| `great_sdd/specs/pre_estimation_specs.py` | 17 reglas, state machine, 6 métiers, fórmulas |
+| `great_sdd/specs/estimation_review_specs.py` | 10 reglas, flujo HVT, columnas de aprobación |
+| `great_sdd/specs/allocation_specs.py` | 16 reglas, tasas K€, societes, split allocation |
+| `great_sdd/specs/final_review_specs.py` | 10 reglas, Stage 3 HVT, agregación |
+| `great_sdd/specs/management_view_specs.py` | 8 reglas, dashboard con charts |
+| `great_sdd/specs/transversal_specs.py` | 13 reglas, ciclos, versiones, emails |
 
-### 3. La lógica está en `great_dspy/modules/`
+### 3. La lógica está en `great_sdd/modules/`
 
 Cada módulo es Python puro. Úsalos como librería desde cualquier backend:
 
 ```python
-from great_dspy.specs.allocation_specs import calculate_fte_ke
+from great_sdd.specs.allocation_specs import calculate_fte_ke
 ke = calculate_fte_ke(fte=1.0, societe_site="Horse Spain S.L.-Valladolid", year="2024")
 # → 107.0
 
-from great_dspy.modules.pre_estimation import StatusTransitionValidator
+from great_sdd.modules.pre_estimation import StatusTransitionValidator
 v = StatusTransitionValidator()
 assert v.forward("approved", "draft")["is_valid"] is False  # Approved es terminal
 ```
@@ -108,7 +108,7 @@ pytest tests/test_allocation.py -v  # Solo Allocation
 
 Si el negocio cambia una regla, el flujo es:
 
-1. Editas el spec en `great_dspy/specs/`
+1. Editas el spec en `great_sdd/specs/`
 2. Corres `pytest tests/ -v` para ver qué se rompe
 3. Arreglas los módulos y tests afectados
 4. Vuelves a correr pytest hasta que todo pase

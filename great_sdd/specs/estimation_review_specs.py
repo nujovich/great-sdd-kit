@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
-from great_dspy.specs.pre_estimation_specs import (
+from great_sdd.specs.pre_estimation_specs import (
     LineStatus,
     STATUS_TRANSITIONS,
     LOCKED_STATUSES,
@@ -202,7 +202,7 @@ ESTIMATION_REVIEW_RULES: list[dict] = [
 
 # Merged full business rules (Pre-Estimation + Estimation Review)
 ALL_BUSINESS_RULES = []
-from great_dspy.specs.pre_estimation_specs import BUSINESS_RULES
+from great_sdd.specs.pre_estimation_specs import BUSINESS_RULES
 ALL_BUSINESS_RULES.extend(BUSINESS_RULES)
 ALL_BUSINESS_RULES.extend(ESTIMATION_REVIEW_RULES)
 

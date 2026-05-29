@@ -17,8 +17,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Optional, get_type_hints
 
-from great_dspy.modules.base import Module, LMClient
-from great_dspy.signatures.pre_estimation import Signature, Field
+from great_sdd.modules.base import Module, LMClient
+from great_sdd.signatures.pre_estimation import Signature, Field
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ class SignatureModule(Module):
 
     def forward_impl(self, **kwargs) -> dict:
         """Override this in subclasses with the actual logic.
-        
+
         IMPORTANT: Subclasses should declare explicit keyword arguments
         matching their Signature's input fields, e.g.:
             def forward_impl(self, lines_json: str) -> dict:

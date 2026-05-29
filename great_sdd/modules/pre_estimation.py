@@ -1,5 +1,5 @@
 """
-GREAT Pre-Estimation — Signature-Driven Modules.
+GREAT Pre-Estimation — Signature-Driven Modules (SDD Kit).
 
 Each module now inherits from SignatureModule and honors a Signature contract.
 The module's forward() is split into:
@@ -15,9 +15,9 @@ import json
 import logging
 from typing import Optional
 
-from great_dspy.modules.base import LMClient
-from great_dspy.modules.signature_module import SignatureModule
-from great_dspy.specs.pre_estimation_specs import (
+from great_sdd.modules.base import LMClient
+from great_sdd.modules.signature_module import SignatureModule
+from great_sdd.specs.pre_estimation_specs import (
     LineStatus,
     Role,
     ROLE_PERMISSIONS,
@@ -34,7 +34,7 @@ from great_dspy.specs.pre_estimation_specs import (
     aggregate_yearly,
     MAN_DAY_FTE_DIVISOR,
 )
-from great_dspy.signatures.pre_estimation import (
+from great_sdd.signatures.pre_estimation import (
     VALIDATE_LINE_SELECTION,
     CHECK_ROLE_PERMISSION,
     VALIDATE_STATUS_TRANSITION,

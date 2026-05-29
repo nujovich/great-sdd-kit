@@ -13,10 +13,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from great_dspy.specs.pre_estimation_specs import (
+from great_sdd.specs.pre_estimation_specs import (
     LineStatus, Role,
 )
-from great_dspy.specs.estimation_review_specs import (
+from great_sdd.specs.estimation_review_specs import (
     ESTIMATION_REVIEW_PERMISSIONS,
     SEND_ELIGIBLE_STATUSES,
     ENGINEER_APPROVAL_MAP,
@@ -28,7 +28,7 @@ from great_dspy.specs.estimation_review_specs import (
     PENDING_DEFINITIONS,
     ESTIMATION_REVIEW_GRID_COLUMNS,
 )
-from great_dspy.modules.estimation_review import (
+from great_sdd.modules.estimation_review import (
     EstimationReviewPermissionChecker,
     ApprovalColumnDeriver,
     SendEligibilityChecker,
@@ -408,7 +408,7 @@ class TestEstimationReviewPipeline:
     """Integration tests for the Estimation Review pipeline."""
 
     def test_pipeline_imports(self):
-        from great_dspy.pipeline.estimation_review_pipeline import (
+        from great_sdd.pipeline.estimation_review_pipeline import (
             EstimationReviewPipeline,
             EstimationReviewContext,
         )
@@ -416,14 +416,14 @@ class TestEstimationReviewPipeline:
         assert EstimationReviewContext is not None
 
     def test_pipeline_can_be_instantiated(self):
-        from great_dspy.pipeline.estimation_review_pipeline import (
+        from great_sdd.pipeline.estimation_review_pipeline import (
             EstimationReviewPipeline,
         )
         pipeline = EstimationReviewPipeline()
         assert pipeline is not None
 
     def test_pipeline_rejects_cpo(self):
-        from great_dspy.pipeline.estimation_review_pipeline import (
+        from great_sdd.pipeline.estimation_review_pipeline import (
             EstimationReviewPipeline,
         )
         pipeline = EstimationReviewPipeline()
@@ -431,7 +431,7 @@ class TestEstimationReviewPipeline:
         assert len(ctx.errors) == 0  # CPO can view
 
     def test_pipeline_detects_eligible_rows(self):
-        from great_dspy.pipeline.estimation_review_pipeline import (
+        from great_sdd.pipeline.estimation_review_pipeline import (
             EstimationReviewPipeline,
         )
         pipeline = EstimationReviewPipeline()
@@ -444,7 +444,7 @@ class TestEstimationReviewPipeline:
         assert len(ctx.eligible_rows) == 1
 
     def test_pipeline_adds_derived_columns(self):
-        from great_dspy.pipeline.estimation_review_pipeline import (
+        from great_sdd.pipeline.estimation_review_pipeline import (
             EstimationReviewPipeline,
         )
         pipeline = EstimationReviewPipeline()
@@ -458,7 +458,7 @@ class TestEstimationReviewPipeline:
         assert ctx.derived_columns[1]["cpo_approval"] == "✓ Approved"
 
     def test_send_to_hvt(self):
-        from great_dspy.pipeline.estimation_review_pipeline import (
+        from great_sdd.pipeline.estimation_review_pipeline import (
             EstimationReviewPipeline,
         )
         pipeline = EstimationReviewPipeline()
@@ -476,7 +476,7 @@ class TestEstimationReviewPipeline:
         assert payload["project_line"] == "PL-001"
 
     def test_engineer_cannot_send_to_hvt(self):
-        from great_dspy.pipeline.estimation_review_pipeline import (
+        from great_sdd.pipeline.estimation_review_pipeline import (
             EstimationReviewPipeline,
         )
         pipeline = EstimationReviewPipeline()
@@ -485,7 +485,7 @@ class TestEstimationReviewPipeline:
         assert result["sent_count"] == 0
 
     def test_process_hvt_callback_approval(self):
-        from great_dspy.pipeline.estimation_review_pipeline import (
+        from great_sdd.pipeline.estimation_review_pipeline import (
             EstimationReviewPipeline,
         )
         pipeline = EstimationReviewPipeline()
@@ -494,7 +494,7 @@ class TestEstimationReviewPipeline:
         assert result["transition_valid"] is True
 
     def test_process_hvt_callback_rejection(self):
-        from great_dspy.pipeline.estimation_review_pipeline import (
+        from great_sdd.pipeline.estimation_review_pipeline import (
             EstimationReviewPipeline,
         )
         pipeline = EstimationReviewPipeline()
@@ -504,7 +504,7 @@ class TestEstimationReviewPipeline:
         assert result["notify_engineer"] is True
 
     def test_export_csv_from_pipeline(self):
-        from great_dspy.pipeline.estimation_review_pipeline import (
+        from great_sdd.pipeline.estimation_review_pipeline import (
             EstimationReviewPipeline,
         )
         pipeline = EstimationReviewPipeline()

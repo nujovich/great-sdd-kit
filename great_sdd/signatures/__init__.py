@@ -1,5 +1,5 @@
 """GREAT SDD Kit — Signatures (Input/Output Contracts)."""
-from great_dspy.signatures.pre_estimation import (
+from great_sdd.signatures.pre_estimation import (
     VALIDATE_LINE_SELECTION,
     CHECK_ROLE_PERMISSION,
     VALIDATE_STATUS_TRANSITION,
@@ -9,7 +9,7 @@ from great_dspy.signatures.pre_estimation import (
     DISTRIBUTE_BY_MONTH,
     GENERATE_PRE_SAVE_SUMMARY,
 )
-from great_dspy.signatures.estimation_review import (
+from great_sdd.signatures.estimation_review import (
     CHECK_ESTIMATION_REVIEW_PERMISSION,
     DERIVE_APPROVAL_COLUMNS,
     CHECK_SEND_ELIGIBILITY,

@@ -14,16 +14,16 @@ import json
 import logging
 from typing import Optional
 
-from great_dspy.modules.base import LMClient
-from great_dspy.modules.signature_module import SignatureModule
-from great_dspy.modules.pre_estimation import StatusTransitionValidator
-from great_dspy.specs.pre_estimation_specs import (
+from great_sdd.modules.base import LMClient
+from great_sdd.modules.signature_module import SignatureModule
+from great_sdd.modules.pre_estimation import StatusTransitionValidator
+from great_sdd.specs.pre_estimation_specs import (
     LineStatus,
     Role,
     STATUS_TRANSITIONS,
     TERMINAL_STATUSES,
 )
-from great_dspy.specs.estimation_review_specs import (
+from great_sdd.specs.estimation_review_specs import (
     ESTIMATION_REVIEW_PERMISSIONS,
     SEND_ELIGIBLE_STATUSES,
     ENGINEER_APPROVAL_MAP,
@@ -32,7 +32,7 @@ from great_dspy.specs.estimation_review_specs import (
     CSV_EXPORT_COLUMNS,
     HVTCallback,
 )
-from great_dspy.signatures.estimation_review import (
+from great_sdd.signatures.estimation_review import (
     CHECK_ESTIMATION_REVIEW_PERMISSION,
     DERIVE_APPROVAL_COLUMNS,
     CHECK_SEND_ELIGIBILITY,
