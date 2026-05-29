@@ -148,6 +148,19 @@ Si quieres aplicar SDD a otro sistema (no GREAT):
 5. Crea `tests/` que verifiquen tus reglas
 6. Copia AGENTS.md, CLAUDE.md, .cursorrules, copilot-instructions.md
 
+## Versionado
+
+Este proyecto usa Semantic Versioning. Ver `VERSIONING.md` para la guía completa.
+
+**Resumen rápido:**
+- **PATCH** (0.0.1): Fix de bug, corrige comportamiento, no rompe API
+- **MINOR** (0.X.0): Nueva funcionalidad, nuevo módulo, nueva regla — no rompe API
+- **MAJOR** (X.0.0): Cambio en la API pública de módulos (firma, retorno, nombres)
+
+Para hacer un bump: `python3 scripts/bump_version.py <major|minor|patch>`
+
+Nunca hagas un bump sin actualizar `CHANGELOG.md`.
+
 ## Stack
 
 Los módulos son Python puro sin dependencias externas. El stack técnico (backend, DB, UI) lo defines tú como desarrollador.
