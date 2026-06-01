@@ -1,12 +1,11 @@
-# GREAT SDD Kit — SDD Kit
+# GREAT SDD Kit
 
 Specification-Driven Development para el sistema GREAT.
 
 Las reglas de negocio del sistema GREAT están codificadas como **especificaciones ejecutables** — no como documentación, no como prompts, no como tickets de Jira. Los agentes de IA (Claude, Codex, Copilot, Cursor) leen estas specs y generan código que las cumple, validado por tests.
 
-> **Última actualización:** 29 mayo 2026 — 257 tests, 7 módulos, 6 vistas.
-> En progreso: auditoría de schema DB v2 (19 tablas PostgreSQL) vs contrato API (OpenAPI + TypeScript).
-> Ver abajo sección "Auditoría DB v2".
+> **Última actualización:** 1 junio 2026 — npm como dependencia (no submodule).
+> 257 tests, 30 módulos, 6 vistas, 78 reglas de negocio.
 
 ## ¿Qué es esto?
 
@@ -15,7 +14,7 @@ Un kit SDD (Spec-Driven Development) que convierte documentos de negocio (PRDs, 
 1. **Specs estructuradas** — Reglas de negocio con ID, severity, criterios de aceptación
 2. **Módulos SDD** — Lógica pura importable como librería
 3. **Pipelines** — Orquestación de módulos como blueprint de endpoints
-4. **Tests ejecutables** — 216 tests que verifican las 78 reglas
+4. **Tests ejecutables** — 257 tests que verifican las 78 reglas
 
 ```plaintext
 Documento (PRD/Épica/Story)
@@ -30,7 +29,7 @@ great_sdd/modules/   ← 30 módulos SDD (lógica pura)
 great_sdd/pipeline/  ← 6 pipelines (blueprint de endpoints)
         │
         ▼
-tests/                ← 216 tests (pytest)
+tests/                ← 257 tests (pytest)
         │
         ▼
 pytest tests/ -v      ← ¿Cumple las 78 reglas? Sí → Merge.
@@ -44,7 +43,7 @@ pytest tests/ -v      ← ¿Cumple las 78 reglas? Sí → Merge.
 | **2** | **Como pipeline** | Necesitás orquestar validaciones en orden (blueprint de endpoints) | SDD modules. `run_pipeline(selected_lines, role, metier)` |
 | **3** | **Como agente de IA** | Querés que Claude/Copilot/Cursor cumpla reglas sin adivinar | AGENTS.md + CLAUDE.md + .cursorrules → specs |
 | **4** | **Como documentación** | Querés docs versionadas y testeables (no PDFs que se pudren) | YAML + Markdown + tests como documentación ejecutable |
-| **5** | **Como auditoría** | Necesitás verificar compliance en CI/CD o revisar un PR | pytest + 216 tests. Resultado en segundos |
+| **5** | **Como auditoría** | Necesitás verificar compliance en CI/CD o revisar un PR | pytest + 257 tests. Resultado en segundos |
 | **6** | **Como framework extensible** | Querés aplicar SDD a otro dominio (no GREAT) | Copiás `sdd/` (base_spec, base_module, base_pipeline) y creás tus reglas |
 
 Cada uso es independiente: podés usar solo la librería sin tocar los pipelines, o solo los tests sin el agente.
@@ -98,7 +97,7 @@ great-sdd-kit/
 │       ├── management_view_pipeline.py     ← Pipeline de Management View
 │       └── transversal_pipeline.py         ← Pipeline transversal
 │
-└── tests/                           ← 216 tests que verifican las 78 reglas
+└── tests/                           ← 257 tests que verifican las 78 reglas
     ├── sample_data.py                  ← Datos de prueba
     ├── test_pipeline.py                ← Tests de pipeline core
     ├── test_pre_estimation.py          ← Tests de Pre-Estimation
@@ -111,17 +110,17 @@ great-sdd-kit/
 
 ## Las 6 Vistas del Sistema GREAT
 
-|| Vista | Archivo de Specs | Reglas | Módulos | Pipeline | Tests |
-||-------|-----------------|--------|---------|----------|-------|
-|| **Pre-Estimation** | `pre_estimation_specs.py` | 17 | 7 | 7 etapas | 68 |
-|| **Estimation Review** | `estimation_review_specs.py` | 10 | — | — | — |
-|| **Allocation** | `allocation_specs.py` | 16 | — | — | — |
-|| **Final Review** | `final_review_specs.py` | 10 | — | — | — |
-|| **Management View** | `management_view_specs.py` | 8 | — | — | — |
-|| **Transversal** | `transversal_specs.py` | 13 | — | — | — |
-|| **Signature** `signature_module.py` | — | — | 1 | — | — |
-|| **Bulk Deletion** `bulk_inductor_deleter.py` | — | 10 | 1 | — | — |
-|| **TOTAL** | | **~84** | **~7** | **6** | **257** |
+| Vista | Archivo de Specs | Reglas | Módulos | Pipeline | Tests |
+|-------|-----------------|--------|---------|----------|-------|
+| **Pre-Estimation** | `pre_estimation_specs.py` | 17 | 7 | 7 etapas | 68 |
+| **Estimation Review** | `estimation_review_specs.py` | 10 | — | — | — |
+| **Allocation** | `allocation_specs.py` | 16 | — | — | — |
+| **Final Review** | `final_review_specs.py` | 10 | — | — | — |
+| **Management View** | `management_view_specs.py` | 8 | — | — | — |
+| **Transversal** | `transversal_specs.py` | 13 | — | — | — |
+| **Signature** `signature_module.py` | — | — | 1 | — | — |
+| **Bulk Deletion** `bulk_inductor_deleter.py` | — | 10 | 1 | — | — |
+| **TOTAL** | | **~84** | **~7** | **6** | **257** |
 
 ## Pipeline: Pre-Estimation (ejemplo)
 
@@ -225,100 +224,62 @@ Ver `INTEGRATION.md` para la guía completa de integración con agentes.
 
 ```bash
 pip install pytest
-python -m pytest tests/ -v              # Todos (216 tests)
+python -m pytest tests/ -v              # Todos (257 tests)
 python -m pytest tests/test_pre_estimation.py -v  # Solo Pre-Estimation (68 tests)
 python -m pytest tests/test_pipeline.py -v        # Pipeline core
 ```
 
-Cada test verifica una o más reglas de negocio. Si tu código pasa los 216 tests, cumple las 78 reglas.
+Cada test verifica una o más reglas de negocio. Si tu código pasa los 257 tests, cumple las 78 reglas.
 
 ## Integración en tu proyecto
 
+El SDD Kit se instala como dependencia npm (funciona para proyectos Node y Python):
+
 ```bash
-# 1. Agregar como git submodule
-cd tu-proyecto
-git submodule add https://github.com/nujovich/great-sdd-kit.git sdd-kit
+# 1. Agregar como dependencia npm
+npm install git+https://github.com/nujovich/great-sdd-kit.git
 
-# 2. Configurar agentes de IA (3 archivos, 1 línea cada uno)
-echo "Carga sdd-kit/AGENTS.md antes de generar cualquier código" >> CLAUDE.md
-echo "Carga sdd-kit/AGENTS.md" >> .cursorrules
-echo "Load sdd-kit/AGENTS.md" >> .github/copilot-instructions.md
+# 2. El código queda en node_modules/great-sdd-kit/
+#    - Reglas: node_modules/great-sdd-kit/great_sdd/specs/
+#    - Módulos: node_modules/great-sdd-kit/great_sdd/modules/
+#    - Tests: node_modules/great-sdd-kit/tests/
 
-# 3. Correr tests
-cd sdd-kit && python -m pytest tests/ -v
+# 3. Configurar agentes de IA en tu proyecto
+echo "Lee node_modules/great-sdd-kit/AGENTS.md antes de generar código" >> CLAUDE.md
+echo "Carga node_modules/great-sdd-kit/AGENTS.md" >> .cursorrules
+
+# 4. Correr tests
+pytest node_modules/great-sdd-kit/tests/ -v
 ```
 
 Ver `INTEGRATION.md` para la guía detallada con troubleshooting.
 
 ## Cómo actualizar el SDD Kit en tu proyecto
 
-Cuando el SDD Kit se actualiza en el repo principal (nuevas reglas, fixes, nuevos módulos), así lo actualizás en tu proyecto:
+Cuando el SDD Kit se actualiza en el repo principal (nuevas reglas, fixes, nuevos módulos):
 
 ```bash
-# Opción 1: Pull del último commit en la rama main
-cd tu-proyecto/sdd-kit
-git checkout main
-git pull origin main
-cd ..
-git add sdd-kit
-git commit -m "chore: update SDD Kit submodule"
-
-# Opción 2: Comando único desde la raíz del proyecto
-git submodule update --remote sdd-kit
-git add sdd-kit
-git commit -m "chore: update SDD Kit submodule"
-
-# Opción 3: Actualizar todos los submodules a la vez
-git submodule update --remote
-git add .
-git commit -m "chore: update all submodules"
+npm update great-sdd-kit
 ```
 
-**Importante:** Después de actualizar, corré los tests para verificar que tu código sigue cumpliendo las reglas:
+Luego verificá que tu código sigue cumpliendo las reglas:
 
 ```bash
-cd sdd-kit && python -m pytest tests/ -q
-# Si algún test falla, es porque una regla cambió o se añadió una nueva.
-# Editá los módulos afectados hasta que todo pase.
+pytest node_modules/great-sdd-kit/tests/ -q
 ```
 
 **Qué hacer si un test falla después de actualizar:**
 
 1. Leyendo el nombre del test que falla, identificá qué regla cambió
-2. Revisá el spec correspondiente en `great_sdd/specs/` para ver el cambio
-3. Actualizá tu código o los tests del proyecto (no los del kit) para cumplir la nueva regla
-4. Corré `pytest tests/ -v` hasta que todo pase
+2. Revisá el spec correspondiente en `node_modules/great-sdd-kit/great_sdd/specs/`
+3. Actualizá tu código para cumplir la nueva regla
+4. Corré `pytest node_modules/great-sdd-kit/tests/ -v` hasta que todo pase
 5. Commit
 
-**Versionado:** El SDD Kit usa tags semánticos (`v1.0.0`, `v1.1.0`, etc.). Para mantener estabilidad, podés pinchar a una versión específica:
+**Versionado:** El SDD Kit usa Semantic Versioning (`v1.0.0`, `v1.1.0`, etc.). Para pinchar una versión específica:
 
 ```bash
-git submodule add -b v1.0.0 https://github.com/nujovich/great-sdd-kit.git sdd-kit
-# O si ya lo tenés agregado:
-cd sdd-kit && git checkout v1.0.0
-```
-
-El SDD Kit de GREAT es complementario con [GitHub Spec Kit](https://github.com/github/spec-kit):
-
-| Dimensión | GitHub Spec Kit | SDD Kit de GREAT |
-|-----------|----------------|-----------------|
-| **Enfoque** | Desarrollo (agente) | Pipeline declarativo (SDD) |
-| **Motor** | Agentes IA | SDD + pytest |
-| **Input** | Requirements (lenguaje natural) | PRDs, épicas, reglas de negocio |
-| **Output** | Código funcional | Specs estructuradas + 216 tests |
-| **Validación** | ¿El código hace lo que dice la spec? | ¿Cumple las 78 reglas de negocio? |
-
-**Flujo combinado recomendado:**
-
-```plaintext
-GitHub Spec Kit              SDD Kit de GREAT
-─────────────────            ─────────────────
-specify init              →  git submodule add great-sdd-kit
-specify plan              →  Cargar reglas aplicables
-specify tasks             →  Tests de compliance adjuntos
-specify implement         →  Agente escribe código
-                         →  pytest tests/ valida reglas
-specify validate          →  Merge si pasa todo
+npm install git+https://github.com/nujovich/great-sdd-kit.git#v1.0.0
 ```
 
 ## SDD Core Framework (reutilizable)
@@ -347,10 +308,10 @@ Para extender a otro dominio:
 |-----------|-----------|
 | **Framework SDD** | SDD Kit propio — specs ejecutables + modules + tests |
 | **Lenguaje** | Python 3.11+ (backend), TypeScript (frontend del proyecto consumidor) |
-| **Tests** | pytest (216 tests) |
+| **Tests** | pytest (257 tests) |
 | **Agentes IA** | Claude Code, GitHub Copilot, Cursor, Codex |
 | **Integración** | CLAUDE.md, .cursorrules, AGENTS.md, copilot-instructions |
-| **Distribución** | Git submodule |
+| **Distribución** | npm (git+https) — `npm install git+https://...` |
 | **Licencia** | MIT |
 
 ## Repositorio
@@ -363,59 +324,3 @@ Para extender a otro dominio:
 - Piskala, D.B. (2026) — *Spec-Driven Development: From Code to Contract* (AIWare 2026)
 - Taghavi, P. & Bhavani, S. (2026) — *Spec Kit Agents: Context-Grounded Agentic Workflows*
 - Marri, S.R. (2026) — *Constitutional Spec-Driven Development* (security-by-construction)
-
----
-
-## Auditoría DB v2 — Schema SQL vs Contrato API
-
-**Estado:** En progreso (pendiente revisión con responsable del schema)
-
-**Source of truth declarada:** `schema.sql` + `schema.md` (19 tablas PostgreSQL, Greenfield v2).
-
-**Archivos bajo auditoría:**
-- `pev-openapi.yaml` — Contrato OpenAPI 3.1.0 ("PEV API", Pre-Estimation Validation)
-- `pev.ts` — Tipos TypeScript auto-generados por openapi-typescript
-
-### Discrepancias detectadas (borrador)
-
-**1. Campos en DB sin cobertura API**
-- `project_line`: 15+ columnas sin exponer (HVT attributes, milestone dates, assignee). Solo `id`, `name`, `metier`, `status`, `updated_at` en el listado.
-- `job_unit`: sin `unit_type` (Man Day / Bench Hours / Kilometres / Kiloeuros), sin coeficientes (`variable`, `fixed`), sin perfiles FMM/SMM/DMM.
-- `job_unit_allocation`: sin endpoints CRUD completos (solo existe prototype y estimation).
-- Tablas sin endpoint alguno: `keuro_rate`, `allocation_rule_version`, `allocation_rule`, `metier_distribution_config`, `hvt_audit_log`, `email_send_log`, `status_change_log`.
-
-**2. `project_id` vs `pl_number`**
-- API usa `project_id`, DB usa `pl_number`. Nadie sabe si son lo mismo.
-
-**3. Prototipo: estructura incompatible**
-- DB: columnas fijas `proto_1`, `proto_2`, `proto_3`
-- API: array genérico `categories: [{id, quantity}]`
-- Pregunta abierta: ¿la API viene de versión anterior?
-
-**4. `H-TESTING` inconsistente**
-- `allocation_rule_version.metier` incluye `H-TESTING`, pero ningún otro CHECK ni el enum `Metier` del OpenAPI lo incluyen.
-
-**5. `energy` vs `fuel_type`**
-- `project_line.energy` y `ws_n2_entry.fuel_type` — posible mismatch de naming para el mismo concepto.
-
-**6. `cpo_comment` ubicación**
-- API lo muestra en `EstimationPayload`. En la DB vive en `status_change_log.comment` (fila Sent→Rejected).
-
-### Pendiente con responsable del schema
-
-1. ¿Schema SQL congelado o pueden cambiar NOT NULL constraints (HVT-02)?
-2. ¿`H-TESTING` es metier real o futuro?
-3. ¿`project_id` API = `pl_number` DB?
-4. ¿Prototipo API se actualizará al modelo de columnas fijas?
-5. ¿El OpenAPI es solo fase 1 (Pre-Estimation)?
-6. ¿Dónde está el generador de `pev.ts`?
-7. ¿`energy` = `fuel_type`?
-8. ¿Para cuándo se necesita el análisis finalizado? (¿compliance en CI? ¿migraciones? ¿documentación?)
-
-### Plan de implementación SDD Kit
-
-Una vez resueltas las preguntas:
-1. `great_dspy/specs/db_schema_specs.py` — reglas por tabla (types, constraints, relaciones)
-2. `great_dspy/specs/api_contract_specs.py` — reglas de coherencia API↔DB
-3. `great_dspy/modules/db_api_consistency.py` — validador cross YAML↔SQL
-4. Tests que verifiquen coherencia bidireccional API vs DB

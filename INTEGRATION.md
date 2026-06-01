@@ -1,19 +1,29 @@
 # SDD Kit — Integración en proyectos
 
-El SDD Kit no es el repo raíz del desarrollador. Es una **dependencia que el agente carga** cuando trabaja en `great-backend` o `great-frontend`.
+El SDD Kit no es el repo raíz del desarrollador. Es una **dependencia que el agente carga** cuando trabaja en cualquier proyecto que use las reglas de negocio del GREAT System.
 
-## Opción recomendada: Git Submodule
+## Instalación como dependencia npm
 
 ```bash
-# En el repo del backend o frontend:
-cd tu-proyecto
-git submodule add https://github.com/nujovich/great-sdd-kit.git sdd-kit
-git commit -m "feat: add SDD Kit as submodule"
+# En la raíz del proyecto (frontend o backend):
+npm install git+https://github.com/nujovich/great-sdd-kit.git
 ```
 
-Esto crea un directorio `sdd-kit/` en tu proyecto con todas las reglas de negocio.
+Esto descarga el SDD Kit en `node_modules/great-sdd-kit/`.
 
-## Configurar los agentes
+### Pinchar una versión específica
+
+```bash
+npm install git+https://github.com/nujovich/great-sdd-kit.git#v1.0.0
+```
+
+### Actualizar a la última versión
+
+```bash
+npm update great-sdd-kit
+```
+
+## Configurar los agentes de IA
 
 Cada proyecto necesita sus propios archivos de entry point que apunten al SDD Kit. Copia estos templates:
 
@@ -22,95 +32,115 @@ Cada proyecto necesita sus propios archivos de entry point que apunten al SDD Ki
 ```markdown
 # [Nombre del Proyecto]
 
-## SDD Kit
+Lee `node_modules/great-sdd-kit/AGENTS.md` antes de generar cualquier código. Este proyecto usa Specification-Driven Development: las reglas de negocio están en `node_modules/great-sdd-kit/great_sdd/specs/` como datos verificables (78 reglas en 6 vistas).
 
-Este proyecto usa Specification-Driven Development. Las reglas de negocio están en `sdd-kit/`.
+Siempre corre `pytest node_modules/great-sdd-kit/tests/ -v` después de generar código para validar que cumple las reglas.
 
-**SIEMPRE carga `sdd-kit/AGENTS.md` antes de generar cualquier código.**
-
-Las reglas están en `sdd-kit/great_sdd/specs/` (78 reglas en 6 vistas).
-La lógica está en `sdd-kit/great_sdd/modules/` (30 módulos Python puros).
-Los pipelines están en `sdd-kit/great_sdd/pipeline/` (6 pipelines).
-Los tests están en `sdd-kit/tests/` (216 tests).
-
-Siempre corre `pytest sdd-kit/tests/ -v` después de generar código para validar que cumple las reglas.
+Referencia rápida del SDD Kit:
+- `node_modules/great-sdd-kit/great_sdd/specs/` → 78 reglas de negocio
+- `node_modules/great-sdd-kit/great_sdd/modules/` → 30 módulos Python puros
+- `node_modules/great-sdd-kit/great_sdd/pipeline/` → 6 pipelines (blueprint para endpoints)
+- `node_modules/great-sdd-kit/tests/` → 257 tests que verifican las reglas
 ```
 
 ### .cursorrules (raíz del proyecto)
 
 ```
-Carga sdd-kit/AGENTS.md antes de generar codigo. Las reglas de negocio estan en sdd-kit/great_sdd/specs/.
+Carga node_modules/great-sdd-kit/AGENTS.md antes de generar codigo. Las reglas de negocio estan en node_modules/great-sdd-kit/great_sdd/specs/ (78 reglas, 6 vistas).
 
-Siempre corre pytest sdd-kit/tests/ -v para validar.
+Siempre corre pytest node_modules/great-sdd-kit/tests/ -v para validar que cumples las reglas.
 ```
 
 ### .github/copilot-instructions.md (raíz del proyecto)
 
 ```markdown
-Before generating code, load sdd-kit/AGENTS.md. Business rules are in sdd-kit/great_sdd/specs/.
-Always run pytest sdd-kit/tests/ -v to validate compliance.
+Before generating code, load node_modules/great-sdd-kit/AGENTS.md. Business rules are in node_modules/great-sdd-kit/great_sdd/specs/.
+Always run pytest node_modules/great-sdd-kit/tests/ -v to validate compliance.
+```
+
+### AGENTS.md (raíz del proyecto, opcional pero recomendado)
+
+```markdown
+# AGENTS.md — [Nombre del Proyecto]
+
+Eres un agente de IA generando código para este proyecto.
+
+## Antes de generar cualquier código
+
+1. Lee `node_modules/great-sdd-kit/AGENTS.md` — contiene las reglas de negocio.
+2. Lee las specs relevantes en `node_modules/great-sdd-kit/great_sdd/specs/`.
+
+## Tests
+
+Después de generar código que implemente reglas de negocio:
+pytest node_modules/great-sdd-kit/tests/ -v
 ```
 
 ## Estructura resultante
 
-```
-tu-backend/
-├── src/                    ← Código del backend
-├── tests/                  ← Tests del backend
-├── sdd-kit/                ← Git submodule del SDD Kit
-│   ├── AGENTS.md
-│   ├── great_sdd/specs/   ← 78 reglas de negocio
-│   ├── great_sdd/modules/ ← 30 módulos
-│   ├── great_sdd/pipeline/← 6 pipelines
-│   └── tests/              ← 216 tests
-├── CLAUDE.md               ← Apunta a sdd-kit/AGENTS.md
-├── .cursorrules            ← Apunta a sdd-kit/AGENTS.md
-└── .github/copilot-instructions.md ← Apunta a sdd-kit/AGENTS.md
+```plaintext
+tu-proyecto/
+├── src/                                    ← Código del proyecto
+├── tests/                                  ← Tests del proyecto
+├── node_modules/
+│   └── great-sdd-kit/                      ← Dependencia npm (no submodule)
+│       ├── AGENTS.md
+│       ├── great_sdd/specs/               ← 78 reglas de negocio
+│       ├── great_sdd/modules/             ← 30 módulos
+│       ├── great_sdd/pipeline/            ← 6 pipelines
+│       └── tests/                          ← 257 tests
+├── CLAUDE.md                               ← Apunta a node_modules/great-sdd-kit/
+├── .cursorrules                            ← Apunta a node_modules/great-sdd-kit/
+└── package.json                            ← "great-sdd-kit": "git+https://..."
 ```
 
-## Cómo usar los módulos desde el backend
+## Cómo usar los módulos desde el backend (Python)
+
+Para que Python pueda importar los módulos del SDD Kit, agregá el path:
 
 ```python
-# En tu backend (FastAPI, Django, etc.)
-from sdd-kit.great_sdd.modules.pre_estimation import SaveValidator
+import sys
+sys.path.insert(0, "node_modules/great-sdd-kit")
 
-@app.post("/api/pre-estimation/save-draft")
-def save_draft(line: dict):
-    validator = SaveValidator()
-    result = validator.forward(line, "draft")
-    if not result["can_save"]:
-        return {"status": 422, "errors": result["validation_errors"]}
-    # ... persistir en DB
+from great_sdd.modules.pre_estimation import SaveValidator
+
+validator = SaveValidator()
+result = validator.forward(line, "draft")
+if not result["can_save"]:
+    return {"status": 422, "errors": result["validation_errors"]}
 ```
 
-Para que Python pueda importar desde `sdd-kit/`, añade al PATH o instálalo como paquete editable:
+O instalalo como paquete editable:
 
 ```bash
-pip install -e sdd-kit/
+pip install -e node_modules/great-sdd-kit/
 ```
 
-## Opción alternativa: Copy (sin submodule)
+## Cómo usar los módulos desde el frontend (TypeScript/React)
 
-Si no quieres submodules, copia estos directorios mínimos:
+El frontend no importa los módulos Python directamente. En su lugar:
+
+1. **Las reglas de negocio** se consumen como datos (specs son Python dicts/JSON-serializables)
+2. **Los endpoints del backend** implementan la lógica usando los módulos
+3. **El frontend** llama a los endpoints y muestra los resultados
+
+Si necesitás las reglas como datos en el frontend, podés exportarlas como JSON:
 
 ```bash
-cp -r sdd-kit/great_sdd/specs/ tu-proyecto/sdd-specs/
-cp -r sdd-kit/sdd/ tu-proyecto/sdd/
+# Desde el repo del SDD Kit, generar JSON de specs
+python3 -c "from great_sdd.specs.pre_estimation_specs import *; import json; print(json.dumps(SPECS, indent=2))" > specs.json
 ```
-
-Y en tu `AGENTS.md` / `CLAUDE.md` apunta a `sdd-specs/` en lugar de `sdd-kit/`.
 
 ## Actualizar el SDD Kit
 
 Cuando las reglas de negocio cambien (nuevo spec en el kit):
 
 ```bash
-cd tu-proyecto
-git submodule update --remote sdd-kit
-git commit -m "chore: update SDD Kit to latest specs"
+npm update great-sdd-kit
+pytest node_modules/great-sdd-kit/tests/ -q
 ```
 
-El agente, la próxima vez que cargue el proyecto, ya tendrá las nuevas reglas.
+Si algún test falla, es porque una regla cambió o se añadió una nueva. Editá los módulos afectados hasta que todo pase.
 
 ## Para crear un SDD Kit para otro dominio
 
@@ -122,4 +152,4 @@ Si quieres aplicar este patrón a otro sistema (no GREAT):
 4. Crea `tu_dominio/modules/` con tu lógica
 5. Crea `tu_dominio/pipeline/` con tu orquestación
 6. Actualiza `AGENTS.md` con tu dominio
-7. Los proyectos que consuman este kit hacen `git submodule add <tu-repo> sdd-kit`
+7. Publica en GitHub y los proyectos consumidores hacen `npm install git+https://<tu-repo>.git`

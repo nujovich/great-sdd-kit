@@ -4,17 +4,16 @@ Eres un agente de IA generando código para un proyecto que usa **Specification-
 
 ## Cómo integrarlo en tu proyecto
 
-Este repositorio NO es el proyecto raíz del desarrollador. Es una **dependencia** que se carga en el agente via git submodule:
+Este repositorio NO es el proyecto raíz del desarrollador. Es una **dependencia npm** que se instala con:
 
 ```bash
-cd tu-backend-o-frontend
-git submodule add https://github.com/nujovich/great-sdd-kit.git sdd-kit
+npm install git+https://github.com/nujovich/great-sdd-kit.git
 ```
 
-Luego en tu `CLAUDE.md` / `.cursorrules` del proyecto principal:
+El código queda en `node_modules/great-sdd-kit/`. Luego en tu `CLAUDE.md` / `.cursorrules` del proyecto principal:
 
 ```
-Carga sdd-kit/AGENTS.md antes de generar cualquier código.
+Lee node_modules/great-sdd-kit/AGENTS.md antes de generar cualquier código.
 ```
 
 Ver `INTEGRATION.md` para más detalles.
@@ -44,7 +43,7 @@ Este repositorio es un **SDD Kit**: las reglas de negocio están codificadas com
 │   ├── pipeline/          ← 6 pipelines (uno por vista)
 │   └── signatures/        ← Contratos input/output
 │
-└── tests/                 ← 216 tests que verifican las 74 reglas
+└── tests/                 ← 257 tests que verifican las 74 reglas
 ```
 
 ## Cómo usar este kit
@@ -71,6 +70,9 @@ No adivines reglas de negocio. No las inventes. No las saques de tu training dat
 Cada módulo es Python puro. Úsalos como librería desde cualquier backend:
 
 ```python
+import sys
+sys.path.insert(0, "node_modules/great-sdd-kit")
+
 from great_sdd.specs.allocation_specs import calculate_fte_ke
 ke = calculate_fte_ke(fte=1.0, societe_site="Horse Spain S.L.-Valladolid", year="2024")
 # → 107.0
@@ -97,7 +99,7 @@ Pre-Estimation endpoint:
 
 ### 5. Los tests verifican las reglas
 
-216 tests. Si tu código los pasa, cumples las 74 reglas de negocio.
+257 tests. Si tu código los pasa, cumple las 74 reglas de negocio.
 
 ```bash
 pytest tests/ -v              # Todos los tests
