@@ -139,7 +139,24 @@ BUSINESS_RULES: list[dict] = [
     {"id": "BR-17", "rule": "Re-save overwrites — each 'Save as Draft' overwrites the previous Draft in the database"},
     {"id": "BR-18", "rule": "Prototype data separate — prototype quantities are stored separately from engineering estimation; do not affect FTE/BH/KM"},
     {"id": "BR-19", "rule": "Prototype categories pending — category names and count are pending definition (PRE-01)"},
+    {"id": "BR-20", "rule": "Custom JU permissions — Engineer, PMO, and Admin can create Custom JUs; RCRC and CPO cannot"},
 ]
+
+# ─── Custom JU Permissions ──────────────────────────────────────
+# Roles that are allowed to create Custom Job Units (BR-20)
+
+CUSTOM_JU_ROLES: dict[str, bool] = {
+    "Admin":    True,
+    "Engineer": True,
+    "PMO":      True,
+    "RCRC":     False,
+    "CPO":      False,
+}
+
+
+def can_create_custom_ju(role: str) -> bool:
+    """Return True if the role can create Custom JUs (BR-20)."""
+    return CUSTOM_JU_ROLES.get(role, False)
 
 
 # ──────────────────────────────────────────────
