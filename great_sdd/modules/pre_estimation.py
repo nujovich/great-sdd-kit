@@ -1,5 +1,5 @@
 """
-GREAT Pre-Estimation — Signature-Driven Modules (SDD Kit).
+GREAT Pre-Estimation — Signature-Driven Modules.
 
 Each module now inherits from SignatureModule and honors a Signature contract.
 The module's forward() is split into:
@@ -15,7 +15,7 @@ import json
 import logging
 from typing import Optional
 
-from great_sdd.modules.base import LMClient
+from great_sdd.modules.base import LMClient, Module
 from great_sdd.modules.signature_module import SignatureModule
 from great_sdd.specs.pre_estimation_specs import (
     LineStatus,
@@ -33,6 +33,8 @@ from great_sdd.specs.pre_estimation_specs import (
     distribute_monthly,
     aggregate_yearly,
     MAN_DAY_FTE_DIVISOR,
+    CUSTOM_JU_ROLES,
+    can_create_custom_ju,
 )
 from great_sdd.signatures.pre_estimation import (
     VALIDATE_LINE_SELECTION,
@@ -411,4 +413,21 @@ class SummaryGenerator(SignatureModule):
         return {
             "summary_text": summary_text or "Summary generation unavailable.",
             "summary_json": estimation_json,
+        }
+
+
+class CustomJUPermissionChecker(Module):
+    """
+    Check if a role can create Custom JUs (BR-20).
+
+    Engineer, PMO, and Admin can create Custom JUs.
+    RCRC and CPO cannot.
+    """
+
+    def forward(self, role: str) -> dict:
+        allowed = can_create_custom_ju(role)
+        return {
+            "role": role,
+            "can_create_custom_ju": allowed,
+            "reason": f"{role} {'can' if allowed else 'cannot'} create Custom JUs",
         }

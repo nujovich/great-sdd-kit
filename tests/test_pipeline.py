@@ -191,9 +191,9 @@ class TestCompatibilityRules:
 
 class TestBusinessRules:
     """Spec §17: Business Rules"""
-    def test_all_19_rules_defined(self):
-        """There should be exactly 19 business rules (17 original + BR-18 + BR-19)."""
-        assert len(BUSINESS_RULES) == 19
+    def test_all_20_rules_defined(self):
+        """There should be exactly 20 business rules (19 original + BR-20 Custom JU permissions)."""
+        assert len(BUSINESS_RULES) == 20
 
     def test_each_rule_has_unique_id(self):
         ids = [r["id"] for r in BUSINESS_RULES]
@@ -808,3 +808,68 @@ class TestHVTAttributeChangeDetection:
         result = check_hvt_attribute_changed(line, original)
         assert result is not None
         assert "client" in result["fields"]
+
+
+# ──────────────────────────────────────────────────────
+# Custom JU Permissions (BR-20)
+# ──────────────────────────────────────────────────────
+
+def test_custom_ju_roles_spec():
+    """BR-20: CUSTOM_JU_ROLES mapping is correct."""
+    from great_sdd.specs.pre_estimation_specs import CUSTOM_JU_ROLES
+    assert CUSTOM_JU_ROLES["Admin"] is True
+    assert CUSTOM_JU_ROLES["Engineer"] is True
+    assert CUSTOM_JU_ROLES["PMO"] is True
+    assert CUSTOM_JU_ROLES["RCRC"] is False
+    assert CUSTOM_JU_ROLES["CPO"] is False
+
+
+def test_can_create_custom_ju_allowed():
+    """BR-20: Engineer, PMO, Admin can create Custom JUs."""
+    from great_sdd.specs.pre_estimation_specs import can_create_custom_ju
+    assert can_create_custom_ju("Admin") is True
+    assert can_create_custom_ju("Engineer") is True
+    assert can_create_custom_ju("PMO") is True
+
+
+def test_can_create_custom_ju_denied():
+    """BR-20: RCRC and CPO cannot create Custom JUs."""
+    from great_sdd.specs.pre_estimation_specs import can_create_custom_ju
+    assert can_create_custom_ju("RCRC") is False
+    assert can_create_custom_ju("CPO") is False
+
+
+def test_can_create_custom_ju_unknown():
+    """BR-20: Unknown role defaults to False."""
+    from great_sdd.specs.pre_estimation_specs import can_create_custom_ju
+    assert can_create_custom_ju("UnknownRole") is False
+
+
+def test_custom_ju_permission_checker():
+    """BR-20: CustomJUPermissionChecker module returns correct permissions."""
+    from great_sdd.modules.pre_estimation import CustomJUPermissionChecker
+    checker = CustomJUPermissionChecker()
+
+    result = checker.forward("Engineer")
+    assert result["can_create_custom_ju"] is True
+    assert "can" in result["reason"]
+
+    result = checker.forward("Admin")
+    assert result["can_create_custom_ju"] is True
+
+    result = checker.forward("PMO")
+    assert result["can_create_custom_ju"] is True
+
+    result = checker.forward("RCRC")
+    assert result["can_create_custom_ju"] is False
+    assert "cannot" in result["reason"]
+
+    result = checker.forward("CPO")
+    assert result["can_create_custom_ju"] is False
+
+
+def test_business_rules_count_20():
+    """BR-20 added: BUSINESS_RULES should now have 20 rules."""
+    from great_sdd.specs.pre_estimation_specs import BUSINESS_RULES
+    assert len(BUSINESS_RULES) == 20
+    assert BUSINESS_RULES[-1]["id"] == "BR-20"

@@ -169,9 +169,9 @@ class TestEstimationReviewBusinessRules:
         """There are exactly 10 Estimation Review business rules."""
         assert len(ESTIMATION_REVIEW_RULES) == 10
 
-    def test_total_rules_29(self):
-        """19 (Pre-Estimation, was 17 + BR-18 + BR-19) + 10 (ER) = 29 total rules."""
-        assert len(ALL_BUSINESS_RULES) == 29
+    def test_total_rules_30(self):
+        """20 (Pre-Estimation, was 19 + BR-20) + 10 (ER) = 30 total rules."""
+        assert len(ALL_BUSINESS_RULES) == 30
 
     def test_read_only_rule_exists(self):
         """ERev-BR-01: Read-only page rule exists."""
