@@ -237,6 +237,7 @@ ALLOCATION_RULES_LIST: list[dict] = [
     {"id": "ALLOC-BR-14", "rule": "Filter persistence — Preserved after all in-page actions"},
     {"id": "ALLOC-BR-15", "rule": "Active cycle only"},
     {"id": "ALLOC-BR-16", "rule": "No finalization action — Final Review reads whatever is saved"},
+    {"id": "ALLOC-BR-17", "rule": "JU metier routing — Bench Hours/Kilometres → H-TESTING; else → match project_line.metier"},
 ]
 
 
@@ -284,6 +285,51 @@ class SplitAllocation:
     original_ju_id: str
     splits: list[dict] = field(default_factory=list)
     # Each split: {"societe": str, "percentage": float, "fte": float, "ke": dict[str, float]}
+
+
+# ──────────────────────────────────────────────
+# 14. JU Metier Routing (§4.6 — ALLOC-BR-17)
+# ──────────────────────────────────────────────
+
+TESTING_UNIT_TYPES = {"Bench Hours", "Kilometres"}
+TESTING_METIER = "H-TESTING"
+VALID_METIERS = {"H-DESIGN", "H-TUNING", "H-SOFTWARE", "H-CUSTOMER", "H-PROJECT", "H-NP", "H-TESTING"}
+
+
+def resolve_ju_metier(unit_type: str, project_line_metier: str) -> str:
+    """
+    Resolve the correct metier for a job unit.
+    BH/KM → H-TESTING; else → same as project_line.metier.
+    """
+    if unit_type in TESTING_UNIT_TYPES:
+        return TESTING_METIER
+    return project_line_metier
+
+
+def validate_ju_metier_routing(job_units: list[dict], project_lines: dict[str, dict]) -> dict:
+    """
+    Validate ALLOC-BR-17 for a batch of job units.
+
+    Args:
+        job_units: list of dicts with keys unit_type, metier, project_line_id
+        project_lines: dict mapping project_line_id → dict with key 'metier'
+
+    Returns:
+        {"valid": bool, "errors": list[str]}
+    """
+    errors = []
+    for ju in job_units:
+        ju_metier = ju.get("metier", "")
+        unit_type = ju.get("unit_type", "")
+        pl_id = ju.get("project_line_id", "")
+        pl_metier = project_lines.get(pl_id, {}).get("metier", "")
+        expected = resolve_ju_metier(unit_type, pl_metier)
+        if ju_metier != expected:
+            errors.append(
+                f"JU {ju.get('id', '?')}: metier={ju_metier}, expected={expected} "
+                f"(unit_type={unit_type}, pl_metier={pl_metier})"
+            )
+    return {"valid": len(errors) == 0, "errors": errors}
 
 
 def apply_split(ju_fte_yearly: dict[str, float], splits: list[dict]) -> list[dict]:

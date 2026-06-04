@@ -12,6 +12,7 @@ Stages:
 """
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, field
 from typing import Optional
@@ -69,7 +70,7 @@ class AllocationPipeline:
         ctx = AllocationContext()
 
         # Stage 1: Permission check
-        perm = self.permission_checker.forward(role)
+        perm = self.permission_checker.forward(role=role)
         ctx.permission_allowed = perm["can_view"]
         ctx.permission_edit = perm["can_edit"]
         ctx.permission_reason = perm["reason"]
@@ -79,40 +80,66 @@ class AllocationPipeline:
             return ctx
 
         # Stage 2: Filter to Approved lines only
-        ctx.eligible_jus = self.eligibility_filter.forward(job_units)
+        result = self.eligibility_filter.forward(job_units_json=json.dumps(job_units))
+        ctx.eligible_jus = json.loads(result["approved_jus_json"])
 
         # Stage 3: Auto-assign societes via rules + H-PROJECT routing
-        ctx.auto_assigned_jus = self.rule_matcher.forward(ctx.eligible_jus)
-        ctx.routed_jus = self.hproject_router.forward(ctx.auto_assigned_jus)
+        rules = self.rule_matcher.rules
+        result = self.rule_matcher.forward(
+            job_units_json=json.dumps(ctx.eligible_jus),
+            rules_json=json.dumps(rules),
+        )
+        ctx.auto_assigned_jus = json.loads(result["assigned_jus_json"])
+
+        result = self.hproject_router.forward(job_units_json=json.dumps(ctx.auto_assigned_jus))
+        ctx.routed_jus = json.loads(result["routed_jus_json"])
 
         # Stage 4: Diversity dropdown
-        ctx.diversity_flagged = self.diversity_handler.forward(ctx.routed_jus)
+        result = self.diversity_handler.forward(job_units_json=json.dumps(ctx.routed_jus))
+        ctx.diversity_flagged = json.loads(result["flagged_jus_json"])
 
         # Stage 5: Calculate K€
-        ctx.calculated_jus = self.ke_calculator.forward(ctx.diversity_flagged)
+        result = self.ke_calculator.forward(job_units_json=json.dumps(ctx.diversity_flagged))
+        ctx.calculated_jus = json.loads(result["calculated_jus_json"])
 
         # Stage 6: Save validation
-        save_check = self.save_validator.forward(ctx.calculated_jus)
+        save_check = self.save_validator.forward(job_units_json=json.dumps(ctx.calculated_jus))
         ctx.can_save = save_check["can_save"]
-        ctx.save_errors = save_check["errors"]
-        ctx.save_warnings = save_check["warnings"]
+        ctx.save_errors = json.loads(save_check["errors_json"])
+        ctx.save_warnings = json.loads(save_check["warnings_json"])
 
         return ctx
 
-    # ── Manual action handlers ──
+    # -- Manual action handlers --
 
     def set_tc_ke(self, ju: dict, total_ke: float,
                   overrides: Optional[dict[str, float]] = None) -> dict:
-        return self.tc_handler.forward(ju, total_ke, overrides)
+        return self.tc_handler.forward(
+            job_unit_json=json.dumps(ju),
+            total_ke=total_ke,
+            overrides_json=json.dumps(overrides) if overrides else "{}",
+        )
 
     def split_ju(self, ju: dict, splits: list[dict]) -> list[dict]:
-        return self.split_handler.forward(ju, splits)
+        result = self.split_handler.forward(
+            ju_json=json.dumps(ju),
+            splits_json=json.dumps(splits),
+        )
+        if result.get("error"):
+            return [{"error": result["error"]}]
+        return json.loads(result["child_jus_json"])
 
     def bulk_assign(self, rows: list[dict], societe: str) -> list[dict]:
-        return self.bulk_assigner.forward(rows, societe)
+        result = self.bulk_assigner.forward(rows_json=json.dumps(rows), societe=societe)
+        return json.loads(result["updated_rows_json"])
 
     def validate_save(self, job_units: list[dict]) -> dict:
-        return self.save_validator.forward(job_units)
+        result = self.save_validator.forward(job_units_json=json.dumps(job_units))
+        return {
+            "can_save": result["can_save"],
+            "errors": json.loads(result["errors_json"]),
+            "warnings": json.loads(result["warnings_json"]),
+        }
 
 
 def run_allocation(

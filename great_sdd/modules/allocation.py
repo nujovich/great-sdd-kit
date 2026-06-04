@@ -1,15 +1,22 @@
 """
-GREAT Allocation — Pipeline Modules.
+GREAT Allocation — Signature-Driven Pipeline Modules.
 
 Financial layer: assigns JUs to societes, calculates K€, handles
 split allocation, bulk assignment, and TC cost type popup.
+
+Each module inherits from SignatureModule and honors a Signature contract
+from signatures/allocation.py. The forward() method is handled by
+SignatureModule (input/output validation), while forward_impl() contains
+the actual business logic.
 """
 from __future__ import annotations
 
+import json
 import logging
 from typing import Optional
 
-from great_sdd.modules.base import Module
+from great_sdd.modules.base import LMClient
+from great_sdd.modules.signature_module import SignatureModule
 from great_sdd.specs.pre_estimation_specs import LineStatus, Role
 from great_sdd.specs.allocation_specs import (
     ALLOCATION_PERMISSIONS,
@@ -24,15 +31,35 @@ from great_sdd.specs.allocation_specs import (
     route_hproject_hnp,
     METIER_ALLOCATION_CONFIG,
     SplitAllocation,
+    resolve_ju_metier,
+    validate_ju_metier_routing,
+    TESTING_UNIT_TYPES,
+    TESTING_METIER,
+)
+from great_sdd.signatures.allocation import (
+    CHECK_ALLOCATION_PERMISSION,
+    FILTER_APPROVED_JUS,
+    MATCH_ALLOCATION_RULES,
+    ROUTE_HPROJECT_HNP,
+    CALCULATE_KE,
+    HANDLE_TC_POPUP,
+    HANDLE_SPLIT,
+    BULK_ASSIGN,
+    VALIDATE_ALLOCATION_SAVE,
+    CHECK_DROPDOWN_DIVERSITY,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class AllocationPermissionChecker(Module):
-    """Check if role can view/edit/save in Allocation (§2)."""
+class AllocationPermissionChecker(SignatureModule):
+    """Check if role can view/edit/save in Allocation (§2).
+    Signature: CHECK_ALLOCATION_PERMISSION
+    """
 
-    def forward(self, role: str) -> dict:
+    signature = CHECK_ALLOCATION_PERMISSION
+
+    def forward_impl(self, role: str) -> dict:
         try:
             role_enum = Role(role)
         except ValueError:
@@ -52,24 +79,39 @@ class AllocationPermissionChecker(Module):
         }
 
 
-class AllocationEligibilityFilter(Module):
-    """Filter job units to only Approved (PL, Métier) pairs (§3)."""
-
-    def forward(self, job_units: list[dict]) -> list[dict]:
-        return [
-            ju for ju in job_units
-            if ju.get("status") == "approved"
-        ]
-
-
-class AllocationRuleMatcher(Module):
+class AllocationEligibilityFilter(SignatureModule):
+    """Filter job units to only Approved (PL, Métier) pairs (§3).
+    Signature: FILTER_APPROVED_JUS
     """
-    Match job units to societes using allocation rules (§4).
+
+    signature = FILTER_APPROVED_JUS
+
+    def forward_impl(self, job_units_json: str) -> dict:
+        try:
+            job_units = json.loads(job_units_json) if isinstance(job_units_json, str) else job_units_json
+        except (json.JSONDecodeError, TypeError):
+            job_units = []
+
+        approved = [ju for ju in job_units if ju.get("status") == "approved"]
+        excluded = len(job_units) - len(approved)
+
+        return {
+            "approved_jus_json": json.dumps(approved),
+            "excluded_count": str(excluded),
+        }
+
+
+class AllocationRuleMatcher(SignatureModule):
+    """Match job units to societes using allocation rules (§4).
+    Signature: MATCH_ALLOCATION_RULES
 
     Pure Python: case-insensitive CONTAINS matching.
     Empty field = wildcard. Most specific wins.
     Exception rules take unconditional priority.
+    Skips JUs that already have a societe (ALLOC-BR-02).
     """
+
+    signature = MATCH_ALLOCATION_RULES
 
     def __init__(self, rules: Optional[list[dict]] = None, lm=None):
         super().__init__(lm)
@@ -88,7 +130,7 @@ class AllocationRuleMatcher(Module):
             if match_value.lower() in ju_value:
                 score += 1
             else:
-                return 0  # Field doesn't match → rule doesn't apply
+                return 0  # Field doesn't match -> rule doesn't apply
         return score
 
     def _find_best_rule(self, ju: dict) -> Optional[dict]:
@@ -115,14 +157,24 @@ class AllocationRuleMatcher(Module):
 
         return best_rule
 
-    def forward(self, job_units: list[dict]) -> list[dict]:
-        """
-        Assign societe and cost type to JUs with no existing assignment.
-        Skips JUs that already have a societe (§4.1).
-        """
+    def forward_impl(self, job_units_json: str, rules_json: str = "[]") -> dict:
+        try:
+            job_units = json.loads(job_units_json) if isinstance(job_units_json, str) else job_units_json
+        except (json.JSONDecodeError, TypeError):
+            job_units = []
+
+        try:
+            rules = json.loads(rules_json) if isinstance(rules_json, str) else rules_json
+        except (json.JSONDecodeError, TypeError):
+            rules = []
+
+        self.rules = rules
         results = []
+        unassigned = 0
+
         for ju in job_units:
             if ju.get("societe"):
+                # ALLOC-BR-02: Skip JUs that already have a societe
                 results.append(ju)
                 continue
 
@@ -131,40 +183,64 @@ class AllocationRuleMatcher(Module):
                 ju["societe"] = rule.get("societe", "")
                 ju["cost_type"] = rule.get("cost_type", "FTE")
                 ju["_rule_matched"] = rule.get("id", "unknown")
+            else:
+                unassigned += 1
 
             results.append(ju)
 
-        return results
+        return {
+            "assigned_jus_json": json.dumps(results),
+            "unassigned_count": str(unassigned),
+        }
 
 
-class HProjectRouter(Module):
-    """Apply H-PROJECT/H-NP extra routing after Excel rules (§4.5)."""
+class HProjectRouter(SignatureModule):
+    """Apply H-PROJECT/H-NP extra routing after Excel rules (§4.5).
+    Signature: ROUTE_HPROJECT_HNP
+    """
 
-    def forward(self, job_units: list[dict]) -> list[dict]:
+    signature = ROUTE_HPROJECT_HNP
+
+    def forward_impl(self, job_units_json: str) -> dict:
+        try:
+            job_units = json.loads(job_units_json) if isinstance(job_units_json, str) else job_units_json
+        except (json.JSONDecodeError, TypeError):
+            job_units = []
+
         results = []
+        routed = 0
+
         for ju in job_units:
             metier = ju.get("metier", "")
             if metier not in ("H-PROJECT", "H-NP"):
                 results.append(ju)
                 continue
 
-            routed = route_hproject_hnp(
+            routed_societe = route_hproject_hnp(
                 standard_emissions=ju.get("standard_emissions", ""),
                 organ_type=ju.get("organ_type", ""),
                 alliance_code=ju.get("alliance_code", ""),
             )
 
-            if routed:
-                ju["societe"] = routed
+            if routed_societe:
+                ju["societe"] = routed_societe
                 ju["_routed_by"] = "hproject_extra"
+                routed += 1
 
             results.append(ju)
 
-        return results
+        return {
+            "routed_jus_json": json.dumps(results),
+            "routed_count": str(routed),
+        }
 
 
-class KECalculator(Module):
-    """Calculate K€ from FTE per year using rate tables (§11)."""
+class KECalculator(SignatureModule):
+    """Calculate K€ from FTE per year using rate tables (§11).
+    Signature: CALCULATE_KE
+    """
+
+    signature = CALCULATE_KE
 
     def calculate_for_ju(self, ju: dict) -> dict:
         """Calculate K€ for a single job unit."""
@@ -184,7 +260,12 @@ class KECalculator(Module):
 
         return ke_yearly
 
-    def forward(self, job_units: list[dict]) -> list[dict]:
+    def forward_impl(self, job_units_json: str) -> dict:
+        try:
+            job_units = json.loads(job_units_json) if isinstance(job_units_json, str) else job_units_json
+        except (json.JSONDecodeError, TypeError):
+            job_units = []
+
         results = []
         for ju in job_units:
             if ju.get("cost_type") == "TC":
@@ -196,65 +277,73 @@ class KECalculator(Module):
             ju["total_ke"] = sum(ke_yearly.values())
             results.append(ju)
 
-        return results
+        return {"calculated_jus_json": json.dumps(results)}
 
 
-class TCPopupHandler(Module):
-    """Handle TC cost type K€ input popup (§8)."""
+class TCPopupHandler(SignatureModule):
+    """Handle TC cost type K€ input popup (§8).
+    Signature: HANDLE_TC_POPUP
+    """
+
+    signature = HANDLE_TC_POPUP
 
     def distribute_ke(self, total_ke: float, fte_yearly: dict[str, float],
                       overrides: Optional[dict[str, float]] = None) -> dict:
-        """
-        Distribute total K€ proportionally to FTE share, with per-year overrides.
-
-        Args:
-            total_ke: Total K€ entered by RCRC
-            fte_yearly: {"2024": 0.5, "2025": 0.3, ...}
-            overrides: Optional per-year overrides {"2024": 30.0}
-
-        Returns:
-            {"2024": 33.33, "2025": 20.0, ...}
-        """
+        """Distribute total K€ proportionally to FTE share, with per-year overrides."""
         distributed = distribute_tc_ke(total_ke, fte_yearly)
         if overrides:
             for year, val in overrides.items():
                 distributed[year] = val
         return distributed
 
-    def forward(self, job_unit: dict, total_ke: float,
-                overrides: Optional[dict[str, float]] = None) -> dict:
+    def forward_impl(self, job_unit_json: str, total_ke: float,
+                     overrides_json: str = "{}") -> dict:
+        try:
+            job_unit = json.loads(job_unit_json) if isinstance(job_unit_json, str) else job_unit_json
+        except (json.JSONDecodeError, TypeError):
+            job_unit = {}
+
+        try:
+            overrides = json.loads(overrides_json) if isinstance(overrides_json, str) else overrides_json
+        except (json.JSONDecodeError, TypeError):
+            overrides = {}
+
         ke_yearly = self.distribute_ke(
             total_ke,
             job_unit.get("fte_yearly", {}),
-            overrides,
+            overrides if overrides else None,
         )
         return {
-            "ke_yearly": ke_yearly,
-            "total_ke": sum(ke_yearly.values()),
+            "ke_yearly_json": json.dumps(ke_yearly),
+            "total_ke": round(sum(ke_yearly.values()), 2),
             "cost_type": "TC",
         }
 
 
-class SplitAllocationHandler(Module):
-    """Handle split allocation across N societes (§10)."""
+class SplitAllocationHandler(SignatureModule):
+    """Handle split allocation across N societes (§10).
+    Signature: HANDLE_SPLIT
+    """
 
-    def forward(self, ju: dict, splits: list[dict]) -> list[dict]:
-        """
-        Split a JU's FTE across N societes.
+    signature = HANDLE_SPLIT
 
-        Args:
-            ju: Original job unit dict
-            splits: [{"societe": "X", "percentage": 60}, ...]
+    def forward_impl(self, ju_json: str, splits_json: str) -> dict:
+        try:
+            ju = json.loads(ju_json) if isinstance(ju_json, str) else ju_json
+        except (json.JSONDecodeError, TypeError):
+            ju = {}
 
-        Returns:
-            List of child JUs with proportional FTE/K€
-        """
+        try:
+            splits = json.loads(splits_json) if isinstance(splits_json, str) else splits_json
+        except (json.JSONDecodeError, TypeError):
+            splits = []
+
         fte_yearly = ju.get("fte_yearly", {})
 
         try:
             split_results = apply_split(fte_yearly, splits)
         except ValueError as e:
-            return [{"error": str(e)}]
+            return {"child_jus_json": "[]", "error": str(e)}
 
         child_rows = []
         for split in split_results:
@@ -266,36 +355,48 @@ class SplitAllocationHandler(Module):
             child["_is_split_child"] = True
             child_rows.append(child)
 
-        return child_rows
+        return {"child_jus_json": json.dumps(child_rows), "error": ""}
 
 
-class BulkAssigner(Module):
-    """Bulk societe assignment (§9)."""
+class BulkAssigner(SignatureModule):
+    """Bulk societe assignment (§9).
+    Signature: BULK_ASSIGN
+    """
 
-    def forward(self, rows: list[dict], societe: str) -> list[dict]:
-        """
-        Apply one societe to multiple rows. Always overwrites existing.
+    signature = BULK_ASSIGN
 
-        Args:
-            rows: List of rows to update
-            societe: Target societe name
+    def forward_impl(self, rows_json: str, societe: str) -> dict:
+        try:
+            rows = json.loads(rows_json) if isinstance(rows_json, str) else rows_json
+        except (json.JSONDecodeError, TypeError):
+            rows = []
 
-        Returns:
-            Updated rows with new societe
-        """
         results = []
         for row in rows:
             row["societe"] = societe
             row["_bulk_assigned"] = True
             row["_dirty"] = True
             results.append(row)
-        return results
+
+        return {
+            "updated_rows_json": json.dumps(results),
+            "assigned_count": str(len(results)),
+        }
 
 
-class AllocationSaveValidator(Module):
-    """Validate pre-save conditions (§5.5, §13)."""
+class AllocationSaveValidator(SignatureModule):
+    """Validate pre-save conditions (§5.5, §13).
+    Signature: VALIDATE_ALLOCATION_SAVE
+    """
 
-    def forward(self, job_units: list[dict]) -> dict:
+    signature = VALIDATE_ALLOCATION_SAVE
+
+    def forward_impl(self, job_units_json: str) -> dict:
+        try:
+            job_units = json.loads(job_units_json) if isinstance(job_units_json, str) else job_units_json
+        except (json.JSONDecodeError, TypeError):
+            job_units = []
+
         errors = []
         warnings = []
 
@@ -315,13 +416,17 @@ class AllocationSaveValidator(Module):
 
         return {
             "can_save": len(errors) == 0,
-            "errors": errors,
-            "warnings": warnings,
+            "errors_json": json.dumps(errors),
+            "warnings_json": json.dumps(warnings),
         }
 
 
-class DiversityDropdownHandler(Module):
-    """Handle diversity dropdown for H-DESIGN, H-TESTING, H-CUSTOMER (§7)."""
+class DiversityDropdownHandler(SignatureModule):
+    """Handle diversity dropdown for H-DESIGN, H-TESTING, H-CUSTOMER (§7).
+    Signature: CHECK_DROPDOWN_DIVERSITY
+    """
+
+    signature = CHECK_DROPDOWN_DIVERSITY
 
     def has_diversity(self, ju: dict) -> bool:
         """Check if a JU requires diversity selection."""
@@ -329,8 +434,14 @@ class DiversityDropdownHandler(Module):
         rule_ju_list = ju.get("_rule_ju_list", [])
         return ju_code in rule_ju_list
 
-    def forward(self, job_units: list[dict]) -> list[dict]:
+    def forward_impl(self, job_units_json: str) -> dict:
+        try:
+            job_units = json.loads(job_units_json) if isinstance(job_units_json, str) else job_units_json
+        except (json.JSONDecodeError, TypeError):
+            job_units = []
+
         results = []
+        unresolved = 0
         for ju in job_units:
             metier = ju.get("metier", "")
             config = METIER_ALLOCATION_CONFIG.get(metier, {})
@@ -339,7 +450,45 @@ class DiversityDropdownHandler(Module):
                 if not ju.get("diversity_resolved"):
                     ju["_needs_diversity"] = True
                     ju["diversity_resolved"] = False
+                    unresolved += 1
 
             results.append(ju)
 
-        return results
+        return {
+            "flagged_jus_json": json.dumps(results),
+            "unresolved_count": str(unresolved),
+        }
+
+
+class JUMetierRouter:
+    """
+    Resolve and validate JU metier routing (ALLOC-BR-17).
+
+    BH/Kilometres -> H-TESTING
+    Man Day/Kiloeuros -> same as project_line.metier
+
+    NOTE: This is a helper class (not a SignatureModule) because it's
+    used internally by other modules, not as a pipeline stage.
+    """
+
+    def resolve(self, unit_type: str, project_line_metier: str) -> str:
+        """Resolve the correct metier for a job unit."""
+        return resolve_ju_metier(unit_type, project_line_metier)
+
+    def forward(self, job_units: list[dict], project_lines: dict[str, dict]) -> dict:
+        """Validate metier routing for a batch of job units."""
+        validation = validate_ju_metier_routing(job_units, project_lines)
+
+        resolved = []
+        for ju in job_units:
+            pl_id = ju.get("project_line_id", "")
+            pl_metier = project_lines.get(pl_id, {}).get("metier", "")
+            expected = resolve_ju_metier(ju.get("unit_type", ""), pl_metier)
+            ju["_expected_metier"] = expected
+            resolved.append(ju)
+
+        return {
+            "valid": validation["valid"],
+            "errors": validation["errors"],
+            "resolved": resolved,
+        }

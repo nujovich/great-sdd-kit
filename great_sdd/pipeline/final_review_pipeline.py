@@ -1,8 +1,16 @@
 """
 GREAT Final Review — Pipeline.
+
+Stages:
+  1. Permission check
+  2. Filter to Approved lines
+  3. Aggregation (by cost_type, society, metier, PL total)
+  4. CSV export
+  5. Stage 3 send (non-blocking, re-sendable, all lines)
 """
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, field
 from typing import Optional
@@ -41,7 +49,7 @@ class FinalReviewPipeline:
     def forward(self, role: str, job_units: list[dict]) -> FinalReviewContext:
         ctx = FinalReviewContext()
 
-        perm = self.permission_checker.forward(role, "view")
+        perm = self.permission_checker.forward(role=role, action="view")
         ctx.permission_allowed = perm["allowed"]
         ctx.permission_reason = perm["reason"]
 
@@ -49,18 +57,27 @@ class FinalReviewPipeline:
             ctx.errors.append(ctx.permission_reason)
             return ctx
 
-        ctx.can_send_stage3 = self.permission_checker.forward(role, "send_stage3")["allowed"]
-        ctx.eligible_jus = self.eligibility_filter.forward(job_units)
-        ctx.aggregations = self.aggregation_engine.forward(ctx.eligible_jus)
+        ctx.can_send_stage3 = self.permission_checker.forward(role=role, action="send_stage3")["allowed"]
+
+        result = self.eligibility_filter.forward(job_units_json=json.dumps(job_units))
+        ctx.eligible_jus = json.loads(result["approved_jus_json"])
+
+        result = self.aggregation_engine.forward(job_units_json=json.dumps(ctx.eligible_jus))
+        ctx.aggregations = json.loads(result["aggregations_json"])
 
         return ctx
 
     def export_csv(self, job_units: list[dict], columns: Optional[list[str]] = None) -> dict:
-        return self.csv_exporter.forward(job_units, columns)
+        return self.csv_exporter.forward(
+            job_units_json=json.dumps(job_units),
+            columns_json=json.dumps(columns) if columns else "[]",
+        )
 
     def send_stage3(self, job_units: list[dict], confirmed: bool = False) -> dict:
-        """Send consolidated data to HVT Stage 3."""
-        return self.stage3_sender.forward(job_units, confirmed)
+        return self.stage3_sender.forward(
+            job_units_json=json.dumps(job_units),
+            confirmed=confirmed,
+        )
 
 
 def run_final_review(role: str, job_units: list[dict],

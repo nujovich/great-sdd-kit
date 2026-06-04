@@ -1,16 +1,22 @@
 """
-GREAT Final Review — Pipeline Modules.
+GREAT Final Review — Signature-Driven Pipeline Modules.
 
 Read-only consolidation of approved estimations with allocation data.
+Last step of the WP5 cycle before Stage 3 transmission to HVT.
+
+Each module inherits from SignatureModule and honors a Signature contract
+from signatures/final_review.py.
 """
 from __future__ import annotations
 
 import csv
 import io
+import json
 import logging
 from typing import Optional
 
-from great_sdd.modules.base import Module
+from great_sdd.modules.base import LMClient
+from great_sdd.modules.signature_module import SignatureModule
 from great_sdd.specs.pre_estimation_specs import LineStatus, Role
 from great_sdd.specs.final_review_specs import (
     FINAL_REVIEW_PERMISSIONS,
@@ -21,14 +27,26 @@ from great_sdd.specs.final_review_specs import (
     calculate_subtotals,
     STAGE3_SEND_CONFIG,
 )
+from great_sdd.signatures.final_review import (
+    CHECK_FINAL_REVIEW_PERMISSION,
+    FILTER_FINAL_REVIEW_JUS,
+    AGGREGATE_FINAL_REVIEW,
+    EXPORT_FINAL_REVIEW_CSV,
+    SEND_STAGE3,
+    CALCULATE_SUBTOTALS,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class FinalReviewPermissionChecker(Module):
-    """Check if role can view/export/send Stage 3 in Final Review (§2)."""
+class FinalReviewPermissionChecker(SignatureModule):
+    """Check if role can view/export/send Stage 3 in Final Review (§2).
+    Signature: CHECK_FINAL_REVIEW_PERMISSION
+    """
 
-    def forward(self, role: str, action: str = "view") -> dict:
+    signature = CHECK_FINAL_REVIEW_PERMISSION
+
+    def forward_impl(self, role: str, action: str = "view") -> dict:
         try:
             role_enum = Role(role)
         except ValueError:
@@ -47,38 +65,77 @@ class FinalReviewPermissionChecker(Module):
         return {"allowed": True, "reason": f"{role} authorized for {action}"}
 
 
-class FinalReviewEligibilityFilter(Module):
-    """Filter to only Approved (PL, Métier) pairs (§3)."""
+class FinalReviewEligibilityFilter(SignatureModule):
+    """Filter to only Approved (PL, Metier) pairs (§3).
+    Signature: FILTER_FINAL_REVIEW_JUS
+    """
 
-    def forward(self, job_units: list[dict]) -> list[dict]:
-        return [ju for ju in job_units if ju.get("status") == "approved"]
+    signature = FILTER_FINAL_REVIEW_JUS
 
+    def forward_impl(self, job_units_json: str) -> dict:
+        try:
+            job_units = json.loads(job_units_json) if isinstance(job_units_json, str) else job_units_json
+        except (json.JSONDecodeError, TypeError):
+            job_units = []
 
-class AggregationEngine(Module):
-    """Compute aggregation levels for Final Review (§5.2)."""
-
-    def forward(self, job_units: list[dict]) -> dict:
-        agg_fields = ["total_fte", "total_ke", "total_bh", "total_km"]
+        approved = [ju for ju in job_units if ju.get("status") == "approved"]
+        excluded = len(job_units) - len(approved)
 
         return {
+            "approved_jus_json": json.dumps(approved),
+            "excluded_count": str(excluded),
+        }
+
+
+class AggregationEngine(SignatureModule):
+    """Compute aggregation levels for Final Review (§5.2).
+    Signature: AGGREGATE_FINAL_REVIEW
+    """
+
+    signature = AGGREGATE_FINAL_REVIEW
+
+    def forward_impl(self, job_units_json: str) -> dict:
+        try:
+            job_units = json.loads(job_units_json) if isinstance(job_units_json, str) else job_units_json
+        except (json.JSONDecodeError, TypeError):
+            job_units = []
+
+        agg_fields = ["total_fte", "total_ke", "total_bh", "total_km"]
+
+        aggregations = {
             "by_cost_type": aggregate_at_level(job_units, ["metier", "societe", "cost_type"], agg_fields),
             "by_society": aggregate_at_level(job_units, ["metier", "societe"], agg_fields),
             "by_metier": aggregate_at_level(job_units, ["metier"], agg_fields),
             "pl_total": calculate_subtotals(job_units, agg_fields),
         }
 
+        return {"aggregations_json": json.dumps(aggregations)}
 
-class CSVGlobalExporter(Module):
-    """Export all JUs to flat CSV (§7)."""
 
-    def forward(self, job_units: list[dict],
-                columns: Optional[list[str]] = None) -> dict:
+class CSVGlobalExporter(SignatureModule):
+    """Export all JUs to flat CSV (§7).
+    Signature: EXPORT_FINAL_REVIEW_CSV
+    """
+
+    signature = EXPORT_FINAL_REVIEW_CSV
+
+    def forward_impl(self, job_units_json: str, columns_json: str = "[]") -> dict:
+        try:
+            job_units = json.loads(job_units_json) if isinstance(job_units_json, str) else job_units_json
+        except (json.JSONDecodeError, TypeError):
+            job_units = []
+
         if not job_units:
-            return {"csv_content": "", "row_count": 0}
+            return {"csv_content": "", "row_count": "0"}
 
-        if columns is None:
+        try:
+            columns = json.loads(columns_json) if isinstance(columns_json, str) else columns_json
+        except (json.JSONDecodeError, TypeError):
+            columns = []
+
+        if not columns:
             columns = [
-                "PL Number", "PL Name", "Métier", "Owner N2", "Societe",
+                "PL Number", "PL Name", "Metier", "Owner N2", "Societe",
                 "Cost Type", "FMM Description", "JU Description", "JU Code",
                 "Total FTE", "Total K€", "Total BH", "Total KM",
             ]
@@ -104,11 +161,15 @@ class CSVGlobalExporter(Module):
                 ju.get("total_km", 0),
             ])
 
-        return {"csv_content": output.getvalue(), "row_count": len(job_units)}
+        return {"csv_content": output.getvalue(), "row_count": str(len(job_units))}
 
 
-class Stage3Sender(Module):
-    """Handle Stage 3 send to HVT (§8)."""
+class Stage3Sender(SignatureModule):
+    """Handle Stage 3 send to HVT (§8).
+    Signature: SEND_STAGE3
+    """
+
+    signature = SEND_STAGE3
 
     def prepare_warning(self, job_units: list[dict]) -> dict:
         """Check for incomplete allocation before Stage 3 send."""
@@ -125,7 +186,12 @@ class Stage3Sender(Module):
             ) if unassigned else "",
         }
 
-    def forward(self, job_units: list[dict], confirmed: bool = False) -> dict:
+    def forward_impl(self, job_units_json: str, confirmed: bool = False) -> dict:
+        try:
+            job_units = json.loads(job_units_json) if isinstance(job_units_json, str) else job_units_json
+        except (json.JSONDecodeError, TypeError):
+            job_units = []
+
         warning = self.prepare_warning(job_units)
 
         if warning["unassigned_count"] > 0 and not confirmed:
@@ -133,9 +199,9 @@ class Stage3Sender(Module):
                 "success": False,
                 "needs_confirmation": True,
                 "warning": warning["warning"],
+                "payload_json": "{}",
             }
 
-        # Build consolidated payload
         payload = {
             "cycle": "",
             "project_lines": [],
@@ -144,4 +210,9 @@ class Stage3Sender(Module):
             "incomplete_count": warning["unassigned_count"],
         }
 
-        return {"success": True, "payload": payload, "warning": warning["warning"]}
+        return {
+            "success": True,
+            "needs_confirmation": False,
+            "warning": warning["warning"],
+            "payload_json": json.dumps(payload),
+        }
