@@ -8,9 +8,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Estimation Review, Allocation, Final Review, Management View modules (only Pre-Estimation fully implemented)
+- Management View and Transversal signatures (Allocation and Final Review done)
 - Pipeline execution context improvements
 - Type hints consolidation across all modules
+
+---
+
+## [1.2.0] — 2026-06-04
+
+### Added
+- **Allocation signatures** (`signatures/allocation.py`): 10 signatures covering ALLOC-BR-01..17
+  - `CHECK_ALLOCATION_PERMISSION`, `FILTER_APPROVED_JUS`, `MATCH_ALLOCATION_RULES`
+  - `ROUTE_HPROJECT_HNP`, `CALCULATE_KE`, `HANDLE_TC_POPUP`, `HANDLE_SPLIT`
+  - `BULK_ASSIGN`, `VALIDATE_ALLOCATION_SAVE`, `CHECK_DROPDOWN_DIVERSITY`
+- **Final Review signatures** (`signatures/final_review.py`): 6 signatures covering FR-BR-01..10
+  - `CHECK_FINAL_REVIEW_PERMISSION`, `FILTER_FINAL_REVIEW_JUS`, `AGGREGATE_FINAL_REVIEW`
+  - `EXPORT_FINAL_REVIEW_CSV`, `SEND_STAGE3`, `CALCULATE_SUBTOTALS`
+- **Refactored modules**: All Allocation and Final Review modules now use `SignatureModule`
+- **Expanded tests**: Allocation 33→46 tests, Final Review 15→26 tests (business rule coverage)
+
+### Changed
+- `AllocationPipeline` and `FinalReviewPipeline` adapted for JSON string I/O between pipeline and modules
+- `signatures/__init__.py` exports updated with Allocation and Final Review signatures
+
+### Stats
+- 78 business rules in executable specs (6 views)
+- 293 tests (all passing)
+- 30 modules (pure Python, no external dependencies)
+- 6 pipelines (blueprints for backend endpoints)
+- 26 signatures (Pre-Estimation 8, Estimation Review 6, Allocation 10, Final Review 6)
+
+---
+
+## [1.1.0] — 2026-06-02
+
+### Added
+- **BR-20 Custom JU permissions**: `CUSTOM_JU_ROLES` dict, `can_create_custom_ju()` helper, `CustomJUPermissionChecker` module
+- 6 new tests for BR-20 permission checks
+
+### Stats
+- 78 business rules in executable specs (6 views)
+- 257 tests (all passing)
 
 ---
 
