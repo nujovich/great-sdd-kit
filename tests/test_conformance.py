@@ -289,5 +289,19 @@ def test_runner_against_oracle_consumer_is_all_green():
 
 def test_runner_reports_mismatch():
     from great_sdd.conformance.runner import run_against_fixtures
-    rep = run_against_fixtures(consumer_fn=lambda inp: {"bogus": True})
+    rep = run_against_fixtures(consumer_fn=lambda req: {"bogus": True})
     assert rep["passed"] is False and rep["failed_count"] > 0
+
+
+# ═══════════════════════════════════════════════════════════
+# docs reconciliation — derived rule count
+# ═══════════════════════════════════════════════════════════
+
+def test_docs_state_canonical_rule_count():
+    from great_sdd.conformance.rule_inventory import rule_count
+    n = str(rule_count())   # 92
+    for doc in ("README.md", "AGENTS.md", "SDD-OVERVIEW.md"):
+        with open(os.path.join(os.path.dirname(__file__), "..", doc), encoding="utf-8") as fh:
+            text = fh.read()
+        assert "74 reglas" not in text and "78 reglas" not in text, f"{doc} stale rule count"
+        assert n in text, f"{doc} missing canonical count {n}"

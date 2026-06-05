@@ -38,12 +38,12 @@ Este repositorio es un **SDD Kit**: las reglas de negocio están codificadas com
 │   └── base_pipeline.py   ← Base class para pipelines
 │
 ├── great_sdd/            ← Dominio: Sistema GREAT
-│   ├── specs/             ← 6 archivos, 74 reglas de negocio
+│   ├── specs/             ← 6 archivos, 92 reglas de negocio
 │   ├── modules/           ← 30 módulos con lógica pura
 │   ├── pipeline/          ← 6 pipelines (uno por vista)
 │   └── signatures/        ← Contratos input/output
 │
-└── tests/                 ← 257 tests que verifican las 74 reglas
+└── tests/                 ← 320 tests que verifican las 92 reglas
 ```
 
 ## Cómo usar este kit
@@ -99,7 +99,7 @@ Pre-Estimation endpoint:
 
 ### 5. Los tests verifican las reglas
 
-257 tests. Si tu código los pasa, cumple las 74 reglas de negocio.
+320 tests. Si tu código los pasa, cumple las 92 reglas de negocio.
 
 ```bash
 pytest tests/ -v              # Todos los tests
