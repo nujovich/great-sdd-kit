@@ -306,15 +306,113 @@ Para extender a otro dominio:
 
 ## Conformance (4ª capa)
 
-El SDD actúa como **oracle determinista**: ejecuta casos representativos contra las funciones puras y emite **golden fixtures** JSON neutros (en `great_sdd/conformance/fixtures/`) que un consumidor (backend Python o frontend TS) usa para verificar que su código cumple las reglas — hermético y en CI. Todo es determinista (sin LLM ni red): la generación se hace con un *Tripwire LM* que aborta ruidosamente si una regla cubierta depende del LM.
+La cuarta capa convierte al SDD en un **oracle determinista**: una implementación de
+referencia contra la cual cualquier consumidor (backend Python o frontend TypeScript)
+verifica que su código cumple las reglas de negocio — hermético, sin LLM, sin red, y en CI.
+
+### Cómo funciona
+
+1. **Oracle / generador** (`sdd/base_conformance.py` + `great_sdd/conformance/generate.py`)
+   recorre las reglas deterministas, ejecuta casos representativos contra las funciones
+   puras y emite **golden fixtures** JSON neutros.
+2. **Golden fixtures committeados** (`great_sdd/conformance/fixtures/<vista>.json`) —
+   **son el contrato**. El oracle vivo NO es dependencia de runtime del consumidor: solo
+   regenera estos archivos. Formato byte-estable (claves ordenadas, sin timestamps):
+   misma entrada → mismo archivo byte a byte.
+3. **Coverage reporter** (`coverage.py`) calcula % de reglas cubiertas y detecta
+   **version skew** (compara el `sdd_version` de los fixtures del consumidor contra el
+   oracle). Exit ≠ 0 si baja del umbral o hay skew.
+4. **Runner del consumidor** (`runner.py`) carga los fixtures pinneados, corre una
+   `consumer_fn` y compara con *exact match*, emitiendo los `rule_ids` ejercitados.
+
+> **Restricción dura — TODO DETERMINISTA.** Los fixtures se generan con un **Tripwire LM**
+> inyectado en cada módulo: si una regla cubierta intenta llamar al LM, la generación
+> **aborta ruidosamente** (`NonDeterministicError`). Como parte de esto se refactorizó
+> `InductorSelector` de LM-driven a un algoritmo determinista basado en reglas
+> (match keyword/substring contra `WORKLOAD_STANDARDS` + fallback documentado).
+
+### Uso
 
 ```bash
-python -m great_sdd.conformance.generate          # (re)generar fixtures
-python -m great_sdd.conformance.generate --check    # CI: falla si hay drift
+python -m great_sdd.conformance.generate            # (re)generar fixtures
+python -m great_sdd.conformance.generate --check     # CI: exit 1 si hay drift
 python -m great_sdd.conformance.coverage --from-fixtures --threshold 0.70
+python -m great_sdd.conformance.runner --emit-report report.json   # consumidor de referencia
 ```
 
-Cobertura actual: 55/55 reglas de negocio con superficie determinista (100% de lo cubrible); 37 reglas de política/UI/persistencia y 3 capacidades LM-only quedan documentadas como exclusiones. Ver `great_sdd/conformance/README.md` para el contrato cross-language.
+Contrato cross-language (cómo un frontend TS consume los MISMOS fixtures JSON):
+ver [`great_sdd/conformance/README.md`](great_sdd/conformance/README.md).
+
+### Cobertura
+
+De las **92 reglas de negocio**, **55 tienen superficie determinista y están
+cubiertas por probes reales** (100% de lo cubrible). Las restantes quedan **documentadas
+como exclusiones** — nada se descarta en silencio; cada exclusión aparece en el reporte de
+coverage y en `great_sdd/conformance/fixtures/_inventory.json`.
+
+<!-- BEGIN QUARANTINE (autogenerado desde great_sdd/conformance/exclusions.py) -->
+> ### ⚠️ Reglas en cuarentena (excluidas de la cobertura de conformance)
+>
+> Estas reglas **NO** están cubiertas por fixtures deterministas. Se listan acá, con su
+> descripción y la razón, para que la exclusión sea explícita y auditable.
+
+#### 🔴 LM-only (3) — `NON_DETERMINISTIC_RULES`
+
+Capacidades cuyo *único* output lo produce el LM. No son IDs de regla: la **decisión**
+determinista subyacente (p.ej. `is_compatible`) sí está cubierta; lo quarantinado es el
+texto/ranking generado por el modelo.
+
+| Capacidad | Razón de la cuarentena |
+|-----------|------------------------|
+| `GENERATE_PRE_SAVE_SUMMARY` | Summary prose is produced by the LM; the numeric data it summarizes is covered by EstimationCalculator/MonthDistributor. |
+| `VALIDATE_LINE_SELECTION:explanation` | incompatibility_reason prose is LM-only; the is_compatible DECISION is covered via are_lines_compatible (BR-06/BR-07). |
+| `SELECT_INDUCTOR_CRAN:semantic-ranking` | Free-text best-fit ranking from arbitrary natural language is LM-only. The deterministic refactor covers keyword/substring selection + documented full-standard fallback, not semantic ranking. |
+
+#### ⚪ Sin superficie de función (37) — `NO_FUNCTION_SURFACE_RULES`
+
+Reglas deterministas pero de política / UI / persistencia, sin función pura ejecutable
+contra la cual generar un fixture.
+
+| Regla | Descripción | Razón de la cuarentena |
+|-------|-------------|------------------------|
+| `BR-01` | No deletion — estimations are never deleted by any user under any circumstance | No-deletion policy — enforced at persistence/UI layer; no callable. |
+| `BR-09` | Occurrence lock default — occurrence_locked is always false by default | occurrence_locked defaults false — data default, not a function. |
+| `BR-10` | Assignment read-only — line-to-engineer assignments come from HVT and cannot be modified in GREAT | Assignment read-only — sourced from HVT; UI/persistence policy. |
+| `BR-14` | Comments scoped to (line, métier) — a comment applies to one line+métier combination only | Comment scoped to (line, metier) — storage shape, no callable. |
+| `BR-18` | Prototype data separate — prototype quantities are stored separately from engineering estimation; do not affect FTE/BH/KM | Prototype data stored separately — persistence policy. |
+| `BR-19` | Prototype categories pending — category names and count are pending definition (PRE-01) | Prototype categories pending definition (PRE-01). |
+| `ERev-BR-01` | Read-only page — no data can be edited from Estimation Review | Read-only page — UI policy; no edit function exists. |
+| `ERev-BR-05` | Send scope — 'Send all eligible' operates on the current filtered view only | Send scope = current filtered view — UI/view-state policy. |
+| `ERev-BR-06` | Engineer scoping — Engineers see only their own (PL, Métier) rows | Engineer row scoping — UI/query scoping, not an ER callable. |
+| `ERev-BR-07` | Comments read-only — Rejection comments are not shown in this grid | Rejection comments hidden — UI rendering policy. |
+| `ERev-BR-09` | Active cycle only — Grid shows data for the active estimation cycle only | Active cycle only — cycle scoping/query policy. |
+| `ALLOC-BR-03` | FTE columns read-only — FTE from approved estimations cannot be modified | FTE columns read-only — UI policy. |
+| `ALLOC-BR-05` | Dirty-row tracking — Only modified rows sent to backend on save | Dirty-row tracking — backend persistence detail. |
+| `ALLOC-BR-12` | Split undo: full delete only — Restores original single row | Split undo = full delete — UI interaction policy. |
+| `ALLOC-BR-14` | Filter persistence — Preserved after all in-page actions | Filter persistence — UI/view-state policy. |
+| `ALLOC-BR-15` | Active cycle only | Active cycle only — cycle scoping/query policy. |
+| `ALLOC-BR-16` | No finalization action — Final Review reads whatever is saved | No finalization action — absence of behavior; nothing to probe. |
+| `FR-BR-01` | Read-only page — No data can be edited from Final Review | Read-only page — UI policy. |
+| `FR-BR-02` | No approval columns — Approval workflow complete before this page | No approval columns — UI rendering policy. |
+| `FR-BR-05` | No prototype data — Prototype costs do not appear in Final Review | No prototype data shown — UI rendering policy. |
+| `FR-BR-09` | Active cycle only | Active cycle only — cycle scoping/query policy. |
+| `MGMT-BR-05` | Single filter for both charts — Métier applies to both simultaneously | Single filter drives both charts — UI wiring policy. |
+| `MGMT-BR-06` | Active cycle only — No historical cycle data | Active cycle only — cycle scoping/query policy. |
+| `MGMT-BR-07` | On page load refresh — No auto-polling or live updates | Refresh on page load — UI lifecycle policy. |
+| `MGMT-BR-08` | Read-only — No data entry, no side effects | Read-only — absence of side effects; nothing to probe. |
+| `CYCLE-BR-03` | No deletion — Cycles and their data are never deleted | Cycles never deleted — persistence policy. |
+| `WL-BR-03` | Preprocessing on upload — Existing pipeline validates and converts | Preprocessing on upload — pipeline/IO side effect. |
+| `WL-BR-04` | Versioned — Each upload is a new version; old versions retained | Versioned uploads — timestamped persistence (not byte-stable). |
+| `WL-BR-05` | Isolation — Saved JU coefficients are immutable after save | Saved coefficients immutable — persistence invariant. |
+| `WL-BR-06` | Validation before commit — Structural errors reported before persistence | Validation before commit — covered structurally by WL-BR-02 probe; commit is IO. |
+| `DEL-BR-03` | Select all shortcut — Header checkbox selects/deselects all visible rows | Select-all shortcut — UI interaction. |
+| `DEL-BR-04` | Confirm before delete — Modal confirmation required before批量删除 executes | Confirm modal before delete — UI interaction. |
+| `DEL-BR-06` | Deletion is permanent — Deleted inductors are not recoverable from the UI | Deletion permanent — persistence invariant. |
+| `DEL-BR-08` | Filter preserves selection — Changing filters preserves current selection state | Filter preserves selection — UI/view-state policy. |
+| `EMAIL-BR-01` | Weekly alerts run on a fixed weekly cadence — not configurable | Weekly cadence not configurable — scheduler policy. |
+| `EMAIL-BR-02` | No per-user opt-out in current scope | No per-user opt-out — policy. |
+| `EMAIL-BR-04` | Email logs retained for the duration of the active cycle | Log retention for active cycle — persistence policy. |
+<!-- END QUARANTINE -->
 
 ## Stack
 

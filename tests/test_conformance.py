@@ -305,3 +305,14 @@ def test_docs_state_canonical_rule_count():
             text = fh.read()
         assert "74 reglas" not in text and "78 reglas" not in text, f"{doc} stale rule count"
         assert n in text, f"{doc} missing canonical count {n}"
+
+
+def test_readme_quarantine_lists_every_excluded_rule():
+    """The README ⚠️ quarantine warning must list every excluded rule/capability."""
+    from great_sdd.conformance.exclusions import (
+        NON_DETERMINISTIC_RULES, NO_FUNCTION_SURFACE_RULES)
+    with open(os.path.join(os.path.dirname(__file__), "..", "README.md"),
+              encoding="utf-8") as fh:
+        readme = fh.read()
+    for key in list(NON_DETERMINISTIC_RULES) + list(NO_FUNCTION_SURFACE_RULES):
+        assert f"`{key}`" in readme, f"README quarantine section missing {key}"
