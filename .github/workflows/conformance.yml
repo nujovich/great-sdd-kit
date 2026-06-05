@@ -1,0 +1,24 @@
+name: conformance
+on:
+  push:
+    branches: [master]
+  pull_request: {}
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pytest
+
+      - name: Fixtures in sync with oracle
+        run: python -m great_sdd.conformance.generate --check
+
+      - name: Unit + conformance tests
+        run: python -m pytest tests/ -q
+
+      - name: Coverage gate
+        run: python -m great_sdd.conformance.coverage --from-fixtures --threshold 0.70
