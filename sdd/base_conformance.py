@@ -136,12 +136,18 @@ def compute_version_skew(consumer_version: str, oracle_version: str) -> dict:
 # ── Consumer runner ──
 
 def run_conformance(fixtures: list[dict], consumer_fn: Callable[[dict], dict]) -> dict:
-    """Run consumer_fn against each fixture; exact-match expected_output."""
+    """Run consumer_fn against each fixture; exact-match expected_output.
+
+    consumer_fn receives a request dict {"rule_ids": [...], "input": {...}} — the
+    rule_ids let it dispatch to the right rule implementation (a TS frontend
+    iterates fixtures knowing which rule it's checking). expected_output is never
+    passed, so the consumer cannot cheat.
+    """
     failures = []
     exercised: set[str] = set()
     for fx in fixtures:
         exercised.update(fx["rule_ids"])
-        actual = normalize_output(consumer_fn(fx["input"]))
+        actual = normalize_output(consumer_fn({"rule_ids": fx["rule_ids"], "input": fx["input"]}))
         if actual != fx["expected_output"]:
             failures.append({
                 "rule_ids": fx["rule_ids"],

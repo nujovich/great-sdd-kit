@@ -127,10 +127,10 @@ def test_run_conformance_exact_match_and_exercised_ids():
         {"rule_ids": ["R-1"], "input": {"v": 1}, "expected_output": {"r": 2}, "sdd_version": "1.0.0"},
         {"rule_ids": ["R-2"], "input": {"v": 5}, "expected_output": {"r": 6}, "sdd_version": "1.0.0"},
     ]
-    rep = run_conformance(fixtures, consumer_fn=lambda inp: {"r": inp["v"] + 1})
+    rep = run_conformance(fixtures, consumer_fn=lambda req: {"r": req["input"]["v"] + 1})
     assert rep["passed"] is True and rep["failed_count"] == 0
     assert sorted(rep["exercised_rule_ids"]) == ["R-1", "R-2"]
-    bad = run_conformance(fixtures, consumer_fn=lambda inp: {"r": 0})
+    bad = run_conformance(fixtures, consumer_fn=lambda req: {"r": 0})
     assert bad["passed"] is False and bad["failed_count"] == 2
     assert bad["failures"][0]["input"] == {"v": 1}
 
@@ -274,3 +274,20 @@ def test_coverage_cli_detects_version_skew(tmp_path):
     rep = tmp_path / "consumer.json"
     rep.write_text(json.dumps({"sdd_version": "0.0.1", "exercised_rule_ids": ["BR-02"]}))
     assert main(["--report", str(rep), "--threshold", "0.0"]) == 1   # skew -> nonzero
+
+
+# ═══════════════════════════════════════════════════════════
+# runner.py — consumer against fixtures
+# ═══════════════════════════════════════════════════════════
+
+def test_runner_against_oracle_consumer_is_all_green():
+    from great_sdd.conformance.runner import run_against_fixtures, oracle_consumer_fn
+    rep = run_against_fixtures(consumer_fn=oracle_consumer_fn)
+    assert rep["passed"] is True, rep["failures"][:2]
+    assert len(rep["exercised_rule_ids"]) >= 1
+
+
+def test_runner_reports_mismatch():
+    from great_sdd.conformance.runner import run_against_fixtures
+    rep = run_against_fixtures(consumer_fn=lambda inp: {"bogus": True})
+    assert rep["passed"] is False and rep["failed_count"] > 0
