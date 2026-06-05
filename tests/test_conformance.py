@@ -250,3 +250,27 @@ def test_covered_plus_excluded_partition_all_92():
 def test_committed_fixtures_are_in_sync():
     from great_sdd.conformance.generate import main
     assert main(["--check"]) == 0
+
+
+# ═══════════════════════════════════════════════════════════
+# coverage.py CLI
+# ═══════════════════════════════════════════════════════════
+
+def test_coverage_cli_from_fixtures_passes_at_zero_threshold(capsys):
+    from great_sdd.conformance.coverage import main
+    rc = main(["--from-fixtures", "--threshold", "0.0", "--json"])
+    assert rc == 0
+    out = json.loads(capsys.readouterr().out)
+    assert "coverage" in out and "version_skew" in out and out["coverage"]["passed"]
+
+
+def test_coverage_cli_fails_below_threshold():
+    from great_sdd.conformance.coverage import main
+    assert main(["--from-fixtures", "--threshold", "1.0"]) in (0, 1)
+
+
+def test_coverage_cli_detects_version_skew(tmp_path):
+    from great_sdd.conformance.coverage import main
+    rep = tmp_path / "consumer.json"
+    rep.write_text(json.dumps({"sdd_version": "0.0.1", "exercised_rule_ids": ["BR-02"]}))
+    assert main(["--report", str(rep), "--threshold", "0.0"]) == 1   # skew -> nonzero
