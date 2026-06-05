@@ -17,7 +17,7 @@
       "BR-17",
       "ERev-BR-03"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -37,7 +37,7 @@
       "BR-17",
       "ERev-BR-03"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -57,7 +57,7 @@
       "BR-17",
       "ERev-BR-03"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -77,7 +77,7 @@
       "BR-17",
       "ERev-BR-03"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -97,7 +97,7 @@
       "BR-17",
       "ERev-BR-03"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -117,7 +117,7 @@
       "BR-17",
       "ERev-BR-03"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -133,7 +133,7 @@
     "rule_ids": [
       "BR-03"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -149,7 +149,7 @@
     "rule_ids": [
       "BR-03"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -165,7 +165,7 @@
     "rule_ids": [
       "BR-03"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -185,7 +185,7 @@
       "BR-06",
       "BR-07"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -205,7 +205,7 @@
       "BR-06",
       "BR-07"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -225,7 +225,7 @@
       "BR-06",
       "BR-07"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -245,7 +245,7 @@
       "BR-06",
       "BR-07"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -342,7 +342,7 @@
     "rule_ids": [
       "BR-08"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -359,7 +359,7 @@
       "BR-11",
       "BR-12"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -376,7 +376,7 @@
       "BR-11",
       "BR-12"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -396,7 +396,7 @@
       "BR-11",
       "BR-12"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -450,7 +450,7 @@
     "rule_ids": [
       "BR-12"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -489,7 +489,7 @@
     "rule_ids": [
       "BR-12"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -503,7 +503,7 @@
     "rule_ids": [
       "BR-12"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -537,7 +537,7 @@
     "rule_ids": [
       "BR-13"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -551,7 +551,7 @@
     "rule_ids": [
       "BR-20"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -565,7 +565,7 @@
     "rule_ids": [
       "BR-20"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -579,7 +579,7 @@
     "rule_ids": [
       "BR-20"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -593,7 +593,7 @@
     "rule_ids": [
       "BR-20"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -607,6 +607,6 @@
     "rule_ids": [
       "BR-20"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   }
 ]

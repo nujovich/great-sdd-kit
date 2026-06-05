@@ -10,7 +10,8 @@ Usage:
 Updates:
     - great_sdd/__init__.__version__
     - pyproject.toml version
-    - git tag vX.Y.Z
+    - package.json version
+    - commits (incl. CHANGELOG.md if present) + git tag vX.Y.Z
 """
 import re
 import sys
@@ -21,6 +22,8 @@ REPO_ROOT = Path(__file__).parent.parent
 
 INIT_FILE = REPO_ROOT / "great_sdd" / "__init__.py"
 PYPROJECT_FILE = REPO_ROOT / "pyproject.toml"
+PACKAGE_FILE = REPO_ROOT / "package.json"
+CHANGELOG_FILE = REPO_ROOT / "CHANGELOG.md"
 
 
 def current_version() -> str:
@@ -65,8 +68,19 @@ def main():
     update_file(INIT_FILE, f'__version__ = "{old}"', f'__version__ = "{new}"')
     update_file(PYPROJECT_FILE, f'version = "{old}"', f'version = "{new}"')
 
-    # Stage + commit + tag
-    subprocess.run(["git", "add", str(INIT_FILE), str(PYPROJECT_FILE)], cwd=REPO_ROOT, check=True)
+    # Keep package.json in sync (JSON-safe edit).
+    import json
+    pkg = json.loads(PACKAGE_FILE.read_text())
+    pkg["version"] = new
+    PACKAGE_FILE.write_text(json.dumps(pkg, indent=2) + "\n")
+    print(f"  updated {PACKAGE_FILE}")
+
+    # Stage + commit + tag (include package.json + CHANGELOG so the version
+    # commit carries the changelog entry the developer prepared).
+    files = [str(INIT_FILE), str(PYPROJECT_FILE), str(PACKAGE_FILE)]
+    if CHANGELOG_FILE.exists():
+        files.append(str(CHANGELOG_FILE))
+    subprocess.run(["git", "add", *files], cwd=REPO_ROOT, check=True)
     subprocess.run(["git", "commit", "-m", f"chore: bump version {old} → {new}"], cwd=REPO_ROOT, check=True)
     subprocess.run(["git", "tag", f"v{new}"], cwd=REPO_ROOT, check=True)
 

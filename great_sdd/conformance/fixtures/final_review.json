@@ -15,7 +15,7 @@
     "rule_ids": [
       "FR-BR-03"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -29,7 +29,7 @@
     "rule_ids": [
       "FR-BR-04"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -43,7 +43,7 @@
     "rule_ids": [
       "FR-BR-04"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -57,7 +57,7 @@
     "rule_ids": [
       "FR-BR-04"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -71,7 +71,7 @@
     "rule_ids": [
       "FR-BR-04"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -95,7 +95,7 @@
       "FR-BR-07",
       "FR-BR-08"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -113,7 +113,7 @@
       "FR-BR-07",
       "FR-BR-08"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -137,7 +137,7 @@
       "FR-BR-07",
       "FR-BR-08"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   },
   {
     "expected_output": {
@@ -150,6 +150,6 @@
     "rule_ids": [
       "FR-BR-10"
     ],
-    "sdd_version": "1.1.0"
+    "sdd_version": "1.2.0"
   }
 ]
