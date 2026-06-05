@@ -1,6 +1,6 @@
 """GREAT SDD Kit — Specification-Driven Development for the GREAT System.
 
-78 business rules as executable specs, 257 tests, zero external dependencies.
+92 business rules as executable specs, 320 tests, deterministic conformance fixtures, zero external dependencies.
 
 Usage:
     pip install git+https://github.com/nujovich/great-dspy-pipeline.git
@@ -10,4 +10,4 @@ Usage:
     from great_sdd.specs.allocation_specs import calculate_fte_ke
 """
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"

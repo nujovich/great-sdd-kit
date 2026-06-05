@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "great-sdd-kit"
-version = "1.2.0"
-description = "Specification-Driven Development Kit for the GREAT System — 78 business rules as executable specs, 257 tests, zero LLM dependencies"
+version = "1.3.0"
+description = "Specification-Driven Development Kit for the GREAT System — 92 business rules as executable specs, 320 tests, deterministic conformance fixtures, zero LLM dependencies"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"

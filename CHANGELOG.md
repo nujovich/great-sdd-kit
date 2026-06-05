@@ -14,6 +14,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.0] — 2026-06-05
+
+### Added
+- **Conformance layer (4th layer)** — the SDD as a deterministic oracle.
+  - `sdd/base_conformance.py` (domain-agnostic engine): `Probe`, `TripwireLM`
+    determinism guard, `canonical_json`, `normalize_output`, `read_version`,
+    `generate_fixtures`, `compute_coverage`, `compute_version_skew`, `run_conformance`.
+  - `sdd/base_pipeline.py` — documented base-pipeline extension point.
+  - `great_sdd/conformance/`: `generate.py` (probes for 6 views), committed golden
+    `fixtures/*.json`, `rule_inventory.py`, `exclusions.py`, `coverage.py`,
+    `runner.py` + reference consumer, cross-language `README.md`.
+  - CI gate `.github/workflows/conformance.yml`: fixture-sync + pytest + coverage.
+  - Coverage: 55/55 deterministic-surface business rules (100% of coverable);
+    37 policy/UI/persistence rules and 3 LM-only capabilities documented as exclusions.
+
+### Changed
+- **`InductorSelector` refactored** from LM-driven to deterministic rule-based
+  selection (keyword/substring match + documented full-standard fallback).
+- Reconciled rule count to **92** (derived by `rule_inventory`) across
+  README/AGENTS/SDD-OVERVIEW; test count corrected to 320; fixed stale
+  `test_pre_estimation.py` reference (tests live in `test_pipeline.py`).
+- `scripts/bump_version.py` now syncs `package.json` and stages `CHANGELOG.md`.
+
+### Fixed
+- Version drift across `__init__`, `pyproject.toml`, `package.json`.
+- `node_modules/` was committed — now untracked and gitignored.
+
+---
+
 ## [1.2.0] — 2026-06-04
 
 ### Added
