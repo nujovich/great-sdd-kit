@@ -171,3 +171,35 @@ def test_inductor_selector_unknown_metier_returns_empty():
     out = InductorSelector(TripwireLM()).forward(
         line_description="x", metier="Nonexistent", available_inductors_json="[]")
     assert json.loads(out["inductor_selections_json"]) == []
+
+
+# ═══════════════════════════════════════════════════════════
+# rule_inventory — canonical 92
+# ═══════════════════════════════════════════════════════════
+
+def test_rule_inventory_canonical_counts():
+    from great_sdd.conformance.rule_inventory import (
+        business_rule_ids, pending_marker_ids, rule_count)
+    brs = business_rule_ids()
+    assert rule_count() == 92
+    assert len(brs) == 92
+    assert "BR-01" in brs and "ALLOC-BR-17" in brs and "EMAIL-BR-04" in brs
+    assert set(pending_marker_ids()) == {
+        "ALLOC-01", "ERev-01", "ERev-02", "ERev-03",
+        "FINAL-01", "MGMT-01", "TRANS-01", "TRANS-02", "TRANS-03"}
+    assert brs == sorted(set(brs))    # deduped + sorted
+
+
+# ═══════════════════════════════════════════════════════════
+# exclusions — documented buckets
+# ═══════════════════════════════════════════════════════════
+
+def test_exclusions_reference_real_or_capability_ids():
+    from great_sdd.conformance.exclusions import (
+        NON_DETERMINISTIC_RULES, NO_FUNCTION_SURFACE_RULES)
+    from great_sdd.conformance.rule_inventory import business_rule_ids
+    brs = set(business_rule_ids())
+    assert set(NO_FUNCTION_SURFACE_RULES).issubset(brs)
+    for d in (NON_DETERMINISTIC_RULES, NO_FUNCTION_SURFACE_RULES):
+        assert all(isinstance(v, str) and v for v in d.values())
+    assert not (set(NON_DETERMINISTIC_RULES) & set(NO_FUNCTION_SURFACE_RULES))
