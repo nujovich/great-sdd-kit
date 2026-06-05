@@ -1,0 +1,282 @@
+[
+  {
+    "expected_output": {
+      "cycles": [
+        {
+          "active": false,
+          "is_historical": true,
+          "name": "C1",
+          "start_date": "2026-01-01"
+        },
+        {
+          "active": true,
+          "is_historical": false,
+          "name": "C2",
+          "start_date": "2026-06-01"
+        }
+      ],
+      "deactivated_previous": true
+    },
+    "input": {
+      "name": "C2",
+      "role": "Admin",
+      "start_date": "2026-06-01"
+    },
+    "rule_ids": [
+      "CYCLE-BR-01",
+      "CYCLE-BR-04"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "error": "Inactive cycles cannot be reactivated (CYCLE-BR-02)",
+      "valid": false
+    },
+    "input": {
+      "cycle_name": "C0"
+    },
+    "rule_ids": [
+      "CYCLE-BR-02"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "message": "Cycle is already active",
+      "valid": true
+    },
+    "input": {
+      "cycle_name": "C1"
+    },
+    "rule_ids": [
+      "CYCLE-BR-02"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "error": "PMO cannot delete inductors (DEL-BR-01)",
+      "success": false
+    },
+    "input": {
+      "role": "PMO"
+    },
+    "rule_ids": [
+      "DEL-BR-01"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "inductors": [
+        {
+          "id": "i1",
+          "name": "A"
+        },
+        {
+          "id": "i2",
+          "name": "B"
+        }
+      ]
+    },
+    "input": {},
+    "rule_ids": [
+      "DEL-BR-02"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "error": "Cannot delete from the only active version (DEL-BR-05)",
+      "success": false
+    },
+    "input": {
+      "role": "Admin"
+    },
+    "rule_ids": [
+      "DEL-BR-05"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "deleted_count": 1,
+      "deleted_ids": [
+        "i1"
+      ],
+      "message": "Deleted 1 inductors from WL-0001 (DEL-BR-10)",
+      "remaining_count": 1,
+      "skipped_count": 0,
+      "success": true,
+      "version_id": "WL-0001"
+    },
+    "input": {
+      "role": "Admin"
+    },
+    "rule_ids": [
+      "DEL-BR-07",
+      "DEL-BR-10"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "error": "No inductors selected (DEL-BR-09)",
+      "success": false
+    },
+    "input": {
+      "role": "Admin"
+    },
+    "rule_ids": [
+      "DEL-BR-09"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "log_count": 2,
+      "recipients": [
+        "a@x.com",
+        "b@x.com"
+      ],
+      "subject": "[GREAT] Weekly Allocation Overview — C1"
+    },
+    "input": {
+      "cycle": "C1",
+      "emails": [
+        "a@x.com",
+        "b@x.com"
+      ],
+      "metrics": {
+        "assigned_jus": 7,
+        "split_rows": 1,
+        "total_jus": 10,
+        "unassigned_jus": 3
+      }
+    },
+    "rule_ids": [
+      "EMAIL-BR-03"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "filtered": [
+        {
+          "metier": "Backend",
+          "name": "b"
+        },
+        {
+          "metier": "Backend",
+          "name": "a"
+        }
+      ],
+      "sorted": [
+        {
+          "metier": "Frontend",
+          "name": "a"
+        },
+        {
+          "metier": "Backend",
+          "name": "a"
+        },
+        {
+          "metier": "Backend",
+          "name": "b"
+        }
+      ]
+    },
+    "input": {},
+    "rule_ids": [
+      "TABLE-BR-01"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "column_widths": {},
+      "filters": {
+        "metier": "Backend"
+      },
+      "page": "p",
+      "sort_column": "",
+      "sort_direction": "asc"
+    },
+    "input": {},
+    "rule_ids": [
+      "TABLE-BR-02"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "column_widths": {},
+      "filters": {},
+      "page": "p",
+      "sort_column": "",
+      "sort_direction": "asc"
+    },
+    "input": {},
+    "rule_ids": [
+      "TABLE-BR-03"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "error": "Unknown role: Bogus",
+      "success": false
+    },
+    "input": {
+      "filename": "wl.xlsx",
+      "role": "Bogus",
+      "user": "u"
+    },
+    "rule_ids": [
+      "WL-BR-01"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "error": "Engineer cannot upload workload standards",
+      "success": false
+    },
+    "input": {
+      "filename": "wl.xlsx",
+      "role": "Engineer",
+      "user": "u"
+    },
+    "rule_ids": [
+      "WL-BR-01"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "errors": [
+        "Only .xlsx files accepted (WL-BR-02)"
+      ]
+    },
+    "input": {
+      "filename": "data.csv"
+    },
+    "rule_ids": [
+      "WL-BR-02"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "errors": []
+    },
+    "input": {
+      "filename": "data.xlsx"
+    },
+    "rule_ids": [
+      "WL-BR-02"
+    ],
+    "sdd_version": "1.1.0"
+  }
+]

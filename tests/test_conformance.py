@@ -203,3 +203,50 @@ def test_exclusions_reference_real_or_capability_ids():
     for d in (NON_DETERMINISTIC_RULES, NO_FUNCTION_SURFACE_RULES):
         assert all(isinstance(v, str) and v for v in d.values())
     assert not (set(NON_DETERMINISTIC_RULES) & set(NO_FUNCTION_SURFACE_RULES))
+
+
+# ═══════════════════════════════════════════════════════════
+# generate.py — probes + fixtures
+# ═══════════════════════════════════════════════════════════
+
+def test_build_probes_cover_expected_views():
+    from great_sdd.conformance.generate import build_probes
+    views = build_probes()
+    assert set(views) == {"pre_estimation", "estimation_review", "allocation",
+                          "final_review", "management_view", "transversal"}
+    assert all(len(v) >= 1 for v in views.values())
+
+
+def test_all_probes_run_without_lm_and_are_deterministic():
+    from great_sdd.conformance.generate import build_probes
+    from sdd.base_conformance import generate_fixtures
+    for view, probes in build_probes().items():
+        e1 = generate_fixtures(probes, "1.0.0")     # raises if any path hits the LM
+        e2 = generate_fixtures(probes, "1.0.0")
+        assert e1 == e2, f"{view} not deterministic"
+
+
+def test_covered_rule_ids_are_real_business_rules():
+    from great_sdd.conformance.generate import covered_rule_ids
+    from great_sdd.conformance.rule_inventory import business_rule_ids
+    assert set(covered_rule_ids()).issubset(set(business_rule_ids()))
+
+
+def test_no_rule_is_both_covered_and_excluded():
+    from great_sdd.conformance.generate import covered_rule_ids
+    from great_sdd.conformance.exclusions import NO_FUNCTION_SURFACE_RULES
+    assert not (set(covered_rule_ids()) & set(NO_FUNCTION_SURFACE_RULES))
+
+
+def test_covered_plus_excluded_partition_all_92():
+    from great_sdd.conformance.generate import covered_rule_ids
+    from great_sdd.conformance.exclusions import NO_FUNCTION_SURFACE_RULES
+    from great_sdd.conformance.rule_inventory import business_rule_ids
+    covered = set(covered_rule_ids())
+    excluded = set(NO_FUNCTION_SURFACE_RULES)
+    assert covered | excluded == set(business_rule_ids())   # nothing unaccounted for
+
+
+def test_committed_fixtures_are_in_sync():
+    from great_sdd.conformance.generate import main
+    assert main(["--check"]) == 0

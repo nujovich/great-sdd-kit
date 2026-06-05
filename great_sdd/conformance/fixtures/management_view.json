@@ -1,0 +1,176 @@
+[
+  {
+    "expected_output": {
+      "allowed": true,
+      "reason": "Admin can access Management View"
+    },
+    "input": {
+      "role": "Admin"
+    },
+    "rule_ids": [
+      "MGMT-BR-01"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "allowed": false,
+      "reason": "CPO has no access to Management View"
+    },
+    "input": {
+      "role": "CPO"
+    },
+    "rule_ids": [
+      "MGMT-BR-01"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "allowed": false,
+      "reason": "Engineer has no access to Management View"
+    },
+    "input": {
+      "role": "Engineer"
+    },
+    "rule_ids": [
+      "MGMT-BR-01"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "allowed": true,
+      "reason": "PMO can access Management View"
+    },
+    "input": {
+      "role": "PMO"
+    },
+    "rule_ids": [
+      "MGMT-BR-01"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "allowed": false,
+      "reason": "RCRC has no access to Management View"
+    },
+    "input": {
+      "role": "RCRC"
+    },
+    "rule_ids": [
+      "MGMT-BR-01"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "metier_filter": "All",
+      "slices": [
+        {
+          "count": 2,
+          "percentage": 33.3,
+          "status": "to_do"
+        },
+        {
+          "count": 0,
+          "percentage": 0.0,
+          "status": "draft"
+        },
+        {
+          "count": 1,
+          "percentage": 16.7,
+          "status": "estimated"
+        },
+        {
+          "count": 0,
+          "percentage": 0.0,
+          "status": "sent"
+        },
+        {
+          "count": 0,
+          "percentage": 0.0,
+          "status": "rejected"
+        },
+        {
+          "count": 3,
+          "percentage": 50.0,
+          "status": "approved"
+        }
+      ],
+      "total": 6
+    },
+    "input": {
+      "pairs_by_status": {
+        "approved": 3,
+        "estimated": 1,
+        "to_do": 2
+      }
+    },
+    "rule_ids": [
+      "MGMT-BR-02"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "counts": {
+        "approved": 2,
+        "draft": 1,
+        "estimated": 0,
+        "rejected": 0,
+        "sent": 0,
+        "to_do": 0
+      }
+    },
+    "input": {
+      "pairs": [
+        {
+          "status": "approved"
+        },
+        {
+          "status": "approved"
+        },
+        {
+          "status": "draft"
+        }
+      ]
+    },
+    "rule_ids": [
+      "MGMT-BR-03"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "filtered": [
+        {
+          "metier": "Backend",
+          "status": "approved"
+        }
+      ]
+    },
+    "input": {
+      "metier": "All",
+      "pairs": [
+        {
+          "metier": "Backend",
+          "status": "approved"
+        },
+        {
+          "metier": "H-NP",
+          "status": "approved"
+        },
+        {
+          "metier": "H-PROJECT",
+          "status": "draft"
+        }
+      ]
+    },
+    "rule_ids": [
+      "MGMT-BR-04"
+    ],
+    "sdd_version": "1.1.0"
+  }
+]

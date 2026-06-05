@@ -1,0 +1,222 @@
+[
+  {
+    "expected_output": {
+      "cpo_approval": "✓ Approved",
+      "engineer_approval": "✓"
+    },
+    "input": {
+      "status": "approved"
+    },
+    "rule_ids": [
+      "BR-05",
+      "ERev-BR-08"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "cpo_approval": "—",
+      "engineer_approval": "—"
+    },
+    "input": {
+      "status": "draft"
+    },
+    "rule_ids": [
+      "BR-05",
+      "ERev-BR-08"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "cpo_approval": "— (not yet sent)",
+      "engineer_approval": "✓"
+    },
+    "input": {
+      "status": "estimated"
+    },
+    "rule_ids": [
+      "BR-05",
+      "ERev-BR-08"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "cpo_approval": "✗ Rejected",
+      "engineer_approval": "—"
+    },
+    "input": {
+      "status": "rejected"
+    },
+    "rule_ids": [
+      "BR-05",
+      "ERev-BR-08"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "cpo_approval": "⏳ Pending",
+      "engineer_approval": "✓"
+    },
+    "input": {
+      "status": "sent"
+    },
+    "rule_ids": [
+      "BR-05",
+      "ERev-BR-08"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "cpo_approval": "—",
+      "engineer_approval": "—"
+    },
+    "input": {
+      "status": "to_do"
+    },
+    "rule_ids": [
+      "BR-05",
+      "ERev-BR-08"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "error_message": "",
+      "notify_engineer": true,
+      "target_status": "rejected",
+      "transition_valid": true
+    },
+    "input": {
+      "approved": false,
+      "comment": "redo",
+      "metier": "Backend",
+      "project_line": "PL1"
+    },
+    "rule_ids": [
+      "ERev-BR-02",
+      "ERev-BR-10"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "error_message": "",
+      "notify_engineer": false,
+      "target_status": "approved",
+      "transition_valid": true
+    },
+    "input": {
+      "approved": true,
+      "comment": "",
+      "metier": "Backend",
+      "project_line": "PL1"
+    },
+    "rule_ids": [
+      "ERev-BR-02",
+      "ERev-BR-10"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "allowed": true,
+      "reason": "RCRC is authorized to export_csv in Estimation Review"
+    },
+    "input": {
+      "action": "export_csv",
+      "role": "RCRC"
+    },
+    "rule_ids": [
+      "ERev-BR-04"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "allowed": false,
+      "reason": "Only PMO/Admin can send to HVT. Engineer cannot."
+    },
+    "input": {
+      "action": "send_to_hvt",
+      "role": "Engineer"
+    },
+    "rule_ids": [
+      "ERev-BR-04"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "allowed": true,
+      "reason": "PMO is authorized to send_to_hvt in Estimation Review"
+    },
+    "input": {
+      "action": "send_to_hvt",
+      "role": "PMO"
+    },
+    "rule_ids": [
+      "ERev-BR-04"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "eligible": false,
+      "reason": "Only PMO/Admin can send to HVT. Engineer cannot."
+    },
+    "input": {
+      "role": "Engineer",
+      "status": "estimated"
+    },
+    "rule_ids": [
+      "ERev-BR-04"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "eligible": false,
+      "reason": "Only Estimated rows are eligible. Current status: approved"
+    },
+    "input": {
+      "role": "PMO",
+      "status": "approved"
+    },
+    "rule_ids": [
+      "ERev-BR-04"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "eligible": false,
+      "reason": "Only Estimated rows are eligible. Current status: draft"
+    },
+    "input": {
+      "role": "PMO",
+      "status": "draft"
+    },
+    "rule_ids": [
+      "ERev-BR-04"
+    ],
+    "sdd_version": "1.1.0"
+  },
+  {
+    "expected_output": {
+      "eligible": true,
+      "reason": ""
+    },
+    "input": {
+      "role": "PMO",
+      "status": "estimated"
+    },
+    "rule_ids": [
+      "ERev-BR-04"
+    ],
+    "sdd_version": "1.1.0"
+  }
+]
