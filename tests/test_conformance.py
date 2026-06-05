@@ -133,3 +133,41 @@ def test_run_conformance_exact_match_and_exercised_ids():
     bad = run_conformance(fixtures, consumer_fn=lambda inp: {"r": 0})
     assert bad["passed"] is False and bad["failed_count"] == 2
     assert bad["failures"][0]["input"] == {"v": 1}
+
+
+# ═══════════════════════════════════════════════════════════
+# InductorSelector — deterministic, LM-free refactor
+# ═══════════════════════════════════════════════════════════
+
+def test_inductor_selector_is_deterministic_and_lm_free():
+    from sdd.base_conformance import TripwireLM
+    from great_sdd.modules.pre_estimation import InductorSelector
+    sel = InductorSelector(TripwireLM())            # tripwire: must NOT call LM
+    out1 = sel.forward(line_description="Build a complex REST API endpoint",
+                       metier="Backend", available_inductors_json="[]")
+    out2 = sel.forward(line_description="Build a complex REST API endpoint",
+                       metier="Backend", available_inductors_json="[]")
+    assert out1 == out2                              # deterministic
+    sels = json.loads(out1["inductor_selections_json"])
+    assert isinstance(sels, list) and len(sels) >= 1
+    api = [s for s in sels if s["name"] == "API endpoints"]
+    assert api and api[0]["selected_cran"] == "Complex"   # "complex" keyword -> Complex cran
+    assert all("job_units" in s for s in sels)
+
+
+def test_inductor_selector_empty_description_falls_back_to_all():
+    from sdd.base_conformance import TripwireLM
+    from great_sdd.modules.pre_estimation import InductorSelector
+    out = InductorSelector(TripwireLM()).forward(
+        line_description="", metier="Backend", available_inductors_json="[]")
+    sels = json.loads(out["inductor_selections_json"])
+    assert len(sels) == 3                            # all Backend inductors, canonical crans
+    assert all(s["selected_cran"] for s in sels)
+
+
+def test_inductor_selector_unknown_metier_returns_empty():
+    from sdd.base_conformance import TripwireLM
+    from great_sdd.modules.pre_estimation import InductorSelector
+    out = InductorSelector(TripwireLM()).forward(
+        line_description="x", metier="Nonexistent", available_inductors_json="[]")
+    assert json.loads(out["inductor_selections_json"]) == []
