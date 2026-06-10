@@ -356,3 +356,59 @@ def test_run_endpoint_conformance_exact_match_and_never_passes_expected():
 
     bad = run_endpoint_conformance(fx, lambda req: {"status": 500, "body": None})
     assert not bad["passed"] and bad["failures"][0]["actual"]["status"] == 500
+
+
+# ═══════════════════════════════════════════════════════════
+# endpoint conformance — GET /project-lines oracle
+# ═══════════════════════════════════════════════════════════
+def test_project_lines_engineer_is_scoped_to_own_lines():
+    from great_sdd.conformance.endpoints.project_lines import list_project_lines
+    out = list_project_lines({"role": "Engineer", "user_oid": "oid-engineer-1",
+                              "query": {}, "active_cycle": True})
+    assert out["status"] == 200
+    pls = [r["pl_number"] for r in out["body"]["data"]]
+    assert pls == ["PL-001", "PL-003"]                       # only engineer-1's lines, sorted
+    assert out["body"]["filterOptions"]["assignees"] == ["oid-engineer-1"]
+    assert out["body"]["filterOptions"]["metiers"] == ["H-NP", "H-SOFTWARE"]
+
+
+def test_project_lines_engineer_ignores_assignee_query():
+    from great_sdd.conformance.endpoints.project_lines import list_project_lines
+    out = list_project_lines({"role": "Engineer", "user_oid": "oid-engineer-1",
+                              "query": {"assignee": "oid-engineer-2"}, "active_cycle": True})
+    assert [r["pl_number"] for r in out["body"]["data"]] == ["PL-001", "PL-003"]
+
+
+def test_project_lines_pmo_sees_all_and_can_filter_metier():
+    from great_sdd.conformance.endpoints.project_lines import list_project_lines
+    all_out = list_project_lines({"role": "PMO", "user_oid": "oid-pmo",
+                                  "query": {}, "active_cycle": True})
+    assert [r["pl_number"] for r in all_out["body"]["data"]] == ["PL-001", "PL-002", "PL-003", "PL-004"]
+    assert all_out["body"]["filterOptions"]["metiers"] == ["H-DESIGN", "H-NP", "H-PROJECT", "H-SOFTWARE"]
+
+    filtered = list_project_lines({"role": "PMO", "user_oid": "oid-pmo",
+                                   "query": {"metier": "H-DESIGN"}, "active_cycle": True})
+    assert [r["pl_number"] for r in filtered["body"]["data"]] == ["PL-002"]
+    # filterOptions ignore active filters -> still the full set
+    assert filtered["body"]["filterOptions"]["metiers"] == ["H-DESIGN", "H-NP", "H-PROJECT", "H-SOFTWARE"]
+
+
+def test_project_lines_status_codes():
+    from great_sdd.conformance.endpoints.project_lines import list_project_lines
+    assert list_project_lines({"role": "CPO", "active_cycle": True})["status"] == 403
+    assert list_project_lines({"role": "PMO", "active_cycle": False})["status"] == 404
+    assert list_project_lines({"role": None, "active_cycle": True})["status"] == 401
+    assert list_project_lines({"role": "CPO", "active_cycle": True})["body"] is None
+
+
+def test_project_lines_rows_have_24_contract_fields_and_no_h_testing():
+    from great_sdd.conformance.endpoints.project_lines import (
+        list_project_lines, PROJECT_LINE_FIELDS)
+    out = list_project_lines({"role": "PMO", "user_oid": "oid-pmo",
+                              "query": {}, "active_cycle": True})
+    assert len(PROJECT_LINE_FIELDS) == 24
+    for row in out["body"]["data"]:
+        assert set(row) == set(PROJECT_LINE_FIELDS)
+        assert row["metier"] != "H-TESTING"
+        assert row["total_days"] is None and row["total_keuro"] is None
+    assert "H-TESTING" not in out["body"]["filterOptions"]["metiers"]
