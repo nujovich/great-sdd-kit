@@ -100,13 +100,13 @@ def demo_state_machine():
     validator = StatusTransitionValidator()
 
     transitions = [
-        ("to_do",      "draft",     False, "✅ To do → Draft (no session)"),
-        ("to_do",      "estimated", False, "❌ To do → Estimated (no draft gate)"),
-        ("draft",      "estimated", True,  "✅ Draft → Estimated (with draft gate)"),
-        ("estimated",  "sent",      False, "✅ Estimated → Sent"),
-        ("sent",       "approved",  False, "✅ Sent → Approved"),
-        ("approved",   "draft",     False, "❌ Approved → Draft (terminal)"),
-        ("modification_requested",   "draft",     False, "✅ Modification Requested → Draft (rework)"),
+        ("to_do",                 "draft",     False, "✅ To do → Draft (no session)"),
+        ("to_do",                 "estimated", False, "❌ To do → Estimated (no draft gate)"),
+        ("draft",                 "estimated", True,  "✅ Draft → Estimated (with draft gate)"),
+        ("estimated",             "sent",      False, "✅ Estimated → Sent"),
+        ("sent",                  "approved",  False, "✅ Sent → Approved"),
+        ("approved",              "draft",     False, "❌ Approved → Draft (terminal)"),
+        ("modification_requested","draft",     False, "✅ Modification Requested → Draft (rework)"),
     ]
 
     for current, target, has_draft, label in transitions:

@@ -29,12 +29,12 @@ class LineStatus(Enum):
 
 # Allowed transitions: (from_status) → [to_statuses]
 STATUS_TRANSITIONS: dict[LineStatus, list[LineStatus]] = {
-    LineStatus.TODO:      [LineStatus.DRAFT],
-    LineStatus.DRAFT:     [LineStatus.DRAFT, LineStatus.ESTIMATED],
-    LineStatus.ESTIMATED: [LineStatus.SENT, LineStatus.MODIFICATION_REQUESTED],
-    LineStatus.SENT:      [LineStatus.APPROVED, LineStatus.MODIFICATION_REQUESTED],
-    LineStatus.MODIFICATION_REQUESTED:  [LineStatus.DRAFT, LineStatus.ESTIMATED],
-    LineStatus.APPROVED:  [],  # Terminal state — no exits
+    LineStatus.TODO:                   [LineStatus.DRAFT],
+    LineStatus.DRAFT:                  [LineStatus.DRAFT, LineStatus.ESTIMATED],
+    LineStatus.ESTIMATED:              [LineStatus.SENT, LineStatus.MODIFICATION_REQUESTED],
+    LineStatus.SENT:                   [LineStatus.APPROVED, LineStatus.MODIFICATION_REQUESTED],
+    LineStatus.MODIFICATION_REQUESTED: [LineStatus.DRAFT, LineStatus.ESTIMATED],
+    LineStatus.APPROVED:               [],  # Terminal state — no exits
 }
 
 # Status semantic groups

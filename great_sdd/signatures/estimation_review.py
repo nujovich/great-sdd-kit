@@ -53,7 +53,7 @@ CHECK_SEND_ELIGIBILITY = Signature(
 PROCESS_HVT_CALLBACK_SIG = Signature(
     name="ProcessHVTCallback",
     description="Process an HVT callback for CPO approval or rejection. "
-                "Approved → Sent→Approved. Rejected → Sent→Rejected with comment.",
+                "Approved → Sent→Approved. Rejected → Sent→Modification Requested with comment.",
     inputs=[
         Field("project_line", "PL Number"),
         Field("metier", "Métier of the estimation"),

@@ -67,21 +67,21 @@ SEND_SCOPE = "current_filtered_view"  # §6.2 — operates on current filtered v
 # ──────────────────────────────────────────────
 
 ENGINEER_APPROVAL_MAP: dict[LineStatus, str] = {
-    LineStatus.TODO:      "—",
-    LineStatus.DRAFT:     "—",
-    LineStatus.ESTIMATED: "✓",
-    LineStatus.SENT:      "✓",
-    LineStatus.APPROVED:  "✓",
-    LineStatus.MODIFICATION_REQUESTED:  "—",
+    LineStatus.TODO:                   "—",
+    LineStatus.DRAFT:                  "—",
+    LineStatus.ESTIMATED:              "✓",
+    LineStatus.SENT:                   "✓",
+    LineStatus.APPROVED:               "✓",
+    LineStatus.MODIFICATION_REQUESTED: "—",
 }
 
 CPO_APPROVAL_MAP: dict[LineStatus, str] = {
-    LineStatus.TODO:      "—",
-    LineStatus.DRAFT:     "—",
-    LineStatus.ESTIMATED: "— (not yet sent)",
-    LineStatus.SENT:      "⏳ Pending",
-    LineStatus.APPROVED:  "✓ Approved",
-    LineStatus.MODIFICATION_REQUESTED:  "✗ Rejected",
+    LineStatus.TODO:                   "—",
+    LineStatus.DRAFT:                  "—",
+    LineStatus.ESTIMATED:              "— (not yet sent)",
+    LineStatus.SENT:                   "⏳ Pending",
+    LineStatus.APPROVED:               "✓ Approved",
+    LineStatus.MODIFICATION_REQUESTED: "✗ Rejected",
 }
 
 

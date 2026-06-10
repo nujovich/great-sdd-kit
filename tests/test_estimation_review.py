@@ -145,7 +145,7 @@ class TestHVTCallbackProcessing:
         assert result["notify_engineer"] is False
 
     def test_rejection_transitions_to_modification_requested(self):
-        """Rejected callback → target_status=modification_requested + comment + notify."""
+        """Rejected callback → target_status=Modification Requested + comment + notify."""
         result = process_hvt_callback(
             HVTCallback("PL-001", "Backend", False, "Insufficient detail")
         )
