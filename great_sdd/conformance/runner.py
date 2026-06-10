@@ -71,9 +71,14 @@ def oracle_endpoint_consumer_fn(req: dict) -> dict:
     """Reference endpoint consumer: re-run the oracle.
 
     req = {"endpoint", "request", "seed"} — dispatches on endpoint. A real backend
-    would instead seed its store from req["seed"] and call its own handler.
+    would instead seed its store from req["seed"] and call its own handler; this
+    reference consumer ignores req["seed"] and re-runs the oracle over its own
+    module-level SEED (the same data the fixture was generated from).
     """
-    return _ENDPOINT_ORACLES[req["endpoint"]](req["request"])
+    fn = _ENDPOINT_ORACLES.get(req["endpoint"])
+    if fn is None:
+        raise ValueError(f"oracle_endpoint_consumer_fn: unknown endpoint {req['endpoint']!r}")
+    return fn(req["request"])
 
 
 def load_endpoint_fixtures(endpoints_dir: Path = ENDPOINTS_DIR) -> list:
