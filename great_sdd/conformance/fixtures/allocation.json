@@ -1,0 +1,235 @@
+[
+  {
+    "expected_output": {
+      "approved_jus_json": [
+        {
+          "ju_code": "a",
+          "status": "approved"
+        },
+        {
+          "ju_code": "c",
+          "status": "approved"
+        }
+      ],
+      "excluded_count": "1"
+    },
+    "input": {
+      "job_units_json": "[{\"ju_code\": \"a\", \"status\": \"approved\"}, {\"ju_code\": \"b\", \"status\": \"estimated\"}, {\"ju_code\": \"c\", \"status\": \"approved\"}]"
+    },
+    "rule_ids": [
+      "ALLOC-BR-01"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "assigned_jus_json": [
+        {
+          "_rule_matched": "R1",
+          "cost_type": "FTE",
+          "ju_code": "a",
+          "metier": "H-DESIGN",
+          "societe": "Horse Spain S.L."
+        },
+        {
+          "ju_code": "b",
+          "metier": "H-DESIGN",
+          "societe": "Already S.L."
+        }
+      ],
+      "unassigned_count": "0"
+    },
+    "input": {
+      "job_units_json": "[{\"ju_code\": \"a\", \"metier\": \"H-DESIGN\"}, {\"ju_code\": \"b\", \"metier\": \"H-DESIGN\", \"societe\": \"Already S.L.\"}]",
+      "rules_json": "[{\"id\": \"R1\", \"fields\": {\"metier\": \"H-DESIGN\"}, \"societe\": \"Horse Spain S.L.\", \"cost_type\": \"FTE\"}]"
+    },
+    "rule_ids": [
+      "ALLOC-BR-02"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "calculated_jus_json": [
+        {
+          "cost_type": "FTE",
+          "fte_yearly": {
+            "2026": 1.0,
+            "2027": 2.0
+          },
+          "ju_code": "a",
+          "ke_yearly": {
+            "2026": 103.0,
+            "2027": 202.0
+          },
+          "societe": "Horse Spain S.L.-Valladolid",
+          "total_ke": 305.0
+        }
+      ]
+    },
+    "input": {
+      "job_units_json": "[{\"ju_code\": \"a\", \"cost_type\": \"FTE\", \"societe\": \"Horse Spain S.L.-Valladolid\", \"fte_yearly\": {\"2026\": 1.0, \"2027\": 2.0}}]"
+    },
+    "rule_ids": [
+      "ALLOC-BR-04"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "can_save": false,
+      "errors_json": [
+        "TSA row tsa1: societe is mandatory",
+        "TC row tc1: societe is mandatory"
+      ],
+      "warnings_json": [
+        "FTE row fte1: no societe assigned (non-blocking)"
+      ]
+    },
+    "input": {
+      "job_units_json": "[{\"ju_code\": \"tsa1\", \"cost_type\": \"TSA\", \"societe\": \"\"}, {\"ju_code\": \"tc1\", \"cost_type\": \"TC\", \"societe\": \"\"}, {\"ju_code\": \"fte1\", \"cost_type\": \"FTE\", \"societe\": \"\"}, {\"ju_code\": \"ok1\", \"cost_type\": \"FTE\", \"societe\": \"Horse Spain S.L.-Valladolid\"}]"
+    },
+    "rule_ids": [
+      "ALLOC-BR-06",
+      "ALLOC-BR-07",
+      "ALLOC-BR-13"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "flagged_jus_json": [
+        {
+          "ju_code": "a",
+          "metier": "H-DESIGN"
+        }
+      ],
+      "unresolved_count": "0"
+    },
+    "input": {
+      "job_units_json": "[{\"ju_code\": \"a\", \"metier\": \"H-DESIGN\"}]"
+    },
+    "rule_ids": [
+      "ALLOC-BR-08"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "assigned_count": "2",
+      "updated_rows_json": [
+        {
+          "_bulk_assigned": true,
+          "_dirty": true,
+          "cost_type": "FTE",
+          "ju_code": "a",
+          "societe": "Horse Spain S.L."
+        },
+        {
+          "_bulk_assigned": true,
+          "_dirty": true,
+          "cost_type": "TSA",
+          "ju_code": "b",
+          "societe": "Horse Spain S.L."
+        }
+      ]
+    },
+    "input": {
+      "rows_json": "[{\"ju_code\": \"a\", \"societe\": \"Old S.L.\", \"cost_type\": \"FTE\"}, {\"ju_code\": \"b\", \"cost_type\": \"TSA\"}]",
+      "societe": "Horse Spain S.L."
+    },
+    "rule_ids": [
+      "ALLOC-BR-09",
+      "ALLOC-BR-10"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "child_jus_json": [],
+      "error": "Split percentages must sum to 100%. Got: 90%"
+    },
+    "input": {
+      "ju_json": "{\"ju_id\": \"j1\", \"fte_yearly\": {\"2026\": 1.0}}",
+      "splits_json": "[{\"societe\": \"A\", \"percentage\": 60}, {\"societe\": \"B\", \"percentage\": 30}]"
+    },
+    "rule_ids": [
+      "ALLOC-BR-11"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "child_jus_json": [
+        {
+          "_is_split_child": true,
+          "_parent_ju_id": "j1",
+          "fte_yearly": {
+            "2026": 0.6
+          },
+          "ju_id": "j1",
+          "societe": "A",
+          "split_pct": 60
+        },
+        {
+          "_is_split_child": true,
+          "_parent_ju_id": "j1",
+          "fte_yearly": {
+            "2026": 0.4
+          },
+          "ju_id": "j1",
+          "societe": "B",
+          "split_pct": 40
+        }
+      ],
+      "error": ""
+    },
+    "input": {
+      "ju_json": "{\"ju_id\": \"j1\", \"fte_yearly\": {\"2026\": 1.0}}",
+      "splits_json": "[{\"societe\": \"A\", \"percentage\": 60}, {\"societe\": \"B\", \"percentage\": 40}]"
+    },
+    "rule_ids": [
+      "ALLOC-BR-11"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "resolved_metier": "H-TESTING"
+    },
+    "input": {
+      "project_line_metier": "H-DESIGN",
+      "unit_type": "Bench Hours"
+    },
+    "rule_ids": [
+      "ALLOC-BR-17"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "resolved_metier": "H-DESIGN"
+    },
+    "input": {
+      "project_line_metier": "H-DESIGN",
+      "unit_type": "Man Day"
+    },
+    "rule_ids": [
+      "ALLOC-BR-17"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "resolved_metier": "H-TESTING"
+    },
+    "input": {
+      "project_line_metier": "H-SOFTWARE",
+      "unit_type": "Kilometres"
+    },
+    "rule_ids": [
+      "ALLOC-BR-17"
+    ],
+    "sdd_version": "2.0.0"
+  }
+]

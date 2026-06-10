@@ -7,6 +7,7 @@ HERE with a written reason. Two buckets:
   NO_FUNCTION_SURFACE_RULES — deterministic business rules with no pure-function
                               to execute (policy / UI / data-lifecycle).
 """
+from __future__ import annotations
 
 # Capabilities whose ONLY output is LM-generated (no deterministic contract).
 # Keyed by capability tag (signature[:aspect]), not always a business-rule id.

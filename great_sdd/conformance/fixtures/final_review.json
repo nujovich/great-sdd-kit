@@ -1,0 +1,155 @@
+[
+  {
+    "expected_output": {
+      "approved_jus_json": [
+        {
+          "ju_code": "a",
+          "status": "approved"
+        }
+      ],
+      "excluded_count": "1"
+    },
+    "input": {
+      "job_units_json": "[{\"ju_code\": \"a\", \"status\": \"approved\"}, {\"ju_code\": \"b\", \"status\": \"sent\"}]"
+    },
+    "rule_ids": [
+      "FR-BR-03"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "allowed": false,
+      "reason": "Only PMO/Admin can send Stage 3"
+    },
+    "input": {
+      "action": "send_stage3",
+      "role": "Engineer"
+    },
+    "rule_ids": [
+      "FR-BR-04"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "allowed": true,
+      "reason": "PMO authorized for send_stage3"
+    },
+    "input": {
+      "action": "send_stage3",
+      "role": "PMO"
+    },
+    "rule_ids": [
+      "FR-BR-04"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "allowed": true,
+      "reason": "Engineer authorized for view"
+    },
+    "input": {
+      "action": "view",
+      "role": "Engineer"
+    },
+    "rule_ids": [
+      "FR-BR-04"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "allowed": true,
+      "reason": "RCRC authorized for view"
+    },
+    "input": {
+      "action": "view",
+      "role": "RCRC"
+    },
+    "rule_ids": [
+      "FR-BR-04"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "needs_confirmation": false,
+      "payload_json": {
+        "cycle": "",
+        "incomplete_count": 0,
+        "project_lines": [],
+        "total_fte": 2.0,
+        "total_ke": 200.0
+      },
+      "success": true,
+      "warning": ""
+    },
+    "input": {
+      "confirmed": false,
+      "job_units_json": "[{\"pl_number\": \"PL1\", \"societe\": \"Horse Spain S.L.\", \"total_fte\": 2.0, \"total_ke\": 200.0}]"
+    },
+    "rule_ids": [
+      "FR-BR-06",
+      "FR-BR-07",
+      "FR-BR-08"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "needs_confirmation": true,
+      "payload_json": {},
+      "success": false,
+      "warning": "1 job units across 1 project lines have no societe assigned. Their K€ will be zero in the transmission."
+    },
+    "input": {
+      "confirmed": false,
+      "job_units_json": "[{\"pl_number\": \"PL1\", \"societe\": \"\", \"total_fte\": 1.0, \"total_ke\": 0.0}]"
+    },
+    "rule_ids": [
+      "FR-BR-06",
+      "FR-BR-07",
+      "FR-BR-08"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "needs_confirmation": false,
+      "payload_json": {
+        "cycle": "",
+        "incomplete_count": 1,
+        "project_lines": [],
+        "total_fte": 1.0,
+        "total_ke": 0.0
+      },
+      "success": true,
+      "warning": "1 job units across 1 project lines have no societe assigned. Their K€ will be zero in the transmission."
+    },
+    "input": {
+      "confirmed": true,
+      "job_units_json": "[{\"pl_number\": \"PL1\", \"societe\": \"\", \"total_fte\": 1.0, \"total_ke\": 0.0}]"
+    },
+    "rule_ids": [
+      "FR-BR-06",
+      "FR-BR-07",
+      "FR-BR-08"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "csv_content": "PL Number,PL Name,Metier,Owner N2,Societe,Cost Type,FMM Description,JU Description,JU Code,Total FTE,Total K€,Total BH,Total KM\r\nPL1,,,,,,,,a,1.0,0,0,0\r\nPL1,,,,,,,,b,2.0,0,0,0\r\n",
+      "row_count": "2"
+    },
+    "input": {
+      "job_units_json": "[{\"pl_number\": \"PL1\", \"ju_code\": \"a\", \"total_fte\": 1.0}, {\"pl_number\": \"PL1\", \"ju_code\": \"b\", \"total_fte\": 2.0}]"
+    },
+    "rule_ids": [
+      "FR-BR-10"
+    ],
+    "sdd_version": "2.0.0"
+  }
+]
