@@ -819,22 +819,22 @@ def test_custom_ju_roles_spec():
     from great_sdd.specs.pre_estimation_specs import CUSTOM_JU_ROLES
     assert CUSTOM_JU_ROLES["Admin"] is True
     assert CUSTOM_JU_ROLES["Engineer"] is True
-    assert CUSTOM_JU_ROLES["PMO"] is True
+    assert CUSTOM_JU_ROLES["PMO"] is False
     assert CUSTOM_JU_ROLES["RCRC"] is False
     assert CUSTOM_JU_ROLES["CPO"] is False
 
 
 def test_can_create_custom_ju_allowed():
-    """BR-20: Engineer, PMO, Admin can create Custom JUs."""
+    """BR-20: Engineer and Admin can create Custom JUs."""
     from great_sdd.specs.pre_estimation_specs import can_create_custom_ju
     assert can_create_custom_ju("Admin") is True
     assert can_create_custom_ju("Engineer") is True
-    assert can_create_custom_ju("PMO") is True
 
 
 def test_can_create_custom_ju_denied():
-    """BR-20: RCRC and CPO cannot create Custom JUs."""
+    """BR-20: PMO, RCRC and CPO cannot create Custom JUs."""
     from great_sdd.specs.pre_estimation_specs import can_create_custom_ju
+    assert can_create_custom_ju("PMO") is False
     assert can_create_custom_ju("RCRC") is False
     assert can_create_custom_ju("CPO") is False
 
@@ -858,7 +858,8 @@ def test_custom_ju_permission_checker():
     assert result["can_create_custom_ju"] is True
 
     result = checker.forward("PMO")
-    assert result["can_create_custom_ju"] is True
+    assert result["can_create_custom_ju"] is False
+    assert "cannot" in result["reason"]
 
     result = checker.forward("RCRC")
     assert result["can_create_custom_ju"] is False

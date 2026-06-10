@@ -75,8 +75,8 @@ ROLE_PERMISSIONS: dict[Role, RolePermission] = {
 # Métiers (Owner N2)
 METIERS = ["H-DESIGN", "H-SOFTWARE", "H-TUNING", "H-PROJECT", "H-TESTING", "H-CUSTOMER"]
 
-# Métiers excluded from filter (H-NP and H-PROJECT)
-EXCLUDED_METIERS_FROM_FILTER = ["H-NP", "H-PROJECT"]
+# Métiers excluded from filter (H-NP, H-PROJECT, and H-TESTING)
+EXCLUDED_METIERS_FROM_FILTER = ["H-NP", "H-PROJECT", "H-TESTING"]
 
 
 # ──────────────────────────────────────────────
@@ -139,7 +139,7 @@ BUSINESS_RULES: list[dict] = [
     {"id": "BR-17", "rule": "Re-save overwrites — each 'Save as Draft' overwrites the previous Draft in the database"},
     {"id": "BR-18", "rule": "Prototype data separate — prototype quantities are stored separately from engineering estimation; do not affect FTE/BH/KM"},
     {"id": "BR-19", "rule": "Prototype categories pending — category names and count are pending definition (PRE-01)"},
-    {"id": "BR-20", "rule": "Custom JU permissions — Engineer, PMO, and Admin can create Custom JUs; RCRC and CPO cannot"},
+    {"id": "BR-20", "rule": "Custom JU permissions — Engineer and Admin can create Custom JUs; PMO, RCRC, and CPO cannot"},
 ]
 
 # ─── Custom JU Permissions ──────────────────────────────────────
@@ -148,7 +148,7 @@ BUSINESS_RULES: list[dict] = [
 CUSTOM_JU_ROLES: dict[str, bool] = {
     "Admin":    True,
     "Engineer": True,
-    "PMO":      True,
+    "PMO":      False,
     "RCRC":     False,
     "CPO":      False,
 }
