@@ -174,68 +174,87 @@ class StatusTransitionValidator(SignatureModule):
         return {"is_valid": True, "error_message": ""}
 
 
+def _ind_attr(ind, attr, default=None):
+    """Accessor that works for both Inductor dataclass and plain dict."""
+    if isinstance(ind, dict):
+        return ind.get(attr, default)
+    return getattr(ind, attr, default)
+
+
+def _ju_fields(ju) -> dict:
+    """Normalize a job unit (dataclass or dict) to the downstream JU shape."""
+    g = (lambda a, d=None: ju.get(a, d)) if isinstance(ju, dict) \
+        else (lambda a, d=None: getattr(ju, a, d))
+    return {
+        "short_name": g("short_name", ""),
+        "description": g("description", ""),
+        "variable": g("variable", 0.0),
+        "fixed": g("fixed", 0.0),
+        "occurrence": 1.0,
+        "unit_type": g("unit_type", "man_day"),
+        "cran": g("cran", ""),
+    }
+
+
+def _inductor_keywords(ind) -> set:
+    """Keyword set derived from an inductor: name tokens + JU short_names + JU desc tokens."""
+    kws = set()
+    for tok in str(_ind_attr(ind, "name", "")).lower().split():
+        kws.add(tok)
+    for ju in _ind_attr(ind, "job_units", []) or []:
+        f = _ju_fields(ju)
+        kws.add(str(f["short_name"]).lower())
+        for tok in str(f["description"]).lower().split():
+            kws.add(tok)
+    return {k for k in kws if k}
+
+
 class InductorSelector(SignatureModule):
     """
-    Selects inductors and crans for a project line.
+    Selects inductors and crans for a project line — DETERMINISTIC, rule-based.
     Signature: SELECT_INDUCTOR_CRAN
 
-    Python: loads workload standard from specs registry.
-    LM: matches line description to inductors and selects appropriate crans.
+    No LM. Selection is keyword/substring matching against the workload standard,
+    with a documented full-standard fallback when nothing matches. Cran is chosen
+    by name-substring match, else the first (canonical) cran. See the conformance
+    layer: SELECT_INDUCTOR_CRAN semantic ranking is the only LM-only capability and
+    is quarantined in NON_DETERMINISTIC_RULES — this module covers the rest.
     """
 
     signature = SELECT_INDUCTOR_CRAN
 
     def forward_impl(self, line_description: str, metier: str,
                      available_inductors_json: str = "[]") -> dict:
+        # 1. Resolve available inductors (consumer JSON or workload standard).
         try:
-            available = json.loads(available_inductors_json) if isinstance(available_inductors_json, str) else available_inductors_json
+            parsed = json.loads(available_inductors_json) \
+                if isinstance(available_inductors_json, str) else available_inductors_json
         except (json.JSONDecodeError, TypeError):
-            available = WORKLOAD_STANDARDS.get(metier, [])
-
+            parsed = []
+        available = parsed if parsed else WORKLOAD_STANDARDS.get(metier, [])
         if not available:
-            return {
-                "inductor_selections_json": "[]",
-            }
+            return {"inductor_selections_json": "[]"}
 
-        # Build prompt for LM
-        inductors_text = json.dumps([
-            {
-                "name": ind.name,
-                "group": ind.group_name,
-                "crans": [{"name": c.name, "variable": c.variable_coeff, "fixed": c.fixed_coeff}
-                          for c in ind.crans],
-                "j_us": [
-                    {"name": ju.short_name, "desc": ju.description, "unit_type": ju.unit_type}
-                    for ju in ind.job_units
-                ],
-            }
-            for ind in available
-        ], indent=2)
+        desc = (line_description or "").lower()
 
-        system = (
-            "You are a GREAT System estimator. Given a project line description and métier, "
-            "select the appropriate inductors and cran variants from the workload standard. "
-            "Return ONLY a JSON array. Each item: {'name': str, 'selected_cran': str, "
-            "'job_units': [{'short_name': str, 'variable': float, 'fixed': float, "
-            "'occurrence': int, 'unit_type': str}]}"
-        )
+        # 2. Deterministic selection: keyword/substring match, else full-standard fallback.
+        matched = [ind for ind in available
+                   if any(kw in desc for kw in _inductor_keywords(ind))]
+        selected = matched if matched else list(available)
 
-        prompt = (
-            f"Project line: {line_description}\n"
-            f"Métier: {metier}\n\n"
-            f"Available workload standard inductors:\n{inductors_text}\n\n"
-            "Select the most relevant inductors and for each, choose the appropriate cran "
-            "variant based on the task complexity. Set reasonable occurrence values (1-10)."
-        )
-
-        response = self.call_lm(system=system, prompt=prompt, max_tokens=1000, temperature=0.2)
-
-        try:
-            selections = json.loads(response)
-        except (json.JSONDecodeError, TypeError):
-            logger.warning(f"Failed to parse LM response: {response[:200]}")
-            selections = []
-
+        # 3. Per inductor: deterministic cran + job units.
+        selections = []
+        for ind in selected:
+            crans = _ind_attr(ind, "crans", []) or []
+            cran_names = [_ind_attr(c, "name", "") for c in crans]
+            chosen = next((n for n in cran_names if n and n.lower() in desc), None)
+            if chosen is None and cran_names:
+                chosen = cran_names[0]
+            selections.append({
+                "name": _ind_attr(ind, "name", ""),
+                "selected_cran": chosen,
+                "job_units": [_ju_fields(ju) for ju in (_ind_attr(ind, "job_units", []) or [])],
+            })
         return {"inductor_selections_json": json.dumps(selections)}
 
 
