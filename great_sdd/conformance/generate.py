@@ -23,12 +23,11 @@ from great_sdd.conformance.rule_inventory import (
     business_rule_ids, pending_marker_ids, rule_count)
 from great_sdd.conformance.exclusions import (
     NON_DETERMINISTIC_RULES, NO_FUNCTION_SURFACE_RULES)
+from great_sdd.conformance.endpoints import project_lines as _project_lines_ep
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 ENDPOINTS_DIR = FIXTURES_DIR / "endpoints"
-
-from great_sdd.conformance.endpoints import project_lines as _project_lines_ep
 
 TRIP = TripwireLM()
 
@@ -462,7 +461,8 @@ def _emit(check: bool) -> int:
         else:
             write_fixture_file(path, entries)
 
-    for name, fixture in build_endpoint_fixtures(version).items():
+    endpoint_fixtures = build_endpoint_fixtures(version)
+    for name, fixture in endpoint_fixtures.items():
         ep_path = ENDPOINTS_DIR / f"{name}.json"
         new_ep = canonical_json(fixture)
         if check:
@@ -493,7 +493,7 @@ def _emit(check: bool) -> int:
         print(f"FIXTURE DRIFT in: {', '.join(drift)}. "
               f"Run: python -m great_sdd.conformance.generate", file=sys.stderr)
         return 1
-    print(f"{'checked' if check else 'wrote'} fixtures for {len(views)} views @ v{version}; "
+    print(f"{'checked' if check else 'wrote'} fixtures for {len(views)} views + {len(endpoint_fixtures)} endpoints @ v{version}; "
           f"{len(covered_rule_ids())}/{rule_count()} business rules covered.")
     return 0
 
