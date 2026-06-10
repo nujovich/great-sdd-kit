@@ -14,6 +14,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] — 2026-06-10
+
+### ⚠ BREAKING CHANGES (HIW-174 — Pre-Estimation PRD alignment)
+- Renamed line status `Rejected`/`rejected` → `Modification Requested`/`modification_requested`
+  (`LineStatus.MODIFICATION_REQUESTED`), updating `STATUS_TRANSITIONS` and `EDITABLE_STATUSES`.
+- Migrated métier taxonomy from generic names to `H-*`: `METIERS` and `WORKLOAD_STANDARDS` keys
+  (Backend→H-DESIGN, Frontend→H-SOFTWARE, Data→H-TUNING, DevOps→H-PROJECT, QA→H-TESTING, Mobile→H-CUSTOMER).
+- `CUSTOM_JU_ROLES["PMO"]` is now `False` — PMO can no longer create Custom JUs (BR-20).
+
+### Changed
+- `EXCLUDED_METIERS_FROM_FILTER` now includes `H-TESTING` (alongside `H-NP`, `H-PROJECT`).
+
+---
+
 ## [1.2.0] — 2026-06-04
 
 ### Added
