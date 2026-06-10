@@ -143,3 +143,21 @@ python -m great_sdd.conformance.generate --check    # CI: exit 1 on drift
 CI ([`.github/workflows/conformance.yml`](../../.github/workflows/conformance.yml))
 regenerates and fails on any diff vs the committed fixtures, then runs `pytest` and
 the coverage gate.
+
+## Endpoint conformance (mirroring an external API contract)
+
+Beyond per-rule fixtures, the layer can mirror a full **HTTP endpoint contract** as
+golden fixtures. Unlike rule fixtures (where the SDD is the oracle), an endpoint
+fixture MIRRORS an external contract (OpenAPI + backend DTO + frontend types) — the
+external API is the source of truth; the SDD reflects it for a cross-language test.
+Endpoint fixtures do NOT enter the business-rule census.
+
+- Oracle: `great_sdd/conformance/endpoints/<name>.py` — a deterministic reference
+  (fixed seed, no network/LLM/time) that re-implements the documented behavior.
+- Fixture: `fixtures/endpoints/<name>.json` — `{endpoint, sdd_version, seed, cases:[{request, expected:{status, body}}]}`, byte-stable.
+- Runner: `run_endpoints_against_fixtures(consumer_fn)` passes `{endpoint, request, seed}`
+  (never `expected`) and exact-matches `{status, body}`.
+
+Implemented: `GET /project-lines` (mirrors `cap_horse_great` pev-openapi + `list_lines`).
+The frontend loads the same JSON as its mock + contract test; the backend can seed
+`fixture.seed` and run its handler against each `request`.
