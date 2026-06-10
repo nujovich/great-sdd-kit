@@ -442,3 +442,13 @@ def test_endpoint_fixture_is_generated_and_byte_stable():
     assert fx["endpoint"] == "GET /project-lines"
     assert len(fx["cases"]) == 7
     assert len(fx["seed"]) == 4
+
+
+def test_oracle_endpoint_consumer_passes_all_cases():
+    from great_sdd.conformance.runner import (
+        run_endpoints_against_fixtures, oracle_endpoint_consumer_fn)
+    reports = run_endpoints_against_fixtures(oracle_endpoint_consumer_fn)
+    assert reports, "no endpoint fixtures found"
+    for rep in reports:
+        assert rep["passed"], rep["failures"][:2]
+    assert any(r["endpoint"] == "GET /project-lines" for r in reports)

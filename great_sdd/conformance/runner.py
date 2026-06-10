@@ -15,8 +15,9 @@ import argparse
 import json
 from pathlib import Path
 
-from sdd.base_conformance import run_conformance, normalize_output, read_version
-from great_sdd.conformance.generate import FIXTURES_DIR, REPO_ROOT, build_probes
+from sdd.base_conformance import run_conformance, normalize_output, read_version, run_endpoint_conformance
+from great_sdd.conformance.generate import FIXTURES_DIR, REPO_ROOT, build_probes, ENDPOINTS_DIR
+from great_sdd.conformance.endpoints import project_lines as _project_lines_ep
 
 
 def load_fixtures(fixtures_dir: Path = FIXTURES_DIR) -> list[dict]:
@@ -59,6 +60,32 @@ def run_against_fixtures(consumer_fn, fixtures_dir: Path = FIXTURES_DIR) -> dict
     return run_conformance(load_fixtures(fixtures_dir), consumer_fn)
 
 
+# ── Endpoint conformance ──
+
+_ENDPOINT_ORACLES = {
+    "GET /project-lines": _project_lines_ep.list_project_lines,
+}
+
+
+def oracle_endpoint_consumer_fn(req: dict) -> dict:
+    """Reference endpoint consumer: re-run the oracle.
+
+    req = {"endpoint", "request", "seed"} — dispatches on endpoint. A real backend
+    would instead seed its store from req["seed"] and call its own handler.
+    """
+    return _ENDPOINT_ORACLES[req["endpoint"]](req["request"])
+
+
+def load_endpoint_fixtures(endpoints_dir: Path = ENDPOINTS_DIR) -> list:
+    return [json.loads(fp.read_text())
+            for fp in sorted(Path(endpoints_dir).glob("*.json"))]
+
+
+def run_endpoints_against_fixtures(consumer_fn, endpoints_dir: Path = ENDPOINTS_DIR) -> list:
+    return [run_endpoint_conformance(fx, consumer_fn)
+            for fx in load_endpoint_fixtures(endpoints_dir)]
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(
         description="Run the reference consumer against committed fixtures.")
@@ -76,7 +103,11 @@ def main(argv=None) -> int:
             "exercised_rule_ids": rep["exercised_rule_ids"],
         }, sort_keys=True, indent=2))
         print(f"  wrote consumer report -> {args.emit_report}")
-    return 0 if rep["passed"] else 1
+    ep_reports = run_endpoints_against_fixtures(oracle_endpoint_consumer_fn)
+    for er in ep_reports:
+        print(f"Endpoint {er['endpoint']}: {er['total'] - er['failed_count']}/{er['total']} cases passed.")
+    ep_ok = all(er["passed"] for er in ep_reports)
+    return 0 if (rep["passed"] and ep_ok) else 1
 
 
 if __name__ == "__main__":
