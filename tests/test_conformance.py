@@ -412,3 +412,16 @@ def test_project_lines_rows_have_24_contract_fields_and_no_h_testing():
         assert row["metier"] != "H-TESTING"
         assert row["total_days"] is None and row["total_keuro"] is None
     assert "H-TESTING" not in out["body"]["filterOptions"]["metiers"]
+
+
+def test_project_lines_engineer_without_oid_is_unauthorized():
+    from great_sdd.conformance.endpoints.project_lines import list_project_lines
+    # An Engineer with no oid has no valid identity -> 401, never an unscoped list.
+    assert list_project_lines({"role": "Engineer", "active_cycle": True})["status"] == 401
+
+
+def test_project_lines_auth_precedes_active_cycle_check():
+    from great_sdd.conformance.endpoints.project_lines import list_project_lines
+    # Auth (dependency layer) is evaluated before the service's cycle check.
+    assert list_project_lines({"role": "CPO", "active_cycle": False})["status"] == 403
+    assert list_project_lines({"role": None, "active_cycle": False})["status"] == 401

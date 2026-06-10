@@ -57,27 +57,42 @@ SEED = [
          "H-PROJECT", "Draft", "oid-pmo"),
 ]
 
+# SEED is part of the mirrored contract — keep it valid against the contract enums
+# (these also document the allowed values for consumers building their own mocks).
+assert all(row["metier"] in PROJECT_LINE_METIERS for row in SEED), "seed métier off-contract"
+assert all(row["status"] in STATUSES for row in SEED), "seed status off-contract"
+
 
 def list_project_lines(request: dict) -> dict:
     """Deterministic reference for GET /project-lines.
 
-    request -> {"status": int, "body": dict | None}. Mirrors list_lines + the
-    openapi access rules:
-      - no active cycle -> 404; no role/JWT -> 401; CPO (or other) -> 403
+    request keys: role (str|None), user_oid (str|None), query (dict with optional
+    'assignee'/'metier'), active_cycle (bool). Returns {"status": int, "body": dict|None}.
+
+    Mirrors list_lines + the openapi guard order:
+      - auth first (dependency layer): no role/JWT -> 401; CPO or other role -> 403;
+        an Engineer without an oid -> 401
+      - then the service: no active cycle -> 404
       - Engineer hard-scoped to own assignee_oid (the assignee query is ignored)
       - PMO/Admin/RCRC honor the assignee/metier query
       - filterOptions reflect the role-scoped set, ignoring active filters
     """
     role = request.get("role")
-    if not request.get("active_cycle", True):
-        return {"status": 404, "body": None}
+    user_oid = request.get("user_oid")
+    # Auth is enforced at the dependency layer (Depends(_ALLOWED)) BEFORE the
+    # service queries the active cycle, so 401/403 take precedence over 404
+    # (this mirrors the FastAPI guard order).
     if role is None:
         return {"status": 401, "body": None}
     if role not in ROLES_ALLOWED:                       # CPO and anything else
         return {"status": 403, "body": None}
+    if role == "Engineer" and not user_oid:
+        # An Engineer carries an oid from the JWT; missing oid == no valid identity.
+        return {"status": 401, "body": None}
+    if not request.get("active_cycle", True):
+        return {"status": 404, "body": None}
 
     query = request.get("query") or {}
-    user_oid = request.get("user_oid")
 
     if role == "Engineer":
         scope_oid = user_oid
