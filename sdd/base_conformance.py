@@ -8,6 +8,8 @@ The engine has four responsibilities:
   2. Fixture generation  — Probe + generate_fixtures emit byte-stable golden JSON.
   3. Coverage / skew     — compute_coverage, compute_version_skew.
   4. Consumer runner     — run_conformance exact-matches a consumer against fixtures.
+  5. Endpoint conformance — EndpointProbe + generate_endpoint_fixtures mirror an external
+     HTTP contract; run_endpoint_conformance exact-matches a consumer's {status, body}.
 """
 from __future__ import annotations
 
@@ -184,6 +186,8 @@ def generate_endpoint_fixtures(probe: EndpointProbe, seed: list, sdd_version: st
 
     Shape: {endpoint, sdd_version, seed, cases:[{request, expected}]}, cases sorted
     by canonical_json(request). fn runs under the caller-injected determinism guard.
+    Pass [] for no seed (never None): the runner fills a missing seed with [] and a
+    None would break the byte-stable golden-fixture contract.
     """
     cases = [{"request": req, "expected": probe.fn(req)} for req in probe.cases]
     cases.sort(key=lambda c: canonical_json(c["request"]))
@@ -203,8 +207,9 @@ def run_endpoint_conformance(fixture: dict, consumer_fn: Callable[[dict], dict])
     """
     endpoint = fixture.get("endpoint", "")
     seed = fixture.get("seed", [])
+    cases = fixture.get("cases", [])
     failures = []
-    for case in fixture["cases"]:
+    for case in cases:
         actual = consumer_fn({"endpoint": endpoint, "request": case["request"], "seed": seed})
         if actual != case["expected"]:
             failures.append({
@@ -214,7 +219,7 @@ def run_endpoint_conformance(fixture: dict, consumer_fn: Callable[[dict], dict])
             })
     return {
         "endpoint": endpoint,
-        "total": len(fixture["cases"]),
+        "total": len(cases),
         "failed_count": len(failures),
         "passed": not failures,
         "failures": failures,
