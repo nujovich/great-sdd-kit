@@ -74,17 +74,17 @@ class TestStateMachine:
         assert LineStatus.DRAFT in STATUS_TRANSITIONS[LineStatus.DRAFT]
         assert LineStatus.ESTIMATED in STATUS_TRANSITIONS[LineStatus.DRAFT]
 
-    def test_estimated_can_go_to_sent_or_rejected(self):
+    def test_estimated_can_go_to_sent_or_modification_requested(self):
         assert LineStatus.SENT in STATUS_TRANSITIONS[LineStatus.ESTIMATED]
-        assert LineStatus.REJECTED in STATUS_TRANSITIONS[LineStatus.ESTIMATED]
+        assert LineStatus.MODIFICATION_REQUESTED in STATUS_TRANSITIONS[LineStatus.ESTIMATED]
 
-    def test_sent_can_go_to_approved_or_rejected(self):
+    def test_sent_can_go_to_approved_or_modification_requested(self):
         assert LineStatus.APPROVED in STATUS_TRANSITIONS[LineStatus.SENT]
-        assert LineStatus.REJECTED in STATUS_TRANSITIONS[LineStatus.SENT]
+        assert LineStatus.MODIFICATION_REQUESTED in STATUS_TRANSITIONS[LineStatus.SENT]
 
-    def test_rejected_can_go_back_to_draft_or_estimated(self):
-        assert LineStatus.DRAFT in STATUS_TRANSITIONS[LineStatus.REJECTED]
-        assert LineStatus.ESTIMATED in STATUS_TRANSITIONS[LineStatus.REJECTED]
+    def test_modification_requested_can_go_back_to_draft_or_estimated(self):
+        assert LineStatus.DRAFT in STATUS_TRANSITIONS[LineStatus.MODIFICATION_REQUESTED]
+        assert LineStatus.ESTIMATED in STATUS_TRANSITIONS[LineStatus.MODIFICATION_REQUESTED]
 
     def test_approved_is_terminal(self):
         assert LineStatus.APPROVED in TERMINAL_STATUSES
@@ -95,10 +95,10 @@ class TestStateMachine:
         assert LineStatus.SENT in LOCKED_STATUSES
         assert LineStatus.APPROVED in LOCKED_STATUSES
 
-    def test_editable_statuses_includes_todo_draft_rejected(self):
+    def test_editable_statuses_includes_todo_draft_modification_requested(self):
         assert LineStatus.TODO in EDITABLE_STATUSES
         assert LineStatus.DRAFT in EDITABLE_STATUSES
-        assert LineStatus.REJECTED in EDITABLE_STATUSES
+        assert LineStatus.MODIFICATION_REQUESTED in EDITABLE_STATUSES
 
 
 class TestRolePermissions:
@@ -212,12 +212,12 @@ class TestWorkloadStandards:
     """Spec §6-8: Workload Standards"""
 
     def test_all_metiers_have_standards(self):
-        for metier in ["Backend", "Frontend", "Data", "DevOps", "QA", "Mobile"]:
+        for metier in ["H-DESIGN", "H-SOFTWARE", "H-TUNING", "H-PROJECT", "H-TESTING", "H-CUSTOMER"]:
             assert metier in WORKLOAD_STANDARDS
             assert len(WORKLOAD_STANDARDS[metier]) > 0
 
     def test_backend_has_api_endpoints(self):
-        names = [ind.name for ind in WORKLOAD_STANDARDS["Backend"]]
+        names = [ind.name for ind in WORKLOAD_STANDARDS["H-DESIGN"]]
         assert "API endpoints" in names
 
     def test_each_inductor_has_at_least_one_cran(self):
@@ -461,7 +461,7 @@ class TestStatusTransitionValidatorSignature:
         assert result["is_valid"] is True
 
     def test_approved_no_transitions(self):
-        for status in ["draft", "estimated", "sent", "rejected"]:
+        for status in ["draft", "estimated", "sent", "modification_requested"]:
             result = self.validator.forward(
                 current_status="approved", target_status=status,
                 has_saved_draft_in_session=False
@@ -475,9 +475,9 @@ class TestStatusTransitionValidatorSignature:
         )
         assert result["is_valid"] is False
 
-    def test_rejected_to_draft(self):
+    def test_modification_requested_to_draft(self):
         result = self.validator.forward(
-            current_status="rejected", target_status="draft",
+            current_status="modification_requested", target_status="draft",
             has_saved_draft_in_session=False
         )
         assert result["is_valid"] is True
@@ -819,22 +819,22 @@ def test_custom_ju_roles_spec():
     from great_sdd.specs.pre_estimation_specs import CUSTOM_JU_ROLES
     assert CUSTOM_JU_ROLES["Admin"] is True
     assert CUSTOM_JU_ROLES["Engineer"] is True
-    assert CUSTOM_JU_ROLES["PMO"] is True
+    assert CUSTOM_JU_ROLES["PMO"] is False
     assert CUSTOM_JU_ROLES["RCRC"] is False
     assert CUSTOM_JU_ROLES["CPO"] is False
 
 
 def test_can_create_custom_ju_allowed():
-    """BR-20: Engineer, PMO, Admin can create Custom JUs."""
+    """BR-20: Engineer and Admin can create Custom JUs."""
     from great_sdd.specs.pre_estimation_specs import can_create_custom_ju
     assert can_create_custom_ju("Admin") is True
     assert can_create_custom_ju("Engineer") is True
-    assert can_create_custom_ju("PMO") is True
 
 
 def test_can_create_custom_ju_denied():
-    """BR-20: RCRC and CPO cannot create Custom JUs."""
+    """BR-20: PMO, RCRC and CPO cannot create Custom JUs."""
     from great_sdd.specs.pre_estimation_specs import can_create_custom_ju
+    assert can_create_custom_ju("PMO") is False
     assert can_create_custom_ju("RCRC") is False
     assert can_create_custom_ju("CPO") is False
 
@@ -858,7 +858,8 @@ def test_custom_ju_permission_checker():
     assert result["can_create_custom_ju"] is True
 
     result = checker.forward("PMO")
-    assert result["can_create_custom_ju"] is True
+    assert result["can_create_custom_ju"] is False
+    assert "cannot" in result["reason"]
 
     result = checker.forward("RCRC")
     assert result["can_create_custom_ju"] is False

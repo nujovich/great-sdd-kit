@@ -142,7 +142,7 @@ def test_eligibility_filter():
 def test_rule_matcher_with_empty_rules():
     """MATCH_ALLOCATION_RULES signature — no rules = no assignments"""
     m = AllocationRuleMatcher([])
-    jus = [{"ju_code": "J1", "metier": "Backend"}]
+    jus = [{"ju_code": "J1", "metier": "H-DESIGN"}]
     result = m.forward(job_units_json=json.dumps(jus), rules_json="[]")
     assigned = json.loads(result["assigned_jus_json"])
     assert len(assigned) == 1
@@ -151,15 +151,15 @@ def test_rule_matcher_with_empty_rules():
 def test_rule_matcher_skips_assigned():
     """MATCH_ALLOCATION_RULES — ALLOC-BR-02: skips JUs with existing societe"""
     m = AllocationRuleMatcher([
-        {"fields": {"metier": "Backend"}, "societe": "Horse Spain", "exception": False},
+        {"fields": {"metier": "H-DESIGN"}, "societe": "Horse Spain", "exception": False},
     ])
     jus = [
-        {"ju_code": "J1", "metier": "Backend", "societe": "Already Set"},
-        {"ju_code": "J2", "metier": "Backend"},
+        {"ju_code": "J1", "metier": "H-DESIGN", "societe": "Already Set"},
+        {"ju_code": "J2", "metier": "H-DESIGN"},
     ]
     result = m.forward(
         job_units_json=json.dumps(jus),
-        rules_json=json.dumps([{"fields": {"metier": "Backend"}, "societe": "Horse Spain", "exception": False}]),
+        rules_json=json.dumps([{"fields": {"metier": "H-DESIGN"}, "societe": "Horse Spain", "exception": False}]),
     )
     assigned = json.loads(result["assigned_jus_json"])
     assert assigned[0]["societe"] == "Already Set"  # Skipped (ALLOC-BR-02)

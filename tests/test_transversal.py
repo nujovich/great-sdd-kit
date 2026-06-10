@@ -77,9 +77,9 @@ def _make_version_with_inductors(version_id, inductors, status="active"):
 def test_bulk_delete_success():
     deleter = BulkInductorDeleter()
     v1 = _make_version_with_inductors("WL-0001", [
-        {"id": "ind-1", "name": "Backend Module A", "metier": "Backend"},
-        {"id": "ind-2", "name": "Frontend Module B", "metier": "Frontend"},
-        {"id": "ind-3", "name": "Data Pipeline C", "metier": "Data"},
+        {"id": "ind-1", "name": "Backend Module A", "metier": "H-DESIGN"},
+        {"id": "ind-2", "name": "Frontend Module B", "metier": "H-SOFTWARE"},
+        {"id": "ind-3", "name": "Data Pipeline C", "metier": "H-TUNING"},
     ], status="superseded")
     deleter.set_versions([v1])
     result = deleter.bulk_delete("WL-0001", ["ind-1", "ind-3"], "Admin")
@@ -290,9 +290,9 @@ def test_table_state_initial():
 
 def test_set_filter():
     m = TableStateManager()
-    m.set_filter("Allocation", "metier", "Backend")
+    m.set_filter("Allocation", "metier", "H-DESIGN")
     state = m.get_state("Allocation")
-    assert state.filters["metier"] == "Backend"
+    assert state.filters["metier"] == "H-DESIGN"
 
 def test_set_sort():
     m = TableStateManager()
@@ -309,7 +309,7 @@ def test_set_column_width():
 
 def test_reset_page():
     m = TableStateManager()
-    m.set_filter("Allocation", "metier", "Backend")
+    m.set_filter("Allocation", "metier", "H-DESIGN")
     m.reset_page("Allocation")
     state = m.get_state("Allocation")
     assert state.filters == {}
@@ -346,7 +346,7 @@ def test_rcrc_weekly():
 def test_rejection_notification():
     s = EmailAlertService()
     result = s.send_rejection_notification(
-        "ana@great.com", "PL-001", "Backend",
+        "ana@great.com", "PL-001", "H-DESIGN",
         "Insufficient detail", "2026 H1"
     )
     assert result["success"] is True
@@ -356,7 +356,7 @@ def test_rejection_notification():
 def test_email_log():
     s = EmailAlertService()
     s.send_engineer_weekly("ana@great.com", [], "2026 H1")
-    s.send_rejection_notification("ana@great.com", "PL-001", "Backend", "Rework", "2026 H1")
+    s.send_rejection_notification("ana@great.com", "PL-001", "H-DESIGN", "Rework", "2026 H1")
     log = s.get_log()
     assert len(log) == 2
     assert log[0].alert_type == "engineer_weekly"

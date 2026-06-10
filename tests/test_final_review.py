@@ -58,13 +58,13 @@ def test_10_rules():
 
 def test_aggregate_at_level():
     jus = [
-        {"metier": "Backend", "societe": "A", "total_fte": 1.0, "total_ke": 50.0},
-        {"metier": "Backend", "societe": "A", "total_fte": 0.5, "total_ke": 25.0},
-        {"metier": "Frontend", "societe": "B", "total_fte": 2.0, "total_ke": 100.0},
+        {"metier": "H-DESIGN", "societe": "A", "total_fte": 1.0, "total_ke": 50.0},
+        {"metier": "H-DESIGN", "societe": "A", "total_fte": 0.5, "total_ke": 25.0},
+        {"metier": "H-SOFTWARE", "societe": "B", "total_fte": 2.0, "total_ke": 100.0},
     ]
     result = aggregate_at_level(jus, ["metier"], ["total_fte", "total_ke"])
     assert len(result) == 2
-    backend = [r for r in result if r["metier"] == "Backend"][0]
+    backend = [r for r in result if r["metier"] == "H-DESIGN"][0]
     assert backend["total_fte"] == 1.5
 
 def test_calculate_subtotals():
@@ -105,9 +105,9 @@ def test_aggregation_engine():
     """AGGREGATE_FINAL_REVIEW signature"""
     e = AggregationEngine()
     jus = [
-        {"metier": "Backend", "societe": "A", "cost_type": "FTE",
+        {"metier": "H-DESIGN", "societe": "A", "cost_type": "FTE",
          "total_fte": 1.0, "total_ke": 50.0, "total_bh": 0, "total_km": 0},
-        {"metier": "Backend", "societe": "A", "cost_type": "TC",
+        {"metier": "H-DESIGN", "societe": "A", "cost_type": "TC",
          "total_fte": 0.0, "total_ke": 30.0, "total_bh": 0, "total_km": 0},
     ]
     result = e.forward(job_units_json=json.dumps(jus))
@@ -119,14 +119,14 @@ def test_aggregation_engine():
 def test_csv_exporter():
     """EXPORT_FINAL_REVIEW_CSV signature — FR-BR-10"""
     e = CSVGlobalExporter()
-    jus = [{"pl_number": "PL-001", "pl_name": "Test", "metier": "Backend",
+    jus = [{"pl_number": "PL-001", "pl_name": "Test", "metier": "H-DESIGN",
             "total_fte": 1.0, "total_ke": 50.0, "total_bh": 0, "total_km": 0,
             "owner_n2": "", "societe": "A", "cost_type": "FTE",
             "fmm_description": "", "ju_description": "", "ju_code": "J1"}]
     result = e.forward(job_units_json=json.dumps(jus))
     assert result["row_count"] == "1"
     assert "PL-001" in result["csv_content"]
-    assert "Backend" in result["csv_content"]
+    assert "H-DESIGN" in result["csv_content"]
 
 def test_csv_exporter_empty():
     """EXPORT_FINAL_REVIEW_CSV — empty input"""
@@ -168,10 +168,10 @@ def test_stage3_sender_confirmed():
 def test_pipeline_full():
     """End-to-end FinalReviewPipeline with approved JUs"""
     jus = [
-        {"ju_code": "J1", "status": "approved", "metier": "Backend",
+        {"ju_code": "J1", "status": "approved", "metier": "H-DESIGN",
          "societe": "Horse Spain", "cost_type": "FTE",
          "total_fte": 1.0, "total_ke": 107.0, "total_bh": 0, "total_km": 0},
-        {"ju_code": "J2", "status": "estimated", "metier": "Frontend",
+        {"ju_code": "J2", "status": "estimated", "metier": "H-SOFTWARE",
          "societe": "", "cost_type": "FTE",
          "total_fte": 2.0, "total_ke": 0, "total_bh": 0, "total_km": 0},
     ]
@@ -253,11 +253,11 @@ def test_fr_br_10_csv_flat():
     """FR-BR-10: CSV flat export — one row per JU, no subtotal rows"""
     e = CSVGlobalExporter()
     jus = [
-        {"pl_number": "PL-001", "pl_name": "Test", "metier": "Backend",
+        {"pl_number": "PL-001", "pl_name": "Test", "metier": "H-DESIGN",
          "total_fte": 1.0, "total_ke": 50.0, "total_bh": 0, "total_km": 0,
          "owner_n2": "", "societe": "A", "cost_type": "FTE",
          "fmm_description": "", "ju_description": "", "ju_code": "J1"},
-        {"pl_number": "PL-001", "pl_name": "Test", "metier": "Backend",
+        {"pl_number": "PL-001", "pl_name": "Test", "metier": "H-DESIGN",
          "total_fte": 0.5, "total_ke": 25.0, "total_bh": 0, "total_km": 0,
          "owner_n2": "", "societe": "A", "cost_type": "FTE",
          "fmm_description": "", "ju_description": "", "ju_code": "J2"},

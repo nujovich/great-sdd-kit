@@ -32,7 +32,7 @@ def test_8_rules():
 
 def test_pie_chart():
     slices = compute_pie_chart({"to_do": 10, "draft": 5, "estimated": 3,
-                                "sent": 2, "rejected": 1, "approved": 4})
+                                "sent": 2, "modification_requested": 1, "approved": 4})
     assert len(slices) == 6
     total_pct = sum(s.percentage for s in slices)
     assert total_pct == 100.0
@@ -62,7 +62,7 @@ def test_metier_filter():
         {"metier": "H-DESIGN", "status": "estimated"},
         {"metier": "H-NP", "status": "approved"},
         {"metier": "H-PROJECT", "status": "draft"},
-        {"metier": "Backend", "status": "to_do"},
+        {"metier": "H-DESIGN", "status": "to_do"},
     ]
     filtered = f.forward(pairs, "All")
     assert len(filtered) == 2  # H-NP and H-PROJECT excluded

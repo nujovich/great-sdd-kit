@@ -10,4 +10,4 @@ Usage:
     from great_sdd.specs.allocation_specs import calculate_fte_ke
 """
 
-__version__ = "1.1.0"
+__version__ = "2.0.0"

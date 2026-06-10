@@ -23,23 +23,23 @@ class LineStatus(Enum):
     DRAFT = "draft"
     ESTIMATED = "estimated"
     SENT = "sent"
-    REJECTED = "rejected"
+    MODIFICATION_REQUESTED = "modification_requested"
     APPROVED = "approved"
 
 
 # Allowed transitions: (from_status) → [to_statuses]
 STATUS_TRANSITIONS: dict[LineStatus, list[LineStatus]] = {
-    LineStatus.TODO:      [LineStatus.DRAFT],
-    LineStatus.DRAFT:     [LineStatus.DRAFT, LineStatus.ESTIMATED],
-    LineStatus.ESTIMATED: [LineStatus.SENT, LineStatus.REJECTED],
-    LineStatus.SENT:      [LineStatus.APPROVED, LineStatus.REJECTED],
-    LineStatus.REJECTED:  [LineStatus.DRAFT, LineStatus.ESTIMATED],
-    LineStatus.APPROVED:  [],  # Terminal state — no exits
+    LineStatus.TODO:                   [LineStatus.DRAFT],
+    LineStatus.DRAFT:                  [LineStatus.DRAFT, LineStatus.ESTIMATED],
+    LineStatus.ESTIMATED:              [LineStatus.SENT, LineStatus.MODIFICATION_REQUESTED],
+    LineStatus.SENT:                   [LineStatus.APPROVED, LineStatus.MODIFICATION_REQUESTED],
+    LineStatus.MODIFICATION_REQUESTED: [LineStatus.DRAFT, LineStatus.ESTIMATED],
+    LineStatus.APPROVED:               [],  # Terminal state — no exits
 }
 
 # Status semantic groups
 LOCKED_STATUSES = {LineStatus.ESTIMATED, LineStatus.SENT, LineStatus.APPROVED}
-EDITABLE_STATUSES = {LineStatus.TODO, LineStatus.DRAFT, LineStatus.REJECTED}
+EDITABLE_STATUSES = {LineStatus.TODO, LineStatus.DRAFT, LineStatus.MODIFICATION_REQUESTED}
 TERMINAL_STATUSES = {LineStatus.APPROVED}
 
 
@@ -73,10 +73,10 @@ ROLE_PERMISSIONS: dict[Role, RolePermission] = {
 }
 
 # Métiers (Owner N2)
-METIERS = ["Backend", "Frontend", "Data", "DevOps", "QA", "Mobile"]
+METIERS = ["H-DESIGN", "H-SOFTWARE", "H-TUNING", "H-PROJECT", "H-TESTING", "H-CUSTOMER"]
 
-# Métiers excluded from filter (H-NP and H-PROJECT)
-EXCLUDED_METIERS_FROM_FILTER = ["H-NP", "H-PROJECT"]
+# Métiers excluded from filter (H-NP, H-PROJECT, and H-TESTING)
+EXCLUDED_METIERS_FROM_FILTER = ["H-NP", "H-PROJECT", "H-TESTING"]
 
 
 # ──────────────────────────────────────────────
@@ -139,7 +139,7 @@ BUSINESS_RULES: list[dict] = [
     {"id": "BR-17", "rule": "Re-save overwrites — each 'Save as Draft' overwrites the previous Draft in the database"},
     {"id": "BR-18", "rule": "Prototype data separate — prototype quantities are stored separately from engineering estimation; do not affect FTE/BH/KM"},
     {"id": "BR-19", "rule": "Prototype categories pending — category names and count are pending definition (PRE-01)"},
-    {"id": "BR-20", "rule": "Custom JU permissions — Engineer, PMO, and Admin can create Custom JUs; RCRC and CPO cannot"},
+    {"id": "BR-20", "rule": "Custom JU permissions — Engineer and Admin can create Custom JUs; PMO, RCRC, and CPO cannot"},
 ]
 
 # ─── Custom JU Permissions ──────────────────────────────────────
@@ -148,7 +148,7 @@ BUSINESS_RULES: list[dict] = [
 CUSTOM_JU_ROLES: dict[str, bool] = {
     "Admin":    True,
     "Engineer": True,
-    "PMO":      True,
+    "PMO":      False,
     "RCRC":     False,
     "CPO":      False,
 }
@@ -300,7 +300,7 @@ class Inductor:
 
 # Inductor definitions per métier and compatibility combo
 WORKLOAD_STANDARDS: dict[str, list[Inductor]] = {
-    "Backend": [
+    "H-DESIGN": [
         Inductor(
             name="API endpoints",
             crans=[
@@ -338,7 +338,7 @@ WORKLOAD_STANDARDS: dict[str, list[Inductor]] = {
             ],
         ),
     ],
-    "Frontend": [
+    "H-SOFTWARE": [
         Inductor(
             name="Pantallas UI",
             crans=[
@@ -363,7 +363,7 @@ WORKLOAD_STANDARDS: dict[str, list[Inductor]] = {
             ],
         ),
     ],
-    "Data": [
+    "H-TUNING": [
         Inductor(
             name="Pipelines ETL",
             crans=[
@@ -399,7 +399,7 @@ WORKLOAD_STANDARDS: dict[str, list[Inductor]] = {
             ],
         ),
     ],
-    "DevOps": [
+    "H-PROJECT": [
         Inductor(
             name="Despliegues infra",
             crans=[
@@ -413,7 +413,7 @@ WORKLOAD_STANDARDS: dict[str, list[Inductor]] = {
             ],
         ),
     ],
-    "QA": [
+    "H-TESTING": [
         Inductor(
             name="Test cases E2E",
             crans=[
@@ -427,7 +427,7 @@ WORKLOAD_STANDARDS: dict[str, list[Inductor]] = {
             ],
         ),
     ],
-    "Mobile": [
+    "H-CUSTOMER": [
         Inductor(
             name="Vistas mobile",
             crans=[

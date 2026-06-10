@@ -100,13 +100,13 @@ def demo_state_machine():
     validator = StatusTransitionValidator()
 
     transitions = [
-        ("to_do",      "draft",     False, "✅ To do → Draft (no session)"),
-        ("to_do",      "estimated", False, "❌ To do → Estimated (no draft gate)"),
-        ("draft",      "estimated", True,  "✅ Draft → Estimated (with draft gate)"),
-        ("estimated",  "sent",      False, "✅ Estimated → Sent"),
-        ("sent",       "approved",  False, "✅ Sent → Approved"),
-        ("approved",   "draft",     False, "❌ Approved → Draft (terminal)"),
-        ("rejected",   "draft",     False, "✅ Rejected → Draft (rework)"),
+        ("to_do",                 "draft",     False, "✅ To do → Draft (no session)"),
+        ("to_do",                 "estimated", False, "❌ To do → Estimated (no draft gate)"),
+        ("draft",                 "estimated", True,  "✅ Draft → Estimated (with draft gate)"),
+        ("estimated",             "sent",      False, "✅ Estimated → Sent"),
+        ("sent",                  "approved",  False, "✅ Sent → Approved"),
+        ("approved",              "draft",     False, "❌ Approved → Draft (terminal)"),
+        ("modification_requested","draft",     False, "✅ Modification Requested → Draft (rework)"),
     ]
 
     for current, target, has_draft, label in transitions:
@@ -212,7 +212,7 @@ def demo_full_pipeline():
         selected_lines=selected,
         role=ENGINEER_ANA["role"],
         current_user=ENGINEER_ANA["user"],
-        metier="Backend",
+        metier="H-DESIGN",
         line_description=selected[0]["description"],
         sp_date=selected[0]["sp_date"],
     )

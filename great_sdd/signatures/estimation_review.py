@@ -28,7 +28,7 @@ DERIVE_APPROVAL_COLUMNS = Signature(
     description="Derive Engineer Approval and CPO Approval column values from status. "
                 "Both are read-only and derived entirely from the status field.",
     inputs=[
-        Field("status", "Current status: to_do, draft, estimated, sent, rejected, approved"),
+        Field("status", "Current status: to_do, draft, estimated, sent, modification_requested, approved"),
     ],
     outputs=[
         Field("engineer_approval", "Engineer Approval display value"),
@@ -53,7 +53,7 @@ CHECK_SEND_ELIGIBILITY = Signature(
 PROCESS_HVT_CALLBACK_SIG = Signature(
     name="ProcessHVTCallback",
     description="Process an HVT callback for CPO approval or rejection. "
-                "Approved → Sent→Approved. Rejected → Sent→Rejected with comment.",
+                "Approved → Sent→Approved. Rejected → Sent→Modification Requested with comment.",
     inputs=[
         Field("project_line", "PL Number"),
         Field("metier", "Métier of the estimation"),
@@ -61,7 +61,7 @@ PROCESS_HVT_CALLBACK_SIG = Signature(
         Field("comment", "Rejection reason from CPO (empty if approved)", optional=True),
     ],
     outputs=[
-        Field("target_status", "New status: approved or rejected"),
+        Field("target_status", "New status: approved or modification_requested"),
         Field("transition_valid", "boolean", field_type="boolean", is_output=True),
         Field("error_message", "error if transition invalid", is_output=True),
         Field("notify_engineer", "bool: true if engineer should be notified (rejection)", field_type="boolean", is_output=True),
