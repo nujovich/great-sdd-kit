@@ -425,3 +425,20 @@ def test_project_lines_auth_precedes_active_cycle_check():
     # Auth (dependency layer) is evaluated before the service's cycle check.
     assert list_project_lines({"role": "CPO", "active_cycle": False})["status"] == 403
     assert list_project_lines({"role": None, "active_cycle": False})["status"] == 401
+
+
+def test_endpoint_fixture_is_generated_and_byte_stable():
+    from great_sdd.conformance.generate import (
+        ENDPOINTS_DIR, build_endpoint_fixtures, REPO_ROOT)
+    from sdd.base_conformance import canonical_json, read_version
+    path = os.path.join(str(ENDPOINTS_DIR), "project_lines.json")
+    assert os.path.exists(path), "run `python3 -m great_sdd.conformance.generate` first"
+    on_disk = open(path, encoding="utf-8").read()
+    version = read_version(REPO_ROOT)
+    regenerated = canonical_json(build_endpoint_fixtures(version)["project_lines"])
+    assert on_disk == regenerated, "endpoint fixture drift — regenerate"
+
+    fx = json.loads(on_disk)
+    assert fx["endpoint"] == "GET /project-lines"
+    assert len(fx["cases"]) == 7
+    assert len(fx["seed"]) == 4

@@ -17,7 +17,7 @@ from pathlib import Path
 
 from sdd.base_conformance import (
     Probe, TripwireLM, generate_fixtures, write_fixture_file, read_version,
-    canonical_json,
+    canonical_json, generate_endpoint_fixtures,
 )
 from great_sdd.conformance.rule_inventory import (
     business_rule_ids, pending_marker_ids, rule_count)
@@ -26,6 +26,9 @@ from great_sdd.conformance.exclusions import (
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
+ENDPOINTS_DIR = FIXTURES_DIR / "endpoints"
+
+from great_sdd.conformance.endpoints import project_lines as _project_lines_ep
 
 TRIP = TripwireLM()
 
@@ -89,8 +92,8 @@ def _pre_estimation_probes() -> list[Probe]:
         # BR-12 — inductor selection deterministic surface (keyword/fallback).
         Probe(["BR-12"], "inductor_selection",
               lambda inp: InductorSelector(TRIP).forward(**inp), cases=[
-            {"line_description": "complex REST API", "metier": "Backend", "available_inductors_json": "[]"},
-            {"line_description": "", "metier": "Frontend", "available_inductors_json": "[]"},
+            {"line_description": "complex REST API", "metier": "H-DESIGN", "available_inductors_json": "[]"},
+            {"line_description": "", "metier": "H-SOFTWARE", "available_inductors_json": "[]"},
             {"line_description": "x", "metier": "Nonexistent", "available_inductors_json": "[]"},
         ]),
         # BR-08 — month distribution (deterministic split from SP date).
@@ -131,8 +134,8 @@ def _estimation_review_probes() -> list[Probe]:
         # ERev-BR-02 / ERev-BR-10 — CPO approve/reject only via HVT callback; sent is terminal-by-HVT.
         Probe(["ERev-BR-02", "ERev-BR-10"], "hvt_callback",
               lambda inp: HVTCallbackProcessor(TRIP).forward(**inp), cases=[
-            {"project_line": "PL1", "metier": "Backend", "approved": True, "comment": ""},
-            {"project_line": "PL1", "metier": "Backend", "approved": False, "comment": "redo"}]),
+            {"project_line": "PL1", "metier": "H-DESIGN", "approved": True, "comment": ""},
+            {"project_line": "PL1", "metier": "H-DESIGN", "approved": False, "comment": "redo"}]),
         # ERev-BR-04 — role permissions for send/export in Estimation Review.
         Probe(["ERev-BR-04"], "er_permission",
               lambda inp: EstimationReviewPermissionChecker(TRIP).forward(**inp), cases=[
@@ -166,10 +169,10 @@ def _allocation_probes() -> list[Probe]:
         Probe(["ALLOC-BR-02"], "alloc_rule_match",
               lambda inp: AllocationRuleMatcher(lm=TRIP).forward(**inp), cases=[
             {"job_units_json": json.dumps([
-                {"ju_code": "a", "metier": "Backend"},
-                {"ju_code": "b", "metier": "Backend", "societe": "Already S.L."}]),
+                {"ju_code": "a", "metier": "H-DESIGN"},
+                {"ju_code": "b", "metier": "H-DESIGN", "societe": "Already S.L."}]),
              "rules_json": json.dumps([
-                {"id": "R1", "fields": {"metier": "Backend"}, "societe": "Horse Spain S.L.", "cost_type": "FTE"}])}]),
+                {"id": "R1", "fields": {"metier": "H-DESIGN"}, "societe": "Horse Spain S.L.", "cost_type": "FTE"}])}]),
         # ALLOC-BR-04 — K€ recalculated from FTE via rate tables.
         Probe(["ALLOC-BR-04"], "alloc_ke_calc",
               lambda inp: KECalculator(TRIP).forward(**inp), cases=[
@@ -188,7 +191,7 @@ def _allocation_probes() -> list[Probe]:
         Probe(["ALLOC-BR-08"], "alloc_diversity",
               lambda inp: DiversityDropdownHandler(TRIP).forward(**inp), cases=[
             {"job_units_json": json.dumps([
-                {"ju_code": "a", "metier": "Backend"}])}]),
+                {"ju_code": "a", "metier": "H-DESIGN"}])}]),
         # ALLOC-BR-09 / ALLOC-BR-10 — bulk assign overwrites societe, never cost type.
         Probe(["ALLOC-BR-09", "ALLOC-BR-10"], "alloc_bulk_assign",
               lambda inp: BulkAssigner(TRIP).forward(**inp), cases=[
@@ -207,9 +210,9 @@ def _allocation_probes() -> list[Probe]:
                                         {"societe": "B", "percentage": 30}])}]),
         # ALLOC-BR-17 — BH/KM -> H-TESTING; else -> project line métier.
         Probe(["ALLOC-BR-17"], "alloc_ju_metier_routing", metier_routing, cases=[
-            {"unit_type": "Bench Hours", "project_line_metier": "Backend"},
-            {"unit_type": "Kilometres", "project_line_metier": "Frontend"},
-            {"unit_type": "Man Day", "project_line_metier": "Backend"}]),
+            {"unit_type": "Bench Hours", "project_line_metier": "H-DESIGN"},
+            {"unit_type": "Kilometres", "project_line_metier": "H-SOFTWARE"},
+            {"unit_type": "Man Day", "project_line_metier": "H-DESIGN"}]),
     ]
 
 
@@ -282,7 +285,7 @@ def _management_view_probes() -> list[Probe]:
             {"pairs": [{"status": "approved"}, {"status": "approved"}, {"status": "draft"}]}]),
         # MGMT-BR-04 — H-NP / H-PROJECT excluded.
         Probe(["MGMT-BR-04"], "mgmt_metier_filter", metier_filter, cases=[
-            {"pairs": [{"metier": "Backend", "status": "approved"},
+            {"pairs": [{"metier": "H-DESIGN", "status": "approved"},
                        {"metier": "H-NP", "status": "approved"},
                        {"metier": "H-PROJECT", "status": "draft"}], "metier": "All"}]),
     ]
@@ -356,20 +359,20 @@ def _transversal_probes() -> list[Probe]:
 
     def table_filter_sort(inp):
         m = TableStateManager(TRIP)
-        m.set_filter("p", "metier", "Backend")
+        m.set_filter("p", "metier", "H-DESIGN")
         m.set_sort("p", "name", "asc")
-        rows = [{"metier": "Backend", "name": "b"}, {"metier": "Frontend", "name": "a"},
-                {"metier": "Backend", "name": "a"}]
+        rows = [{"metier": "H-DESIGN", "name": "b"}, {"metier": "H-SOFTWARE", "name": "a"},
+                {"metier": "H-DESIGN", "name": "a"}]
         return {"filtered": m.apply_filters(rows, "p"), "sorted": m.apply_sort(rows, "p")}
 
     def table_persist(inp):
         m = TableStateManager(TRIP)
-        m.set_filter("p", "metier", "Backend")
+        m.set_filter("p", "metier", "H-DESIGN")
         return _state_dict(m.get_state("p"))
 
     def table_reset(inp):
         m = TableStateManager(TRIP)
-        m.set_filter("p", "metier", "Backend")
+        m.set_filter("p", "metier", "H-DESIGN")
         m.reset_page("p")
         return _state_dict(m.get_state("p"))
 
@@ -428,6 +431,14 @@ def build_probes() -> dict[str, list[Probe]]:
     }
 
 
+def build_endpoint_fixtures(version: str) -> dict:
+    """name -> endpoint fixture dict. One file per endpoint under fixtures/endpoints/."""
+    return {
+        "project_lines": generate_endpoint_fixtures(
+            _project_lines_ep.PROBE, _project_lines_ep.SEED, version),
+    }
+
+
 def covered_rule_ids() -> list[str]:
     ids: set[str] = set()
     for probes in build_probes().values():
@@ -450,6 +461,16 @@ def _emit(check: bool) -> int:
                 drift.append(view)
         else:
             write_fixture_file(path, entries)
+
+    for name, fixture in build_endpoint_fixtures(version).items():
+        ep_path = ENDPOINTS_DIR / f"{name}.json"
+        new_ep = canonical_json(fixture)
+        if check:
+            old_ep = ep_path.read_text() if ep_path.exists() else ""
+            if old_ep != new_ep:
+                drift.append(f"endpoints/{name}")
+        else:
+            write_fixture_file(ep_path, fixture)
 
     inv = {
         "sdd_version": version,
