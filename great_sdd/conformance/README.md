@@ -161,3 +161,8 @@ Endpoint fixtures do NOT enter the business-rule census.
 Implemented: `GET /project-lines` (mirrors `cap_horse_great` pev-openapi + `list_lines`).
 The frontend loads the same JSON as its mock + contract test; the backend can seed
 `fixture.seed` and run its handler against each `request`.
+
+> **Row ordering:** the real endpoint query has no `ORDER BY`, so `data` row order is
+> unspecified by the contract. The oracle sorts `data` by `pl_number` to keep the fixture
+> byte-stable — a consumer replaying the fixture must sort `data` by `pl_number` before the
+> exact-match (`filterOptions` lists, by contrast, are contract-sorted).
