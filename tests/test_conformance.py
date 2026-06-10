@@ -459,4 +459,4 @@ def test_coverage_lists_endpoints_separately_from_rule_census():
     lines = endpoint_coverage_lines()
     joined = "\n".join(lines)
     assert "GET /project-lines" in joined
-    assert "7" in joined            # 7 cases
+    assert "7 cases" in joined

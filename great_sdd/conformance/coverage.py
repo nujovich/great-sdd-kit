@@ -19,8 +19,9 @@ from great_sdd.conformance.exclusions import (
 from great_sdd.conformance.generate import REPO_ROOT, FIXTURES_DIR
 
 
-def endpoint_coverage_lines() -> list:
+def endpoint_coverage_lines() -> list[str]:
     """Human-readable endpoint coverage, SEPARATE from the business-rule census."""
+    # deferred: runner imports generate + endpoints; a top-level import here would be circular
     from great_sdd.conformance.runner import load_endpoint_fixtures
     lines = []
     for fx in load_endpoint_fixtures():
