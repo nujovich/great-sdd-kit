@@ -162,3 +162,60 @@ def run_conformance(fixtures: list[dict], consumer_fn: Callable[[dict], dict]) -
         "failures": failures,
         "exercised_rule_ids": sorted(exercised),
     }
+
+
+# ── Endpoint conformance ──
+
+@dataclass
+class EndpointProbe:
+    """Binds an HTTP endpoint to a deterministic fn over representative requests.
+
+    fn(request: dict) -> {"status": int, "body": dict | None}. One probe per
+    fixture file (one endpoint per file).
+    """
+    endpoint: str
+    name: str
+    fn: Callable[[dict], dict]
+    cases: list[dict] = field(default_factory=list)
+
+
+def generate_endpoint_fixtures(probe: EndpointProbe, seed: list, sdd_version: str) -> dict:
+    """Run every request case; emit one byte-stable fixture dict.
+
+    Shape: {endpoint, sdd_version, seed, cases:[{request, expected}]}, cases sorted
+    by canonical_json(request). fn runs under the caller-injected determinism guard.
+    """
+    cases = [{"request": req, "expected": probe.fn(req)} for req in probe.cases]
+    cases.sort(key=lambda c: canonical_json(c["request"]))
+    return {
+        "endpoint": probe.endpoint,
+        "sdd_version": sdd_version,
+        "seed": seed,
+        "cases": cases,
+    }
+
+
+def run_endpoint_conformance(fixture: dict, consumer_fn: Callable[[dict], dict]) -> dict:
+    """Run consumer_fn against each case; exact-match {status, body}.
+
+    consumer_fn receives {"endpoint", "request", "seed"} — never "expected", so it
+    cannot cheat. A backend uses "seed" to set up identical state before calling.
+    """
+    endpoint = fixture.get("endpoint", "")
+    seed = fixture.get("seed", [])
+    failures = []
+    for case in fixture["cases"]:
+        actual = consumer_fn({"endpoint": endpoint, "request": case["request"], "seed": seed})
+        if actual != case["expected"]:
+            failures.append({
+                "request": case["request"],
+                "expected": case["expected"],
+                "actual": actual,
+            })
+    return {
+        "endpoint": endpoint,
+        "total": len(fixture["cases"]),
+        "failed_count": len(failures),
+        "passed": not failures,
+        "failures": failures,
+    }

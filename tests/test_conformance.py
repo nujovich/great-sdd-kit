@@ -144,9 +144,9 @@ def test_inductor_selector_is_deterministic_and_lm_free():
     from great_sdd.modules.pre_estimation import InductorSelector
     sel = InductorSelector(TripwireLM())            # tripwire: must NOT call LM
     out1 = sel.forward(line_description="Build a complex REST API endpoint",
-                       metier="Backend", available_inductors_json="[]")
+                       metier="H-DESIGN", available_inductors_json="[]")
     out2 = sel.forward(line_description="Build a complex REST API endpoint",
-                       metier="Backend", available_inductors_json="[]")
+                       metier="H-DESIGN", available_inductors_json="[]")
     assert out1 == out2                              # deterministic
     sels = json.loads(out1["inductor_selections_json"])
     assert isinstance(sels, list) and len(sels) >= 1
@@ -159,9 +159,9 @@ def test_inductor_selector_empty_description_falls_back_to_all():
     from sdd.base_conformance import TripwireLM
     from great_sdd.modules.pre_estimation import InductorSelector
     out = InductorSelector(TripwireLM()).forward(
-        line_description="", metier="Backend", available_inductors_json="[]")
+        line_description="", metier="H-DESIGN", available_inductors_json="[]")
     sels = json.loads(out["inductor_selections_json"])
-    assert len(sels) == 3                            # all Backend inductors, canonical crans
+    assert len(sels) == 3                            # all H-DESIGN inductors, canonical crans
     assert all(s["selected_cran"] for s in sels)
 
 
@@ -316,3 +316,43 @@ def test_readme_quarantine_lists_every_excluded_rule():
         readme = fh.read()
     for key in list(NON_DETERMINISTIC_RULES) + list(NO_FUNCTION_SURFACE_RULES):
         assert f"`{key}`" in readme, f"README quarantine section missing {key}"
+
+
+# ═══════════════════════════════════════════════════════════
+# endpoint conformance — engine primitives
+# ═══════════════════════════════════════════════════════════
+def test_endpoint_probe_generates_sorted_byte_stable_fixture():
+    from sdd.base_conformance import EndpointProbe, generate_endpoint_fixtures
+    probe = EndpointProbe(
+        endpoint="GET /demo", name="demo",
+        fn=lambda req: {"status": 200, "body": {"echo": req.get("q")}},
+        cases=[{"q": "b"}, {"q": "a"}])
+    seed = [{"id": "1"}]
+    fx = generate_endpoint_fixtures(probe, seed, "9.9.9")
+    assert fx["endpoint"] == "GET /demo"
+    assert fx["sdd_version"] == "9.9.9"
+    assert fx["seed"] == seed
+    # cases sorted by canonical_json(request): {"q":"a"} before {"q":"b"}
+    assert [c["request"]["q"] for c in fx["cases"]] == ["a", "b"]
+    assert fx["cases"][0]["expected"] == {"status": 200, "body": {"echo": "a"}}
+
+
+def test_run_endpoint_conformance_exact_match_and_never_passes_expected():
+    from sdd.base_conformance import EndpointProbe, generate_endpoint_fixtures, run_endpoint_conformance
+    probe = EndpointProbe(
+        endpoint="GET /demo", name="demo",
+        fn=lambda req: {"status": 200, "body": {"echo": req["q"]}},
+        cases=[{"q": "a"}])
+    fx = generate_endpoint_fixtures(probe, [], "9.9.9")
+
+    seen_keys = []
+    def consumer(req):
+        seen_keys.append(set(req))
+        return {"status": 200, "body": {"echo": req["request"]["q"]}}
+    rep = run_endpoint_conformance(fx, consumer)
+    assert rep["passed"] and rep["failed_count"] == 0 and rep["total"] == 1
+    # consumer receives endpoint/request/seed, never "expected"
+    assert seen_keys[0] == {"endpoint", "request", "seed"}
+
+    bad = run_endpoint_conformance(fx, lambda req: {"status": 500, "body": None})
+    assert not bad["passed"] and bad["failures"][0]["actual"]["status"] == 500
