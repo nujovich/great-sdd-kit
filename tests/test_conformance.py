@@ -452,3 +452,11 @@ def test_oracle_endpoint_consumer_passes_all_cases():
     for rep in reports:
         assert rep["passed"], rep["failures"][:2]
     assert any(r["endpoint"] == "GET /project-lines" for r in reports)
+
+
+def test_coverage_lists_endpoints_separately_from_rule_census():
+    from great_sdd.conformance.coverage import endpoint_coverage_lines
+    lines = endpoint_coverage_lines()
+    joined = "\n".join(lines)
+    assert "GET /project-lines" in joined
+    assert "7" in joined            # 7 cases

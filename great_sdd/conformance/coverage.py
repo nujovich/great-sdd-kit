@@ -19,6 +19,15 @@ from great_sdd.conformance.exclusions import (
 from great_sdd.conformance.generate import REPO_ROOT, FIXTURES_DIR
 
 
+def endpoint_coverage_lines() -> list:
+    """Human-readable endpoint coverage, SEPARATE from the business-rule census."""
+    from great_sdd.conformance.runner import load_endpoint_fixtures
+    lines = []
+    for fx in load_endpoint_fixtures():
+        lines.append(f"Endpoint {fx['endpoint']}: {len(fx['cases'])} cases (mirrored contract)")
+    return lines
+
+
 def _denominator() -> list[str]:
     """Business rules minus deterministic-but-unprobeable ones (documented)."""
     excluded = set(NO_FUNCTION_SURFACE_RULES)
@@ -77,6 +86,8 @@ def main(argv=None) -> int:
               f"{', '.join(sorted(NO_FUNCTION_SURFACE_RULES))}")
         print(f"Version: consumer={skew['consumer_version']} oracle={skew['oracle_version']} "
               f"-> {'SKEW' if skew['skew'] else 'OK'}")
+        for line in endpoint_coverage_lines():
+            print(f"  {line}")
     return 0 if (cov["passed"] and not skew["skew"]) else 1
 
 
