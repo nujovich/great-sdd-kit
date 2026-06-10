@@ -62,7 +62,7 @@ def test_metier_filter():
         {"metier": "H-DESIGN", "status": "estimated"},
         {"metier": "H-NP", "status": "approved"},
         {"metier": "H-PROJECT", "status": "draft"},
-        {"metier": "Backend", "status": "to_do"},
+        {"metier": "H-DESIGN", "status": "to_do"},
     ]
     filtered = f.forward(pairs, "All")
     assert len(filtered) == 2  # H-NP and H-PROJECT excluded

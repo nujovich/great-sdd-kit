@@ -212,12 +212,12 @@ class TestWorkloadStandards:
     """Spec §6-8: Workload Standards"""
 
     def test_all_metiers_have_standards(self):
-        for metier in ["Backend", "Frontend", "Data", "DevOps", "QA", "Mobile"]:
+        for metier in ["H-DESIGN", "H-SOFTWARE", "H-TUNING", "H-PROJECT", "H-TESTING", "H-CUSTOMER"]:
             assert metier in WORKLOAD_STANDARDS
             assert len(WORKLOAD_STANDARDS[metier]) > 0
 
     def test_backend_has_api_endpoints(self):
-        names = [ind.name for ind in WORKLOAD_STANDARDS["Backend"]]
+        names = [ind.name for ind in WORKLOAD_STANDARDS["H-DESIGN"]]
         assert "API endpoints" in names
 
     def test_each_inductor_has_at_least_one_cran(self):

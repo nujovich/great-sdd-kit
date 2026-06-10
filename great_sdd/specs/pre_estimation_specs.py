@@ -73,7 +73,7 @@ ROLE_PERMISSIONS: dict[Role, RolePermission] = {
 }
 
 # Métiers (Owner N2)
-METIERS = ["Backend", "Frontend", "Data", "DevOps", "QA", "Mobile"]
+METIERS = ["H-DESIGN", "H-SOFTWARE", "H-TUNING", "H-PROJECT", "H-TESTING", "H-CUSTOMER"]
 
 # Métiers excluded from filter (H-NP and H-PROJECT)
 EXCLUDED_METIERS_FROM_FILTER = ["H-NP", "H-PROJECT"]
@@ -300,7 +300,7 @@ class Inductor:
 
 # Inductor definitions per métier and compatibility combo
 WORKLOAD_STANDARDS: dict[str, list[Inductor]] = {
-    "Backend": [
+    "H-DESIGN": [
         Inductor(
             name="API endpoints",
             crans=[
@@ -338,7 +338,7 @@ WORKLOAD_STANDARDS: dict[str, list[Inductor]] = {
             ],
         ),
     ],
-    "Frontend": [
+    "H-SOFTWARE": [
         Inductor(
             name="Pantallas UI",
             crans=[
@@ -363,7 +363,7 @@ WORKLOAD_STANDARDS: dict[str, list[Inductor]] = {
             ],
         ),
     ],
-    "Data": [
+    "H-TUNING": [
         Inductor(
             name="Pipelines ETL",
             crans=[
@@ -399,7 +399,7 @@ WORKLOAD_STANDARDS: dict[str, list[Inductor]] = {
             ],
         ),
     ],
-    "DevOps": [
+    "H-PROJECT": [
         Inductor(
             name="Despliegues infra",
             crans=[
@@ -413,7 +413,7 @@ WORKLOAD_STANDARDS: dict[str, list[Inductor]] = {
             ],
         ),
     ],
-    "QA": [
+    "H-TESTING": [
         Inductor(
             name="Test cases E2E",
             crans=[
@@ -427,7 +427,7 @@ WORKLOAD_STANDARDS: dict[str, list[Inductor]] = {
             ],
         ),
     ],
-    "Mobile": [
+    "H-CUSTOMER": [
         Inductor(
             name="Vistas mobile",
             crans=[

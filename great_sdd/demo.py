@@ -212,7 +212,7 @@ def demo_full_pipeline():
         selected_lines=selected,
         role=ENGINEER_ANA["role"],
         current_user=ENGINEER_ANA["user"],
-        metier="Backend",
+        metier="H-DESIGN",
         line_description=selected[0]["description"],
         sp_date=selected[0]["sp_date"],
     )

@@ -139,7 +139,7 @@ class TestHVTCallbackProcessing:
 
     def test_approval_transitions_to_approved(self):
         """Approved callback → target_status=approved."""
-        result = process_hvt_callback(HVTCallback("PL-001", "Backend", True))
+        result = process_hvt_callback(HVTCallback("PL-001", "H-DESIGN", True))
         assert result["target_status"] == LineStatus.APPROVED
         assert result["comment"] == ""
         assert result["notify_engineer"] is False
@@ -147,7 +147,7 @@ class TestHVTCallbackProcessing:
     def test_rejection_transitions_to_modification_requested(self):
         """Rejected callback → target_status=Modification Requested + comment + notify."""
         result = process_hvt_callback(
-            HVTCallback("PL-001", "Backend", False, "Insufficient detail")
+            HVTCallback("PL-001", "H-DESIGN", False, "Insufficient detail")
         )
         assert result["target_status"] == LineStatus.MODIFICATION_REQUESTED
         assert result["comment"] == "Insufficient detail"
@@ -156,7 +156,7 @@ class TestHVTCallbackProcessing:
     def test_approval_no_comment(self):
         """Approval callback with empty comment."""
         result = process_hvt_callback(
-            HVTCallback("PL-002", "Frontend", True, "")
+            HVTCallback("PL-002", "H-SOFTWARE", True, "")
         )
         assert result["target_status"] == LineStatus.APPROVED
         assert result["comment"] == ""
@@ -251,7 +251,7 @@ class TestApprovalColumnDeriverModule:
         self.deriver = ApprovalColumnDeriver()
 
     def test_derives_estimated_row(self):
-        row = {"id": "PL-001", "status": "estimated", "metier": "Backend"}
+        row = {"id": "PL-001", "status": "estimated", "metier": "H-DESIGN"}
         derived = self.deriver.derive_row(row)
         assert derived["engineer_approval"] == "✓"
         assert derived["cpo_approval"] == "— (not yet sent)"
@@ -334,14 +334,14 @@ class TestHVTCallbackProcessorModule:
 
     def test_approval(self):
         result = self.processor.forward(
-            project_line="PL-001", metier="Backend", approved=True
+            project_line="PL-001", metier="H-DESIGN", approved=True
         )
         assert result["target_status"] == "approved"
         assert result["transition_valid"] is True
 
     def test_rejection(self):
         result = self.processor.forward(
-            project_line="PL-001", metier="Backend", approved=False, comment="Too optimistic"
+            project_line="PL-001", metier="H-DESIGN", approved=False, comment="Too optimistic"
         )
         assert result["target_status"] == "modification_requested"
         assert result["transition_valid"] is True
@@ -359,7 +359,7 @@ class TestCSVExporterModule:
         assert result["row_count"] == "0"
 
     def test_export_simple_rows(self):
-        rows = [{"id": "PL-001", "name": "Auth API", "metier": "Backend",
+        rows = [{"id": "PL-001", "name": "Auth API", "metier": "H-DESIGN",
                  "total_fte": 1.5, "total_bh": 0, "total_km": 0}]
         result = self.exporter.forward(
             rows_json=json.dumps(rows), mode="all_filtered",
@@ -368,10 +368,10 @@ class TestCSVExporterModule:
         assert result["row_count"] == "1"
         assert "PL-001" in result["csv_content"]
         assert "Auth API" in result["csv_content"]
-        assert "Backend" in result["csv_content"]
+        assert "H-DESIGN" in result["csv_content"]
 
     def test_export_with_yearly_columns(self):
-        rows = [{"id": "PL-001", "name": "Auth API", "metier": "Backend",
+        rows = [{"id": "PL-001", "name": "Auth API", "metier": "H-DESIGN",
                  "total_fte": 1.5, "total_bh": 0, "total_km": 0}]
         result = self.exporter.forward(
             rows_json=json.dumps(rows), mode="all_filtered",
@@ -383,7 +383,7 @@ class TestCSVExporterModule:
 
     def test_export_with_inductors(self):
         rows = [{
-            "id": "PL-001", "name": "Auth API", "metier": "Backend",
+            "id": "PL-001", "name": "Auth API", "metier": "H-DESIGN",
             "inductors": [
                 {
                     "name": "API endpoints",
@@ -436,8 +436,8 @@ class TestEstimationReviewPipeline:
         )
         pipeline = EstimationReviewPipeline()
         rows = [
-            {"id": "PL-001", "status": "estimated", "metier": "Backend"},
-            {"id": "PL-002", "status": "draft", "metier": "Backend"},
+            {"id": "PL-001", "status": "estimated", "metier": "H-DESIGN"},
+            {"id": "PL-002", "status": "draft", "metier": "H-DESIGN"},
         ]
         ctx = pipeline.forward(role="PMO", grid_rows=rows)
         assert ctx.has_eligible_rows is True
@@ -449,8 +449,8 @@ class TestEstimationReviewPipeline:
         )
         pipeline = EstimationReviewPipeline()
         rows = [
-            {"id": "PL-001", "status": "estimated", "metier": "Backend"},
-            {"id": "PL-002", "status": "approved", "metier": "Frontend"},
+            {"id": "PL-001", "status": "estimated", "metier": "H-DESIGN"},
+            {"id": "PL-002", "status": "approved", "metier": "H-SOFTWARE"},
         ]
         ctx = pipeline.forward(role="PMO", grid_rows=rows)
         assert len(ctx.derived_columns) == 2
@@ -463,9 +463,9 @@ class TestEstimationReviewPipeline:
         )
         pipeline = EstimationReviewPipeline()
         rows = [
-            {"id": "PL-001", "status": "estimated", "metier": "Backend",
+            {"id": "PL-001", "status": "estimated", "metier": "H-DESIGN",
              "yearly_aggregation": {"2024": {"fte": 1.0, "bh": 0, "km": 0}}},
-            {"id": "PL-002", "status": "draft", "metier": "Backend"},
+            {"id": "PL-002", "status": "draft", "metier": "H-DESIGN"},
         ]
         result = pipeline.send_to_hvt("PMO", rows)
         assert result["success"] is True
@@ -489,7 +489,7 @@ class TestEstimationReviewPipeline:
             EstimationReviewPipeline,
         )
         pipeline = EstimationReviewPipeline()
-        result = pipeline.process_callback("PL-001", "Backend", True)
+        result = pipeline.process_callback("PL-001", "H-DESIGN", True)
         assert result["target_status"] == "approved"
         assert result["transition_valid"] is True
 
@@ -498,7 +498,7 @@ class TestEstimationReviewPipeline:
             EstimationReviewPipeline,
         )
         pipeline = EstimationReviewPipeline()
-        result = pipeline.process_callback("PL-001", "Backend", False, "Rework needed")
+        result = pipeline.process_callback("PL-001", "H-DESIGN", False, "Rework needed")
         assert result["target_status"] == "modification_requested"
         assert result["transition_valid"] is True
         assert result["notify_engineer"] is True
@@ -508,7 +508,7 @@ class TestEstimationReviewPipeline:
             EstimationReviewPipeline,
         )
         pipeline = EstimationReviewPipeline()
-        rows = [{"id": "PL-001", "name": "Test", "metier": "Backend",
+        rows = [{"id": "PL-001", "name": "Test", "metier": "H-DESIGN",
                  "total_fte": 1.0, "total_bh": 0, "total_km": 0}]
         result = pipeline.export_csv(rows, "all_filtered")
         assert result["row_count"] == "1"
