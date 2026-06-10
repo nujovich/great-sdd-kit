@@ -74,17 +74,17 @@ class TestStateMachine:
         assert LineStatus.DRAFT in STATUS_TRANSITIONS[LineStatus.DRAFT]
         assert LineStatus.ESTIMATED in STATUS_TRANSITIONS[LineStatus.DRAFT]
 
-    def test_estimated_can_go_to_sent_or_rejected(self):
+    def test_estimated_can_go_to_sent_or_modification_requested(self):
         assert LineStatus.SENT in STATUS_TRANSITIONS[LineStatus.ESTIMATED]
-        assert LineStatus.REJECTED in STATUS_TRANSITIONS[LineStatus.ESTIMATED]
+        assert LineStatus.MODIFICATION_REQUESTED in STATUS_TRANSITIONS[LineStatus.ESTIMATED]
 
-    def test_sent_can_go_to_approved_or_rejected(self):
+    def test_sent_can_go_to_approved_or_modification_requested(self):
         assert LineStatus.APPROVED in STATUS_TRANSITIONS[LineStatus.SENT]
-        assert LineStatus.REJECTED in STATUS_TRANSITIONS[LineStatus.SENT]
+        assert LineStatus.MODIFICATION_REQUESTED in STATUS_TRANSITIONS[LineStatus.SENT]
 
-    def test_rejected_can_go_back_to_draft_or_estimated(self):
-        assert LineStatus.DRAFT in STATUS_TRANSITIONS[LineStatus.REJECTED]
-        assert LineStatus.ESTIMATED in STATUS_TRANSITIONS[LineStatus.REJECTED]
+    def test_modification_requested_can_go_back_to_draft_or_estimated(self):
+        assert LineStatus.DRAFT in STATUS_TRANSITIONS[LineStatus.MODIFICATION_REQUESTED]
+        assert LineStatus.ESTIMATED in STATUS_TRANSITIONS[LineStatus.MODIFICATION_REQUESTED]
 
     def test_approved_is_terminal(self):
         assert LineStatus.APPROVED in TERMINAL_STATUSES
@@ -95,10 +95,10 @@ class TestStateMachine:
         assert LineStatus.SENT in LOCKED_STATUSES
         assert LineStatus.APPROVED in LOCKED_STATUSES
 
-    def test_editable_statuses_includes_todo_draft_rejected(self):
+    def test_editable_statuses_includes_todo_draft_modification_requested(self):
         assert LineStatus.TODO in EDITABLE_STATUSES
         assert LineStatus.DRAFT in EDITABLE_STATUSES
-        assert LineStatus.REJECTED in EDITABLE_STATUSES
+        assert LineStatus.MODIFICATION_REQUESTED in EDITABLE_STATUSES
 
 
 class TestRolePermissions:
@@ -461,7 +461,7 @@ class TestStatusTransitionValidatorSignature:
         assert result["is_valid"] is True
 
     def test_approved_no_transitions(self):
-        for status in ["draft", "estimated", "sent", "rejected"]:
+        for status in ["draft", "estimated", "sent", "modification_requested"]:
             result = self.validator.forward(
                 current_status="approved", target_status=status,
                 has_saved_draft_in_session=False
@@ -475,9 +475,9 @@ class TestStatusTransitionValidatorSignature:
         )
         assert result["is_valid"] is False
 
-    def test_rejected_to_draft(self):
+    def test_modification_requested_to_draft(self):
         result = self.validator.forward(
-            current_status="rejected", target_status="draft",
+            current_status="modification_requested", target_status="draft",
             has_saved_draft_in_session=False
         )
         assert result["is_valid"] is True

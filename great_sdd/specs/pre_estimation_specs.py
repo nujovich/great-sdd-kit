@@ -23,7 +23,7 @@ class LineStatus(Enum):
     DRAFT = "draft"
     ESTIMATED = "estimated"
     SENT = "sent"
-    REJECTED = "rejected"
+    MODIFICATION_REQUESTED = "modification_requested"
     APPROVED = "approved"
 
 
@@ -31,15 +31,15 @@ class LineStatus(Enum):
 STATUS_TRANSITIONS: dict[LineStatus, list[LineStatus]] = {
     LineStatus.TODO:      [LineStatus.DRAFT],
     LineStatus.DRAFT:     [LineStatus.DRAFT, LineStatus.ESTIMATED],
-    LineStatus.ESTIMATED: [LineStatus.SENT, LineStatus.REJECTED],
-    LineStatus.SENT:      [LineStatus.APPROVED, LineStatus.REJECTED],
-    LineStatus.REJECTED:  [LineStatus.DRAFT, LineStatus.ESTIMATED],
+    LineStatus.ESTIMATED: [LineStatus.SENT, LineStatus.MODIFICATION_REQUESTED],
+    LineStatus.SENT:      [LineStatus.APPROVED, LineStatus.MODIFICATION_REQUESTED],
+    LineStatus.MODIFICATION_REQUESTED:  [LineStatus.DRAFT, LineStatus.ESTIMATED],
     LineStatus.APPROVED:  [],  # Terminal state — no exits
 }
 
 # Status semantic groups
 LOCKED_STATUSES = {LineStatus.ESTIMATED, LineStatus.SENT, LineStatus.APPROVED}
-EDITABLE_STATUSES = {LineStatus.TODO, LineStatus.DRAFT, LineStatus.REJECTED}
+EDITABLE_STATUSES = {LineStatus.TODO, LineStatus.DRAFT, LineStatus.MODIFICATION_REQUESTED}
 TERMINAL_STATUSES = {LineStatus.APPROVED}
 
 

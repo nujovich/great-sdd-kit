@@ -124,9 +124,9 @@ class TestApprovalColumns:
         """Approved shows '✓ Approved' for CPO approval."""
         assert CPO_APPROVAL_MAP[LineStatus.APPROVED] == "✓ Approved"
 
-    def test_rejected_shows_rejected_for_cpo(self):
-        """Rejected shows '✗ Rejected' for CPO approval."""
-        assert CPO_APPROVAL_MAP[LineStatus.REJECTED] == "✗ Rejected"
+    def test_modification_requested_shows_rejected_for_cpo(self):
+        """Modification Requested shows '✗ Rejected' for CPO approval."""
+        assert CPO_APPROVAL_MAP[LineStatus.MODIFICATION_REQUESTED] == "✗ Rejected"
 
     def test_todo_shows_dash_for_both(self):
         """To do shows — for both approvals."""
@@ -144,12 +144,12 @@ class TestHVTCallbackProcessing:
         assert result["comment"] == ""
         assert result["notify_engineer"] is False
 
-    def test_rejection_transitions_to_rejected(self):
-        """Rejected callback → target_status=rejected + comment + notify."""
+    def test_rejection_transitions_to_modification_requested(self):
+        """Rejected callback → target_status=modification_requested + comment + notify."""
         result = process_hvt_callback(
             HVTCallback("PL-001", "Backend", False, "Insufficient detail")
         )
-        assert result["target_status"] == LineStatus.REJECTED
+        assert result["target_status"] == LineStatus.MODIFICATION_REQUESTED
         assert result["comment"] == "Insufficient detail"
         assert result["notify_engineer"] is True
 
@@ -268,8 +268,8 @@ class TestApprovalColumnDeriverModule:
         assert derived["engineer_approval"] == "✓"
         assert derived["cpo_approval"] == "✓ Approved"
 
-    def test_derives_rejected_row(self):
-        row = {"id": "PL-001", "status": "rejected"}
+    def test_derives_modification_requested_row(self):
+        row = {"id": "PL-001", "status": "modification_requested"}
         derived = self.deriver.derive_row(row)
         assert derived["engineer_approval"] == "—"
         assert derived["cpo_approval"] == "✗ Rejected"
@@ -343,7 +343,7 @@ class TestHVTCallbackProcessorModule:
         result = self.processor.forward(
             project_line="PL-001", metier="Backend", approved=False, comment="Too optimistic"
         )
-        assert result["target_status"] == "rejected"
+        assert result["target_status"] == "modification_requested"
         assert result["transition_valid"] is True
 
 
@@ -499,7 +499,7 @@ class TestEstimationReviewPipeline:
         )
         pipeline = EstimationReviewPipeline()
         result = pipeline.process_callback("PL-001", "Backend", False, "Rework needed")
-        assert result["target_status"] == "rejected"
+        assert result["target_status"] == "modification_requested"
         assert result["transition_valid"] is True
         assert result["notify_engineer"] is True
 

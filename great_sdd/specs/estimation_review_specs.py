@@ -72,7 +72,7 @@ ENGINEER_APPROVAL_MAP: dict[LineStatus, str] = {
     LineStatus.ESTIMATED: "✓",
     LineStatus.SENT:      "✓",
     LineStatus.APPROVED:  "✓",
-    LineStatus.REJECTED:  "—",
+    LineStatus.MODIFICATION_REQUESTED:  "—",
 }
 
 CPO_APPROVAL_MAP: dict[LineStatus, str] = {
@@ -81,7 +81,7 @@ CPO_APPROVAL_MAP: dict[LineStatus, str] = {
     LineStatus.ESTIMATED: "— (not yet sent)",
     LineStatus.SENT:      "⏳ Pending",
     LineStatus.APPROVED:  "✓ Approved",
-    LineStatus.REJECTED:  "✗ Rejected",
+    LineStatus.MODIFICATION_REQUESTED:  "✗ Rejected",
 }
 
 
@@ -119,7 +119,7 @@ def process_hvt_callback(callback: HVTCallback) -> dict:
 
     Returns:
         dict with:
-          - target_status: LineStatus (APPROVED or REJECTED)
+          - target_status: LineStatus (APPROVED or MODIFICATION_REQUESTED)
           - comment: str (rejection reason if rejected)
           - notify_engineer: bool (true if rejected)
     """
@@ -131,7 +131,7 @@ def process_hvt_callback(callback: HVTCallback) -> dict:
         }
     else:
         return {
-            "target_status": LineStatus.REJECTED,
+            "target_status": LineStatus.MODIFICATION_REQUESTED,
             "comment": callback.comment,
             "notify_engineer": True,
         }

@@ -106,7 +106,7 @@ def demo_state_machine():
         ("estimated",  "sent",      False, "✅ Estimated → Sent"),
         ("sent",       "approved",  False, "✅ Sent → Approved"),
         ("approved",   "draft",     False, "❌ Approved → Draft (terminal)"),
-        ("rejected",   "draft",     False, "✅ Rejected → Draft (rework)"),
+        ("modification_requested",   "draft",     False, "✅ Modification Requested → Draft (rework)"),
     ]
 
     for current, target, has_draft, label in transitions:

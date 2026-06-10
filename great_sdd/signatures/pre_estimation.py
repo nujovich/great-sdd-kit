@@ -83,7 +83,7 @@ VALIDATE_STATUS_TRANSITION = Signature(
     name="ValidateStatusTransition",
     description="Validate a status transition following the GREAT state machine.",
     inputs=[
-        Field("current_status", "Current status: to_do, draft, estimated, sent, rejected, approved"),
+        Field("current_status", "Current status: to_do, draft, estimated, sent, modification_requested, approved"),
         Field("target_status", "Desired target status"),
         Field("has_saved_draft_in_session", "Has 'Save as Draft' been clicked in current session", field_type="boolean"),
     ],

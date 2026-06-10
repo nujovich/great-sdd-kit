@@ -32,7 +32,7 @@ def test_8_rules():
 
 def test_pie_chart():
     slices = compute_pie_chart({"to_do": 10, "draft": 5, "estimated": 3,
-                                "sent": 2, "rejected": 1, "approved": 4})
+                                "sent": 2, "modification_requested": 1, "approved": 4})
     assert len(slices) == 6
     total_pct = sum(s.percentage for s in slices)
     assert total_pct == 100.0

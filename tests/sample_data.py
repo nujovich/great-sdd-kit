@@ -77,7 +77,7 @@ SAMPLE_PROJECT_LINES = [
         "injection_system": "Direct Injection",
         "assignee": "Ana Martinez",
         "metier": "Backend",
-        "status": "rejected",
+        "status": "modification_requested",
         "sp_date": "2026-05-01",
         "duration_months": 2,
         "description": "Redesign password recovery flow with transactional emails and rate limiting.",

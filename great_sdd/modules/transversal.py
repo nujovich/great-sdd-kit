@@ -410,7 +410,7 @@ class EmailAlertService(Module):
         TRANS-02: Content pending definition.
         """
         estimated = sum(1 for l in lines if l.get("status") == "estimated")
-        rejected = sum(1 for l in lines if l.get("status") == "rejected")
+        rejected = sum(1 for l in lines if l.get("status") == "modification_requested")
         approved = sum(1 for l in lines if l.get("status") == "approved")
 
         subject = f"[GREAT] Weekly Estimation Summary — {cycle_name}"
