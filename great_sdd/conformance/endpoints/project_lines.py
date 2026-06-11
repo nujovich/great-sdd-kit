@@ -150,6 +150,7 @@ REQUEST_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "ListProjectLinesQuery",
     "type": "object",
+    # all query params are optional (the endpoint returns the full role-scoped set with none)
     "properties": {
         "assignee": {"type": "string",
                      "description": "Filter by assignee OID (PMO/Admin/RCRC)."},
@@ -171,7 +172,8 @@ RESPONSE_SCHEMA = {
             "required": ["assignees", "metiers"],
             "properties": {
                 "assignees": {"type": "array", "items": {"type": "string"}},
-                "metiers": {"type": "array", "items": {"type": "string"}},
+                "metiers": {"type": "array",
+                            "items": {"type": "string", "enum": list(PROJECT_LINE_METIERS)}},
             },
         },
     },
