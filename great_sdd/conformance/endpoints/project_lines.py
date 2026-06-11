@@ -133,3 +133,79 @@ PROBE = EndpointProbe(
         {"role": None, "user_oid": None, "query": {}, "active_cycle": True},
     ],
 )
+
+# ── HTTP contract (mirrored from cap_horse_great pev-openapi.yaml) ──
+# Used by the collection exporter to build Bruno/Postman requests. The server
+# base path (/api/v1) is a collection variable {{baseUrl}}; auth is Bearer {{token}}.
+
+HTTP_BINDING = {
+    "method": "GET",
+    "path": "/project-lines",
+    "query_params": ["assignee", "metier"],
+    "auth": "bearer",
+    "body": None,
+}
+
+REQUEST_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ListProjectLinesQuery",
+    "type": "object",
+    "properties": {
+        "assignee": {"type": "string",
+                     "description": "Filter by assignee OID (PMO/Admin/RCRC)."},
+        "metier": {"type": "string", "enum": list(PROJECT_LINE_METIERS),
+                   "description": "Filter by project line métier (PMO/Admin/RCRC)."},
+    },
+    "additionalProperties": False,
+}
+
+RESPONSE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ProjectLinesResponse",
+    "type": "object",
+    "required": ["data", "filterOptions"],
+    "properties": {
+        "data": {"type": "array", "items": {"$ref": "#/definitions/ProjectLine"}},
+        "filterOptions": {
+            "type": "object",
+            "required": ["assignees", "metiers"],
+            "properties": {
+                "assignees": {"type": "array", "items": {"type": "string"}},
+                "metiers": {"type": "array", "items": {"type": "string"}},
+            },
+        },
+    },
+    "definitions": {
+        "ProjectLine": {
+            "type": "object",
+            "required": ["id", "pl_number", "pl_name", "status", "metier"],
+            "properties": {
+                "id": {"type": "string", "format": "uuid"},
+                "pl_number": {"type": "string"},
+                "pl_name": {"type": "string"},
+                "status": {"type": "string", "enum": list(STATUSES)},
+                "request_type": {"type": ["string", "null"]},
+                "client": {"type": ["string", "null"]},
+                "metier": {"type": "string", "enum": list(PROJECT_LINE_METIERS)},
+                "organ_type": {"type": ["string", "null"]},
+                "project_ranking": {"type": ["string", "null"]},
+                "market": {"type": ["string", "null"]},
+                "alliance_code": {"type": ["string", "null"]},
+                "vehicle_code": {"type": ["string", "null"]},
+                "energy": {"type": ["string", "null"]},
+                "injection_system": {"type": ["string", "null"]},
+                "standard_emissions": {"type": ["string", "null"]},
+                "engineering": {"type": ["string", "null"]},
+                "estimate_type": {"type": ["string", "null"]},
+                "sp_date": {"type": ["string", "null"], "format": "date"},
+                "pc_date": {"type": ["string", "null"], "format": "date"},
+                "co_date": {"type": ["string", "null"], "format": "date"},
+                "sop_date": {"type": ["string", "null"], "format": "date"},
+                "assignee": {"type": ["string", "null"],
+                             "description": "Entra OID (from column assignee_oid)."},
+                "total_days": {"type": ["integer", "null"]},
+                "total_keuro": {"type": ["number", "null"]},
+            },
+        }
+    },
+}

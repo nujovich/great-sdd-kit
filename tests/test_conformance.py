@@ -460,3 +460,23 @@ def test_coverage_lists_endpoints_separately_from_rule_census():
     joined = "\n".join(lines)
     assert "GET /project-lines" in joined
     assert "7 cases" in joined
+
+
+# ═══════════════════════════════════════════════════════════
+# collection export — oracle HTTP binding + schemas
+# ═══════════════════════════════════════════════════════════
+def test_project_lines_http_binding_and_schemas():
+    from great_sdd.conformance.endpoints.project_lines import (
+        HTTP_BINDING, REQUEST_SCHEMA, RESPONSE_SCHEMA, PROJECT_LINE_FIELDS)
+    assert HTTP_BINDING["method"] == "GET"
+    assert HTTP_BINDING["path"] == "/project-lines"
+    assert HTTP_BINDING["query_params"] == ["assignee", "metier"]
+    assert HTTP_BINDING["auth"] == "bearer"
+    # response schema's ProjectLine must cover exactly the 24 contract fields
+    pl_props = RESPONSE_SCHEMA["definitions"]["ProjectLine"]["properties"]
+    assert set(pl_props) == set(PROJECT_LINE_FIELDS)
+    # métier enum mirrors the contract (no H-TESTING) in both schemas
+    assert "H-TESTING" not in pl_props["metier"]["enum"]
+    assert "H-TESTING" not in REQUEST_SCHEMA["properties"]["metier"]["enum"]
+    # request query params line up with the binding
+    assert set(REQUEST_SCHEMA["properties"]) == set(HTTP_BINDING["query_params"])
