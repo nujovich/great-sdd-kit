@@ -1,0 +1,389 @@
+{
+  "GET /project-lines": [
+    {
+      "request": {
+        "active_cycle": false,
+        "query": {},
+        "role": "PMO",
+        "user_oid": "oid-pmo"
+      },
+      "response": {
+        "body": null,
+        "status": 404
+      },
+      "scenario": "no active cycle (404)"
+    },
+    {
+      "request": {
+        "active_cycle": true,
+        "query": {
+          "assignee": "oid-engineer-2"
+        },
+        "role": "Engineer",
+        "user_oid": "oid-engineer-1"
+      },
+      "response": {
+        "body": {
+          "data": [
+            {
+              "alliance_code": null,
+              "assignee": "oid-engineer-1",
+              "client": null,
+              "co_date": null,
+              "energy": null,
+              "engineering": null,
+              "estimate_type": null,
+              "id": "11111111-1111-4111-8111-111111111111",
+              "injection_system": null,
+              "market": null,
+              "metier": "H-SOFTWARE",
+              "organ_type": null,
+              "pc_date": null,
+              "pl_name": "Auth refactor",
+              "pl_number": "PL-001",
+              "project_ranking": null,
+              "request_type": null,
+              "sop_date": null,
+              "sp_date": null,
+              "standard_emissions": null,
+              "status": "Rejected",
+              "total_days": null,
+              "total_keuro": null,
+              "vehicle_code": null
+            },
+            {
+              "alliance_code": null,
+              "assignee": "oid-engineer-1",
+              "client": null,
+              "co_date": null,
+              "energy": null,
+              "engineering": null,
+              "estimate_type": null,
+              "id": "33333333-3333-4333-8333-333333333333",
+              "injection_system": null,
+              "market": null,
+              "metier": "H-NP",
+              "organ_type": null,
+              "pc_date": null,
+              "pl_name": "NP line",
+              "pl_number": "PL-003",
+              "project_ranking": null,
+              "request_type": null,
+              "sop_date": null,
+              "sp_date": null,
+              "standard_emissions": null,
+              "status": "To do",
+              "total_days": null,
+              "total_keuro": null,
+              "vehicle_code": null
+            }
+          ],
+          "filterOptions": {
+            "assignees": [
+              "oid-engineer-1"
+            ],
+            "metiers": [
+              "H-NP",
+              "H-SOFTWARE"
+            ]
+          }
+        },
+        "status": 200
+      },
+      "scenario": "Engineer — assignee=oid-engineer-2 (200)"
+    },
+    {
+      "request": {
+        "active_cycle": true,
+        "query": {
+          "metier": "H-DESIGN"
+        },
+        "role": "PMO",
+        "user_oid": "oid-pmo"
+      },
+      "response": {
+        "body": {
+          "data": [
+            {
+              "alliance_code": null,
+              "assignee": "oid-engineer-2",
+              "client": null,
+              "co_date": null,
+              "energy": null,
+              "engineering": null,
+              "estimate_type": null,
+              "id": "22222222-2222-4222-8222-222222222222",
+              "injection_system": null,
+              "market": null,
+              "metier": "H-DESIGN",
+              "organ_type": null,
+              "pc_date": null,
+              "pl_name": "OAuth integration",
+              "pl_number": "PL-002",
+              "project_ranking": null,
+              "request_type": null,
+              "sop_date": null,
+              "sp_date": null,
+              "standard_emissions": null,
+              "status": "To do",
+              "total_days": null,
+              "total_keuro": null,
+              "vehicle_code": null
+            }
+          ],
+          "filterOptions": {
+            "assignees": [
+              "oid-engineer-1",
+              "oid-engineer-2",
+              "oid-pmo"
+            ],
+            "metiers": [
+              "H-DESIGN",
+              "H-NP",
+              "H-PROJECT",
+              "H-SOFTWARE"
+            ]
+          }
+        },
+        "status": 200
+      },
+      "scenario": "PMO — metier=H-DESIGN (200)"
+    },
+    {
+      "request": {
+        "active_cycle": true,
+        "query": {},
+        "role": "CPO",
+        "user_oid": "oid-cpo"
+      },
+      "response": {
+        "body": null,
+        "status": 403
+      },
+      "scenario": "CPO — forbidden (403)"
+    },
+    {
+      "request": {
+        "active_cycle": true,
+        "query": {},
+        "role": "Engineer",
+        "user_oid": "oid-engineer-1"
+      },
+      "response": {
+        "body": {
+          "data": [
+            {
+              "alliance_code": null,
+              "assignee": "oid-engineer-1",
+              "client": null,
+              "co_date": null,
+              "energy": null,
+              "engineering": null,
+              "estimate_type": null,
+              "id": "11111111-1111-4111-8111-111111111111",
+              "injection_system": null,
+              "market": null,
+              "metier": "H-SOFTWARE",
+              "organ_type": null,
+              "pc_date": null,
+              "pl_name": "Auth refactor",
+              "pl_number": "PL-001",
+              "project_ranking": null,
+              "request_type": null,
+              "sop_date": null,
+              "sp_date": null,
+              "standard_emissions": null,
+              "status": "Rejected",
+              "total_days": null,
+              "total_keuro": null,
+              "vehicle_code": null
+            },
+            {
+              "alliance_code": null,
+              "assignee": "oid-engineer-1",
+              "client": null,
+              "co_date": null,
+              "energy": null,
+              "engineering": null,
+              "estimate_type": null,
+              "id": "33333333-3333-4333-8333-333333333333",
+              "injection_system": null,
+              "market": null,
+              "metier": "H-NP",
+              "organ_type": null,
+              "pc_date": null,
+              "pl_name": "NP line",
+              "pl_number": "PL-003",
+              "project_ranking": null,
+              "request_type": null,
+              "sop_date": null,
+              "sp_date": null,
+              "standard_emissions": null,
+              "status": "To do",
+              "total_days": null,
+              "total_keuro": null,
+              "vehicle_code": null
+            }
+          ],
+          "filterOptions": {
+            "assignees": [
+              "oid-engineer-1"
+            ],
+            "metiers": [
+              "H-NP",
+              "H-SOFTWARE"
+            ]
+          }
+        },
+        "status": 200
+      },
+      "scenario": "Engineer — all (200)"
+    },
+    {
+      "request": {
+        "active_cycle": true,
+        "query": {},
+        "role": "PMO",
+        "user_oid": "oid-pmo"
+      },
+      "response": {
+        "body": {
+          "data": [
+            {
+              "alliance_code": null,
+              "assignee": "oid-engineer-1",
+              "client": null,
+              "co_date": null,
+              "energy": null,
+              "engineering": null,
+              "estimate_type": null,
+              "id": "11111111-1111-4111-8111-111111111111",
+              "injection_system": null,
+              "market": null,
+              "metier": "H-SOFTWARE",
+              "organ_type": null,
+              "pc_date": null,
+              "pl_name": "Auth refactor",
+              "pl_number": "PL-001",
+              "project_ranking": null,
+              "request_type": null,
+              "sop_date": null,
+              "sp_date": null,
+              "standard_emissions": null,
+              "status": "Rejected",
+              "total_days": null,
+              "total_keuro": null,
+              "vehicle_code": null
+            },
+            {
+              "alliance_code": null,
+              "assignee": "oid-engineer-2",
+              "client": null,
+              "co_date": null,
+              "energy": null,
+              "engineering": null,
+              "estimate_type": null,
+              "id": "22222222-2222-4222-8222-222222222222",
+              "injection_system": null,
+              "market": null,
+              "metier": "H-DESIGN",
+              "organ_type": null,
+              "pc_date": null,
+              "pl_name": "OAuth integration",
+              "pl_number": "PL-002",
+              "project_ranking": null,
+              "request_type": null,
+              "sop_date": null,
+              "sp_date": null,
+              "standard_emissions": null,
+              "status": "To do",
+              "total_days": null,
+              "total_keuro": null,
+              "vehicle_code": null
+            },
+            {
+              "alliance_code": null,
+              "assignee": "oid-engineer-1",
+              "client": null,
+              "co_date": null,
+              "energy": null,
+              "engineering": null,
+              "estimate_type": null,
+              "id": "33333333-3333-4333-8333-333333333333",
+              "injection_system": null,
+              "market": null,
+              "metier": "H-NP",
+              "organ_type": null,
+              "pc_date": null,
+              "pl_name": "NP line",
+              "pl_number": "PL-003",
+              "project_ranking": null,
+              "request_type": null,
+              "sop_date": null,
+              "sp_date": null,
+              "standard_emissions": null,
+              "status": "To do",
+              "total_days": null,
+              "total_keuro": null,
+              "vehicle_code": null
+            },
+            {
+              "alliance_code": null,
+              "assignee": "oid-pmo",
+              "client": null,
+              "co_date": null,
+              "energy": null,
+              "engineering": null,
+              "estimate_type": null,
+              "id": "44444444-4444-4444-8444-444444444444",
+              "injection_system": null,
+              "market": null,
+              "metier": "H-PROJECT",
+              "organ_type": null,
+              "pc_date": null,
+              "pl_name": "Infra deploy",
+              "pl_number": "PL-004",
+              "project_ranking": null,
+              "request_type": null,
+              "sop_date": null,
+              "sp_date": null,
+              "standard_emissions": null,
+              "status": "Draft",
+              "total_days": null,
+              "total_keuro": null,
+              "vehicle_code": null
+            }
+          ],
+          "filterOptions": {
+            "assignees": [
+              "oid-engineer-1",
+              "oid-engineer-2",
+              "oid-pmo"
+            ],
+            "metiers": [
+              "H-DESIGN",
+              "H-NP",
+              "H-PROJECT",
+              "H-SOFTWARE"
+            ]
+          }
+        },
+        "status": 200
+      },
+      "scenario": "PMO — all (200)"
+    },
+    {
+      "request": {
+        "active_cycle": true,
+        "query": {},
+        "role": null,
+        "user_oid": null
+      },
+      "response": {
+        "body": null,
+        "status": 401
+      },
+      "scenario": "no JWT / role (401)"
+    }
+  ]
+}

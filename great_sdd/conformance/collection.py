@@ -234,3 +234,76 @@ def build_bruno(endpoints: list) -> dict:
     for seq, ep in enumerate(sorted(endpoints, key=lambda e: e["name"]), start=1):
         files[f"{_bru_slug(ep['name'])}.bru"] = _bru_file(ep, seq)
     return files
+
+
+def _artifact_blobs(endpoints: list) -> dict:
+    """Relative path -> file content (str) for ALL collection artifacts."""
+    blobs = {
+        "postman_collection.json": canonical_json(build_postman(endpoints)),
+        "examples.json": canonical_json(build_examples(endpoints)),
+    }
+    for rel, content in build_bruno(endpoints).items():
+        blobs[f"bruno/{rel}"] = content
+    return blobs
+
+
+def write_collections(endpoints: list, out_dir: Path) -> list:
+    """Write every artifact under out_dir. Returns the relative paths written."""
+    out_dir = Path(out_dir)
+    written = []
+    for rel, content in _artifact_blobs(endpoints).items():
+        path = out_dir / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        written.append(rel)
+    return sorted(written)
+
+
+def check_collections(endpoints: list, out_dir: Path) -> list:
+    """Return artifacts that drift from disk (empty == in sync)."""
+    out_dir = Path(out_dir)
+    drift = []
+    for rel, content in _artifact_blobs(endpoints).items():
+        path = out_dir / rel
+        on_disk = path.read_text(encoding="utf-8") if path.exists() else ""
+        if on_disk != content:
+            drift.append(rel)
+    return sorted(drift)
+
+
+def _cmd_generate(args) -> int:
+    endpoints = load_endpoints(Path(args.fixtures_dir))
+    out_dir = Path(args.out)
+    if args.check:
+        drift = check_collections(endpoints, out_dir)
+        if drift:
+            print(f"COLLECTION DRIFT in: {', '.join(drift)}. "
+                  f"Run: python -m great_sdd.conformance.collection generate", file=sys.stderr)
+            return 1
+        print(f"checked collections for {len(endpoints)} endpoint(s) in {out_dir}.")
+        return 0
+    written = write_collections(endpoints, out_dir)
+    print(f"wrote {len(written)} collection artifact(s) for "
+          f"{len(endpoints)} endpoint(s) -> {out_dir}.")
+    return 0
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(
+        description="Export Bruno/Postman collections from conformance endpoint fixtures.")
+    sub = ap.add_subparsers(dest="command", required=True)
+
+    g = sub.add_parser("generate", help="Write collection artifacts to disk.")
+    g.add_argument("--fixtures-dir", default=str(ENDPOINTS_DIR),
+                   help="Dir of endpoint fixtures (*.json).")
+    g.add_argument("--out", default=str(DEFAULT_OUT), help="Output dir for artifacts.")
+    g.add_argument("--check", action="store_true",
+                   help="Verify committed artifacts are in sync (exit 1 on drift).")
+    g.set_defaults(func=_cmd_generate)
+
+    args = ap.parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

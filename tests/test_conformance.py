@@ -579,3 +579,20 @@ def test_build_bruno_files():
     close = max(i for i, l in enumerate(lines) if l == "}")
     for l in lines[di + 1:close]:
         assert l != "}", f"bare }} would close Bruno docs block early: {l!r}"
+
+
+def test_collection_generate_writes_and_is_byte_stable():
+    from great_sdd.conformance.collection import write_collections, DEFAULT_OUT, load_endpoints
+    write_collections(load_endpoints(), DEFAULT_OUT)
+    base = str(DEFAULT_OUT)
+    pm = os.path.join(base, "postman_collection.json")
+    ex = os.path.join(base, "examples.json")
+    bru = os.path.join(base, "bruno", "project-lines.bru")
+    assert os.path.exists(pm) and os.path.exists(ex) and os.path.exists(bru)
+    # examples.json round-trips and has all 7 cases
+    examples = json.loads(open(ex, encoding="utf-8").read())
+    assert len(examples["GET /project-lines"]) == 7
+    # byte-stable: regenerating produces identical bytes
+    before = open(pm, encoding="utf-8").read()
+    write_collections(load_endpoints(), DEFAULT_OUT)
+    assert open(pm, encoding="utf-8").read() == before
