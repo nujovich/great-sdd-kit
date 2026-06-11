@@ -313,6 +313,8 @@ def build_zip_bytes(endpoints: list) -> bytes:
 def _cmd_export(args) -> int:
     endpoints = load_endpoints(Path(args.fixtures_dir))
     out = Path(args.out)
+    if out.parent != Path(""):
+        out.parent.mkdir(parents=True, exist_ok=True)
     out.write_bytes(build_zip_bytes(endpoints))
     print(f"wrote collection bundle for {len(endpoints)} endpoint(s) -> {out}.")
     return 0
@@ -334,7 +336,7 @@ def main(argv=None) -> int:
     e = sub.add_parser("export", help="Bundle the collections into a portable .zip.")
     e.add_argument("--fixtures-dir", default=str(ENDPOINTS_DIR),
                    help="Dir of endpoint fixtures (*.json).")
-    e.add_argument("--out", default="great-collections.zip", help="Output .zip path.")
+    e.add_argument("--out", default="great-collections.zip", help="Output .zip path (overwrites if it exists).")
     e.set_defaults(func=_cmd_export)
 
     args = ap.parse_args(argv)
