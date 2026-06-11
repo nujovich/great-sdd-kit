@@ -177,3 +177,55 @@ def build_postman(endpoints: list) -> dict:
         ],
         "item": items,
     }
+
+
+def _bru_slug(name: str) -> str:
+    """Filename slug from an endpoint name, e.g. 'GET /project-lines' -> 'project-lines'."""
+    return name.split(" ", 1)[-1].strip("/").replace("/", "_") or "endpoint"
+
+
+def _bru_query_string(binding: dict) -> str:
+    qp = binding.get("query_params", [])
+    return ("?" + "&".join(f"{k}=" for k in qp)) if qp else ""
+
+
+def _bru_file(ep: dict, seq: int) -> str:
+    """Native Bruno .bru content for one endpoint."""
+    binding = ep["module"].HTTP_BINDING
+    method = binding["method"].lower()
+    url = "{{baseUrl}}" + binding["path"] + _bru_query_string(binding)
+    query_block = ""
+    if binding.get("query_params"):
+        lines = "\n".join(f"  {k}: " for k in binding["query_params"])
+        query_block = f"\nparams:query {{\n{lines}\n}}\n"
+    # scenarios + schemas go in docs (Bruno has no saved-example concept)
+    scenarios = "\n".join(
+        f"- {_scenario_label(c['request'], c['expected']['status'])}"
+        for c in ep["fixture"]["cases"])
+    docs = (
+        f"{ep['name']}\n\n## Scenarios\n{scenarios}\n\n"
+        + _markdown_docs(binding, ep["module"].REQUEST_SCHEMA,
+                         ep["module"].RESPONSE_SCHEMA)
+    )
+    return (
+        f"meta {{\n  name: {ep['name']}\n  type: http\n  seq: {seq}\n}}\n\n"
+        f"{method} {{\n  url: {url}\n  body: none\n  auth: bearer\n}}\n"
+        f"{query_block}\n"
+        f"headers {{\n  Authorization: Bearer {{{{token}}}}\n}}\n\n"
+        f"auth:bearer {{\n  token: {{{{token}}}}\n}}\n\n"
+        f"docs {{\n{docs}\n}}\n"
+    )
+
+
+def build_bruno(endpoints: list) -> dict:
+    """Relative path -> file content for a native Bruno collection folder."""
+    files = {
+        "bruno.json": canonical_json({
+            "version": "1",
+            "name": "GREAT API — conformance collection",
+            "type": "collection",
+        }).rstrip() + "\n",
+    }
+    for seq, ep in enumerate(sorted(endpoints, key=lambda e: e["name"]), start=1):
+        files[f"{_bru_slug(ep['name'])}.bru"] = _bru_file(ep, seq)
+    return files

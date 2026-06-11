@@ -555,3 +555,21 @@ def test_postman_examples_reflect_scenario_auth_and_query():
     # the saved request template lists optional params as disabled (shown, not sent)
     assert item["request"]["url"]["query"]
     assert all(q.get("disabled") for q in item["request"]["url"]["query"])
+
+
+def test_build_bruno_files():
+    from great_sdd.conformance.collection import build_bruno, load_endpoints
+    files = build_bruno(load_endpoints())
+    assert "bruno.json" in files
+    meta = json.loads(files["bruno.json"])
+    assert meta["type"] == "collection" and meta["name"]
+    # one .bru per endpoint
+    bru_files = [k for k in files if k.endswith(".bru")]
+    assert len(bru_files) == 1
+    bru = files[bru_files[0]]
+    assert "meta {" in bru and "get {" in bru
+    assert "url: {{baseUrl}}/project-lines" in bru
+    assert "Authorization: Bearer {{token}}" in bru
+    assert "docs {" in bru and "Response schema" in bru
+    # scenarios listed in docs
+    assert "CPO — forbidden (403)" in bru
