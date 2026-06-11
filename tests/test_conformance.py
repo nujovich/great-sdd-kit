@@ -563,13 +563,19 @@ def test_build_bruno_files():
     assert "bruno.json" in files
     meta = json.loads(files["bruno.json"])
     assert meta["type"] == "collection" and meta["name"]
-    # one .bru per endpoint
     bru_files = [k for k in files if k.endswith(".bru")]
     assert len(bru_files) == 1
     bru = files[bru_files[0]]
     assert "meta {" in bru and "get {" in bru
-    assert "url: {{baseUrl}}/project-lines" in bru
+    # clean url line — no empty query string appended
+    assert "  url: {{baseUrl}}/project-lines\n" in bru
     assert "Authorization: Bearer {{token}}" in bru
     assert "docs {" in bru and "Response schema" in bru
-    # scenarios listed in docs
     assert "CPO — forbidden (403)" in bru
+    # Bruno closes a docs block at the first column-0 '}'. The embedded JSON Schema
+    # must be indented so NO inner line is a bare '}' before the real block close.
+    lines = bru.split("\n")
+    di = next(i for i, l in enumerate(lines) if l.startswith("docs {"))
+    close = max(i for i, l in enumerate(lines) if l == "}")
+    for l in lines[di + 1:close]:
+        assert l != "}", f"bare }} would close Bruno docs block early: {l!r}"

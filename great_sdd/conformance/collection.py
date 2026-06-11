@@ -184,16 +184,21 @@ def _bru_slug(name: str) -> str:
     return name.split(" ", 1)[-1].strip("/").replace("/", "_") or "endpoint"
 
 
-def _bru_query_string(binding: dict) -> str:
-    qp = binding.get("query_params", [])
-    return ("?" + "&".join(f"{k}=" for k in qp)) if qp else ""
+def _indent_docs(text: str) -> str:
+    """Indent docs content 2 spaces so embedded JSON braces never start a line.
+
+    Bruno's .bru grammar closes a `docs {` block at the first newline+`}`; a bare
+    `}` at column 0 (from pretty-printed JSON Schema) would truncate it. Indenting
+    matches Bruno's own writer, which outdents on read.
+    """
+    return "\n".join("  " + line if line else line for line in text.split("\n"))
 
 
 def _bru_file(ep: dict, seq: int) -> str:
     """Native Bruno .bru content for one endpoint."""
     binding = ep["module"].HTTP_BINDING
     method = binding["method"].lower()
-    url = "{{baseUrl}}" + binding["path"] + _bru_query_string(binding)
+    url = "{{baseUrl}}" + binding["path"]
     query_block = ""
     if binding.get("query_params"):
         lines = "\n".join(f"  {k}: " for k in binding["query_params"])
@@ -213,7 +218,7 @@ def _bru_file(ep: dict, seq: int) -> str:
         f"{query_block}\n"
         f"headers {{\n  Authorization: Bearer {{{{token}}}}\n}}\n\n"
         f"auth:bearer {{\n  token: {{{{token}}}}\n}}\n\n"
-        f"docs {{\n{docs}\n}}\n"
+        f"docs {{\n{_indent_docs(docs)}\n}}\n"
     )
 
 
