@@ -508,3 +508,28 @@ def test_project_lines_http_binding_and_schemas():
     assert "H-TESTING" not in REQUEST_SCHEMA["properties"]["metier"]["enum"]
     # request query params line up with the binding
     assert set(REQUEST_SCHEMA["properties"]) == set(HTTP_BINDING["query_params"])
+
+
+def test_build_postman_collection_v21_shape():
+    from great_sdd.conformance.collection import build_postman, load_endpoints
+    coll = build_postman(load_endpoints())
+    assert coll["info"]["schema"] == \
+        "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    assert any(v["key"] == "baseUrl" for v in coll["variable"])
+    assert any(v["key"] == "token" for v in coll["variable"])
+    item = next(i for i in coll["item"] if i["name"] == "GET /project-lines")
+    assert item["request"]["method"] == "GET"
+    # bearer auth header present
+    assert any(h["key"] == "Authorization" and h["value"] == "Bearer {{token}}"
+               for h in item["request"]["header"])
+    # url uses {{baseUrl}} + path + query params
+    assert item["request"]["url"]["raw"].startswith("{{baseUrl}}/project-lines")
+    assert {q["key"] for q in item["request"]["url"]["query"]} == {"assignee", "metier"}
+    # one saved example per conformance case, each with its status code
+    assert len(item["response"]) == 7
+    codes = sorted(r["code"] for r in item["response"])
+    assert codes == [200, 200, 200, 200, 401, 403, 404]
+    # request description embeds both schemas + the 24 fields, no H-TESTING
+    desc = item["request"]["description"]
+    assert "Request schema" in desc and "Response schema" in desc
+    assert "total_keuro" in desc and "H-TESTING" not in desc

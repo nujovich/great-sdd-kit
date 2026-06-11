@@ -80,3 +80,83 @@ def build_examples(endpoints: list) -> dict:
             })
         out[ep["name"]] = rows
     return out
+
+
+def _markdown_docs(binding: dict, request_schema: dict, response_schema: dict) -> str:
+    """Markdown for a request description: both JSON Schemas + auth note."""
+    return (
+        f"`{binding['method']} {{{{baseUrl}}}}{binding['path']}`\n\n"
+        f"Auth: Bearer `{{{{token}}}}`.\n\n"
+        "## Request schema\n\n```json\n"
+        + canonical_json(request_schema).rstrip()
+        + "\n```\n\n## Response schema\n\n```json\n"
+        + canonical_json(response_schema).rstrip()
+        + "\n```\n"
+    )
+
+
+def _pm_url(binding: dict, query: dict = None) -> dict:
+    """Postman url object: {{baseUrl}} + path segments + query params."""
+    query = query or {}
+    qitems = [{"key": k, "value": str(query.get(k, ""))}
+              for k in binding.get("query_params", [])]
+    raw = "{{baseUrl}}" + binding["path"]
+    if qitems:
+        raw += "?" + "&".join(f"{q['key']}={q['value']}" for q in qitems)
+    return {
+        "raw": raw,
+        "host": ["{{baseUrl}}"],
+        "path": [seg for seg in binding["path"].split("/") if seg],
+        "query": qitems,
+    }
+
+
+def _pm_headers(binding: dict) -> list:
+    headers = []
+    if binding.get("auth") == "bearer":
+        headers.append({"key": "Authorization", "value": "Bearer {{token}}"})
+    return headers
+
+
+def build_postman(endpoints: list) -> dict:
+    """Postman Collection v2.1: one item per endpoint, one saved example per case."""
+    items = []
+    for ep in endpoints:
+        binding = ep["module"].HTTP_BINDING
+        desc = _markdown_docs(binding, ep["module"].REQUEST_SCHEMA,
+                              ep["module"].RESPONSE_SCHEMA)
+        headers = _pm_headers(binding)
+        responses = []
+        for case in ep["fixture"]["cases"]:
+            status = case["expected"]["status"]
+            body = case["expected"]["body"]
+            responses.append({
+                "name": _scenario_label(case["request"], status),
+                "originalRequest": {
+                    "method": binding["method"], "header": headers,
+                    "url": _pm_url(binding, (case["request"].get("query") or {})),
+                },
+                "code": status,
+                "_postman_previewlanguage": "json",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": canonical_json(body).rstrip() if body is not None else "",
+            })
+        items.append({
+            "name": ep["name"],
+            "request": {"method": binding["method"], "header": headers,
+                        "url": _pm_url(binding), "description": desc},
+            "response": responses,
+        })
+    return {
+        "info": {
+            "name": "GREAT API — conformance collection",
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+            "description": "Generated from great_sdd conformance endpoint fixtures. "
+                           "Set {{baseUrl}} and {{token}} before sending.",
+        },
+        "variable": [
+            {"key": "baseUrl", "value": "/api/v1"},
+            {"key": "token", "value": "<JWT>"},
+        ],
+        "item": items,
+    }
