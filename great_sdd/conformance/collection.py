@@ -42,6 +42,10 @@ def load_endpoints(fixtures_dir: Path = ENDPOINTS_DIR) -> list:
     endpoints = []
     for fx in _load_endpoint_fixtures(fixtures_dir):
         name = fx["endpoint"]
+        if name not in _ENDPOINT_MODULES:
+            raise ValueError(
+                f"No oracle module registered for endpoint {name!r}; "
+                f"add it to _ENDPOINT_MODULES in collection.py.")
         endpoints.append({"name": name, "fixture": fx,
                           "module": _ENDPOINT_MODULES[name]})
     return endpoints
