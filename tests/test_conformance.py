@@ -596,3 +596,18 @@ def test_collection_generate_writes_and_is_byte_stable():
     before = open(pm, encoding="utf-8").read()
     write_collections(load_endpoints(), DEFAULT_OUT)
     assert open(pm, encoding="utf-8").read() == before
+
+
+def test_collection_export_zip_is_deterministic(tmp_path):
+    import io as _io
+    import zipfile
+    from great_sdd.conformance.collection import build_zip_bytes, load_endpoints
+    blob1 = build_zip_bytes(load_endpoints())
+    blob2 = build_zip_bytes(load_endpoints())
+    assert isinstance(blob1, bytes)
+    assert blob1 == blob2                        # deterministic (fixed date_time)
+    zf = zipfile.ZipFile(_io.BytesIO(blob1))
+    names = set(zf.namelist())
+    assert "postman_collection.json" in names
+    assert "examples.json" in names
+    assert any(n.startswith("bruno/") and n.endswith(".bru") for n in names)

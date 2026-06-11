@@ -295,6 +295,29 @@ def _cmd_generate(args) -> int:
     return 0
 
 
+# Fixed timestamp so the zip is byte-identical across runs (no now()).
+_ZIP_DATE_TIME = (1980, 1, 1, 0, 0, 0)
+
+
+def build_zip_bytes(endpoints: list) -> bytes:
+    """A deterministic .zip of every collection artifact (sorted, fixed mtime)."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for rel, content in sorted(_artifact_blobs(endpoints).items()):
+            info = zipfile.ZipInfo(filename=rel, date_time=_ZIP_DATE_TIME)
+            info.compress_type = zipfile.ZIP_DEFLATED
+            zf.writestr(info, content.encode("utf-8"))
+    return buf.getvalue()
+
+
+def _cmd_export(args) -> int:
+    endpoints = load_endpoints(Path(args.fixtures_dir))
+    out = Path(args.out)
+    out.write_bytes(build_zip_bytes(endpoints))
+    print(f"wrote collection bundle for {len(endpoints)} endpoint(s) -> {out}.")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(
         description="Export Bruno/Postman collections from conformance endpoint fixtures.")
@@ -307,6 +330,12 @@ def main(argv=None) -> int:
     g.add_argument("--check", action="store_true",
                    help="Verify committed artifacts are in sync (exit 1 on drift).")
     g.set_defaults(func=_cmd_generate)
+
+    e = sub.add_parser("export", help="Bundle the collections into a portable .zip.")
+    e.add_argument("--fixtures-dir", default=str(ENDPOINTS_DIR),
+                   help="Dir of endpoint fixtures (*.json).")
+    e.add_argument("--out", default="great-collections.zip", help="Output .zip path.")
+    e.set_defaults(func=_cmd_export)
 
     args = ap.parse_args(argv)
     return args.func(args)
