@@ -166,3 +166,20 @@ The frontend loads the same JSON as its mock + contract test; the backend can se
 > unspecified by the contract. The oracle sorts `data` by `pl_number` to keep the fixture
 > byte-stable — a consumer replaying the fixture must sort `data` by `pl_number` before the
 > exact-match (`filterOptions` lists, by contrast, are contract-sorted).
+
+### Exporting Bruno / Postman collections
+
+From the endpoint fixtures, generate importable API collections (the fixtures are a
+diff oracle, not made for browsing):
+
+```bash
+python -m great_sdd.conformance.collection generate         # write postman_collection.json + bruno/ + examples.json
+python -m great_sdd.conformance.collection generate --check  # CI: exit 1 if committed artifacts drift
+python -m great_sdd.conformance.collection export --out great-collections.zip   # portable zip bundle
+```
+
+Artifacts land in `fixtures/endpoints/collections/` (committed). Both commands accept
+`--fixtures-dir DIR` to run on-demand over new user data (a `{endpoint, seed, cases}`
+JSON) without touching the committed tree. Set `{{baseUrl}}` (`/api/v1`) and `{{token}}`
+(Bearer JWT) after importing. Each request carries the request/response JSON Schema in
+its description and one saved example per conformance scenario (200/403/404/401).

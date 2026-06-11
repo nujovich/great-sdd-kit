@@ -31,6 +31,8 @@ Comandos (requiere Python ≥3.11):
 python -m great_sdd.conformance.generate            # (re)generar fixtures
 python -m great_sdd.conformance.generate --check    # CI: exit 1 si hay drift
 python -m great_sdd.conformance.coverage --from-fixtures --threshold 0.70
+python -m great_sdd.conformance.collection generate   # exporta collections Bruno/Postman desde los endpoint fixtures
+python -m great_sdd.conformance.collection export --out great-collections.zip   # bundle .zip portable
 ```
 
 Cobertura actual: **55/55 reglas cubribles (100%)**; las 40 restantes son exclusiones
