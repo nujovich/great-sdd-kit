@@ -463,6 +463,34 @@ def test_coverage_lists_endpoints_separately_from_rule_census():
 
 
 # ═══════════════════════════════════════════════════════════
+# collection export — foundations
+# ═══════════════════════════════════════════════════════════
+def test_scenario_label_covers_statuses():
+    from great_sdd.conformance.collection import _scenario_label
+    assert _scenario_label({"role": None}, 401) == "no JWT / role (401)"
+    assert _scenario_label({"role": "CPO"}, 403) == "CPO — forbidden (403)"
+    assert _scenario_label({"role": "PMO"}, 404) == "no active cycle (404)"
+    assert _scenario_label({"role": "PMO", "query": {}}, 200) == "PMO — all (200)"
+    assert _scenario_label({"role": "PMO", "query": {"metier": "H-DESIGN"}}, 200) \
+        == "PMO — metier=H-DESIGN (200)"
+
+
+def test_build_examples_has_all_cases_per_endpoint():
+    from great_sdd.conformance.collection import build_examples, load_endpoints
+    eps = load_endpoints()                      # default committed fixtures
+    examples = build_examples(eps)
+    assert "GET /project-lines" in examples
+    rows = examples["GET /project-lines"]
+    assert len(rows) == 7                        # all 7 conformance cases
+    for row in rows:
+        assert set(row) == {"scenario", "request", "response"}
+        assert set(row["response"]) == {"status", "body"}
+    # at least one 200 and the 403/404/401 are represented
+    statuses = sorted({r["response"]["status"] for r in rows})
+    assert statuses == [200, 401, 403, 404]
+
+
+# ═══════════════════════════════════════════════════════════
 # collection export — oracle HTTP binding + schemas
 # ═══════════════════════════════════════════════════════════
 def test_project_lines_http_binding_and_schemas():
