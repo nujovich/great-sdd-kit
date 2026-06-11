@@ -94,17 +94,28 @@ puros (sin red/LLM/tiempo):
 
 ### CLI / determinismo
 
+El módulo usa subcomandos (argparse subparsers):
+
 ```bash
-python -m great_sdd.conformance.collection                 # default: lee fixtures/endpoints/, escribe fixtures/endpoints/collections/
-python -m great_sdd.conformance.collection --check          # CI: exit 1 si los artefactos committeados driftan
-python -m great_sdd.conformance.collection --fixtures-dir DIR --out DIR   # on-demand sobre data del usuario
+python -m great_sdd.conformance.collection generate                       # default: lee fixtures/endpoints/, escribe fixtures/endpoints/collections/
+python -m great_sdd.conformance.collection generate --check                # CI: exit 1 si los artefactos committeados driftan
+python -m great_sdd.conformance.collection generate --fixtures-dir DIR --out DIR   # on-demand sobre data del usuario
+python -m great_sdd.conformance.collection download --out coleccion.zip     # empaqueta las collections en UN zip portable
+python -m great_sdd.conformance.collection download --fixtures-dir DIR --out c.zip   # zip a partir de data on-demand
 ```
 
+- **`generate`:** produce/`--check`ea los artefactos en disco (el run por defecto queda committeado).
+- **`download`:** empaqueta en UN `.zip` portable el `postman_collection.json` + la carpeta
+  `bruno/` + `examples.json`, listo para compartir/importar sin clonar el repo. Por defecto
+  arma el zip desde las collections committeadas; con `--fixtures-dir` arma el zip on-demand a
+  partir de data nueva del usuario (genera en memoria y comprime, sin tocar el árbol committeado).
+  Salida por defecto `--out great-collections.zip`.
 - **On-demand con data nueva:** el usuario regenera un endpoint fixture con su propio seed
   (`generate` con datos nuevos) o arma un JSON con la forma `{endpoint, seed, cases}` y apunta
-  `--fixtures-dir`/`--out` a su carpeta. Mismo generador, otra entrada/salida.
+  `--fixtures-dir` a su carpeta — sirve tanto para `generate` como para `download`.
 - Byte-stable vía `canonical_json` (sorted keys, indent 2, newline final); `.bru` con orden de
-  bloques fijo. Artefactos del run por defecto quedan committeados.
+  bloques fijo. El `.zip` es determinista: cada entrada se escribe con un `date_time` fijo
+  (constante, no `now()`) y orden de archivos estable, así el mismo input produce el mismo zip.
 
 ## Data flow
 
@@ -123,6 +134,7 @@ oracle HTTP_BINDING+SCHEMAS ─┤→ collection.py ─→ postman_collection.js
 4. **Schema embebido:** la descripción del request contiene los 24 campos del contrato y no incluye `H-TESTING` en el enum métier.
 5. **Byte-stability:** `collection --check` no reporta drift tras regenerar; regenerar dos veces = bytes idénticos.
 6. **On-demand:** correr el generador con un `--fixtures-dir` temporal (un fixture mínimo) produce artefactos coherentes (smoke).
+7. **download (zip):** `download --out tmp.zip` crea un zip que contiene `postman_collection.json`, `examples.json` y `bruno/...`; reabrirlo (`zipfile`) lista esas entradas y su contenido coincide con `generate`. El zip es determinista (dos corridas → mismos bytes, gracias al `date_time` fijo).
 
 ### Verificación end-to-end
 
@@ -138,7 +150,7 @@ python3 -m pytest tests/ -q                             # suite verde
 | Archivo | Acción |
 |---|---|
 | `great_sdd/conformance/endpoints/project_lines.py` | + `HTTP_BINDING`, `REQUEST_SCHEMA`, `RESPONSE_SCHEMA` |
-| `great_sdd/conformance/collection.py` | nuevo — generador Postman/Bruno/examples + CLI |
+| `great_sdd/conformance/collection.py` | nuevo — generador Postman/Bruno/examples + CLI con subcomandos `generate` y `download` (zip) |
 | `great_sdd/conformance/fixtures/endpoints/collections/postman_collection.json` | generado, committeado |
 | `great_sdd/conformance/fixtures/endpoints/collections/examples.json` | generado, committeado |
 | `great_sdd/conformance/fixtures/endpoints/collections/bruno/` | generado, committeado |
