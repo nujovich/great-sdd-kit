@@ -39,6 +39,9 @@ def _load_endpoint_fixtures(fixtures_dir: Path) -> list:
 
 def load_endpoints(fixtures_dir: Path = ENDPOINTS_DIR) -> list:
     """List of {name, fixture, module} for each endpoint fixture found."""
+    fixtures_dir = Path(fixtures_dir)
+    if not fixtures_dir.is_dir():
+        raise ValueError(f"fixtures dir not found: {fixtures_dir}")
     endpoints = []
     for fx in _load_endpoint_fixtures(fixtures_dir):
         name = fx["endpoint"]
@@ -248,7 +251,11 @@ def _artifact_blobs(endpoints: list) -> dict:
 
 
 def write_collections(endpoints: list, out_dir: Path) -> list:
-    """Write every artifact under out_dir. Returns the relative paths written."""
+    """Write every artifact under out_dir. Returns the relative paths written.
+
+    NOTE: does not prune stale files (e.g. a .bru for an endpoint later removed
+    from _ENDPOINT_MODULES) — drift-check covers content, not orphans.
+    """
     out_dir = Path(out_dir)
     written = []
     for rel, content in _artifact_blobs(endpoints).items():
