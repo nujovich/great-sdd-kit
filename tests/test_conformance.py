@@ -533,3 +533,25 @@ def test_build_postman_collection_v21_shape():
     desc = item["request"]["description"]
     assert "Request schema" in desc and "Response schema" in desc
     assert "total_keuro" in desc and "H-TESTING" not in desc
+
+
+def test_postman_examples_reflect_scenario_auth_and_query():
+    from great_sdd.conformance.collection import build_postman, load_endpoints
+    item = next(i for i in build_postman(load_endpoints())["item"]
+                if i["name"] == "GET /project-lines")
+    by_code = {}
+    for r in item["response"]:
+        by_code.setdefault(r["code"], []).append(r)
+    # 401 example carries NO Authorization header (the "no JWT" scenario) and text preview
+    ex401 = by_code[401][0]
+    assert all(h["key"] != "Authorization" for h in ex401["originalRequest"]["header"])
+    assert ex401["_postman_previewlanguage"] == "text" and ex401["body"] == ""
+    assert ex401["status"] == "Unauthorized"
+    # a 200 example with a metier filter carries that query param + value
+    assert any(
+        any(q["key"] == "metier" and q["value"] == "H-DESIGN"
+            for q in r["originalRequest"]["url"]["query"])
+        for r in by_code[200])
+    # the saved request template lists optional params as disabled (shown, not sent)
+    assert item["request"]["url"]["query"]
+    assert all(q.get("disabled") for q in item["request"]["url"]["query"])

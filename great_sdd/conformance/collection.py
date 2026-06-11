@@ -95,14 +95,24 @@ def _markdown_docs(binding: dict, request_schema: dict, response_schema: dict) -
     )
 
 
-def _pm_url(binding: dict, query: dict = None) -> dict:
-    """Postman url object: {{baseUrl}} + path segments + query params."""
+def _pm_url(binding: dict, query: dict = None, template: bool = False) -> dict:
+    """Postman url object: {{baseUrl}} + path + query params.
+
+    template=True (the saved request) lists every optional param as disabled —
+    shown for discoverability but NOT sent. Otherwise (a concrete example) include
+    only the params actually present in `query`, with their values.
+    """
     query = query or {}
-    qitems = [{"key": k, "value": str(query.get(k, ""))}
-              for k in binding.get("query_params", [])]
+    qp = binding.get("query_params", [])
+    if template:
+        qitems = [{"key": k, "value": "", "disabled": True} for k in qp]
+    else:
+        qitems = [{"key": k, "value": str(query[k])}
+                  for k in qp if query.get(k) is not None]
+    sent = [q for q in qitems if not q.get("disabled")]
     raw = "{{baseUrl}}" + binding["path"]
-    if qitems:
-        raw += "?" + "&".join(f"{q['key']}={q['value']}" for q in qitems)
+    if sent:
+        raw += "?" + "&".join(f"{q['key']}={q['value']}" for q in sent)
     return {
         "raw": raw,
         "host": ["{{baseUrl}}"],
@@ -111,11 +121,14 @@ def _pm_url(binding: dict, query: dict = None) -> dict:
     }
 
 
-def _pm_headers(binding: dict) -> list:
-    headers = []
-    if binding.get("auth") == "bearer":
-        headers.append({"key": "Authorization", "value": "Bearer {{token}}"})
-    return headers
+def _pm_headers(binding: dict, authenticated: bool = True) -> list:
+    """Bearer auth header; empty for an unauthenticated example (authenticated=False)."""
+    if authenticated and binding.get("auth") == "bearer":
+        return [{"key": "Authorization", "value": "Bearer {{token}}"}]
+    return []
+
+
+_PM_STATUS_TEXT = {200: "OK", 401: "Unauthorized", 403: "Forbidden", 404: "Not Found"}
 
 
 def build_postman(endpoints: list) -> dict:
@@ -128,23 +141,27 @@ def build_postman(endpoints: list) -> dict:
         headers = _pm_headers(binding)
         responses = []
         for case in ep["fixture"]["cases"]:
+            req = case["request"]
             status = case["expected"]["status"]
             body = case["expected"]["body"]
+            has_body = body is not None
             responses.append({
-                "name": _scenario_label(case["request"], status),
+                "name": _scenario_label(req, status),
                 "originalRequest": {
-                    "method": binding["method"], "header": headers,
-                    "url": _pm_url(binding, (case["request"].get("query") or {})),
+                    "method": binding["method"],
+                    "header": _pm_headers(binding, authenticated=req.get("role") is not None),
+                    "url": _pm_url(binding, (req.get("query") or {})),
                 },
+                "status": _PM_STATUS_TEXT.get(status, ""),
                 "code": status,
-                "_postman_previewlanguage": "json",
+                "_postman_previewlanguage": "json" if has_body else "text",
                 "header": [{"key": "Content-Type", "value": "application/json"}],
-                "body": canonical_json(body).rstrip() if body is not None else "",
+                "body": canonical_json(body).rstrip() if has_body else "",
             })
         items.append({
             "name": ep["name"],
             "request": {"method": binding["method"], "header": headers,
-                        "url": _pm_url(binding), "description": desc},
+                        "url": _pm_url(binding, template=True), "description": desc},
             "response": responses,
         })
     return {
