@@ -3,12 +3,11 @@ GREAT System — Estimation Review Spec Registry.
 
 Shares the core state machine from Pre-Estimation specs and adds:
 - Estimation Review-specific role permissions (read-only for all)
-- Send-to-HVT flow with eligibility rules
-- HVT callback handling (approve/reject)
+- HVT callback handling (approve/reject from external system)
 - Approval column derivation rules
-- CSV export specs
+- CSV export specs (two modes: selected / all_filtered)
 - Estimation Review business rules
-- Pending definitions (ERev-01, ERev-02, ERev-03)
+- Pending definitions (ERev-02, ERev-03)
 """
 from __future__ import annotations
 
@@ -34,36 +33,22 @@ from great_sdd.specs.pre_estimation_specs import (
 @dataclass
 class EstimationReviewPermission:
     can_view: bool
-    can_send_to_hvt: bool
-    can_export_csv: bool
+    can_export_selected: bool
+    can_export_all_filtered: bool
     scope: str  # "all" | "own_rows_only"
 
 
 ESTIMATION_REVIEW_PERMISSIONS: dict[Role, EstimationReviewPermission] = {
-    Role.ADMIN:    EstimationReviewPermission(can_view=True,  can_send_to_hvt=True,  can_export_csv=True,  scope="all"),
-    Role.PMO:      EstimationReviewPermission(can_view=True,  can_send_to_hvt=True,  can_export_csv=True,  scope="all"),
-    Role.CPO:      EstimationReviewPermission(can_view=True,  can_send_to_hvt=False, can_export_csv=True,  scope="all"),
-    Role.ENGINEER: EstimationReviewPermission(can_view=True,  can_send_to_hvt=False, can_export_csv=True,  scope="own_rows_only"),
-    Role.RCRC:     EstimationReviewPermission(can_view=True,  can_send_to_hvt=False, can_export_csv=True,  scope="all"),
+    Role.ADMIN:    EstimationReviewPermission(can_view=True, can_export_selected=True, can_export_all_filtered=True, scope="all"),
+    Role.PMO:      EstimationReviewPermission(can_view=True, can_export_selected=True, can_export_all_filtered=True, scope="all"),
+    Role.CPO:      EstimationReviewPermission(can_view=True, can_export_selected=True, can_export_all_filtered=True, scope="all"),
+    Role.ENGINEER: EstimationReviewPermission(can_view=True, can_export_selected=True, can_export_all_filtered=True, scope="own_rows_only"),
+    Role.RCRC:     EstimationReviewPermission(can_view=True, can_export_selected=True, can_export_all_filtered=True, scope="all"),
 }
 
 
 # ──────────────────────────────────────────────
-# 2. Send-to-HVT Eligibility (§6)
-# ──────────────────────────────────────────────
-
-SEND_ELIGIBLE_STATUSES = {LineStatus.ESTIMATED}
-
-SEND_IRREVERSIBLE = True  # §6.3 — Sent cannot be cancelled
-
-SEND_SCOPE = "current_filtered_view"  # §6.2 — operates on current filtered view
-
-# Pending: ERev-01 — manual PMO button vs automatic on status=Estimated
-# Current decision: manual button. Awaiting PO confirmation.
-
-
-# ──────────────────────────────────────────────
-# 3. Approval Column Derivation (§5)
+# 2. Approval Column Derivation (§5)
 # ──────────────────────────────────────────────
 
 ENGINEER_APPROVAL_MAP: dict[LineStatus, str] = {
@@ -86,7 +71,7 @@ CPO_APPROVAL_MAP: dict[LineStatus, str] = {
 
 
 # ──────────────────────────────────────────────
-# 4. HVT Callback Handling (§7)
+# 3. HVT Callback Handling (§7)
 # ──────────────────────────────────────────────
 
 @dataclass
@@ -138,7 +123,7 @@ def process_hvt_callback(callback: HVTCallback) -> dict:
 
 
 # ──────────────────────────────────────────────
-# 5. CSV Export (§9)
+# 4. CSV Export (§9)
 # ──────────────────────────────────────────────
 
 CSV_EXPORT_COLUMNS = [
@@ -158,7 +143,7 @@ CSV_EXPORT_COLUMNS = [
 
 
 # ──────────────────────────────────────────────
-# 6. Grid Columns (§4.1)
+# 5. Grid Columns (§4.1)
 # ──────────────────────────────────────────────
 
 ESTIMATION_REVIEW_GRID_COLUMNS = [
@@ -172,7 +157,7 @@ ESTIMATION_REVIEW_GRID_COLUMNS = [
     "Total FTE",
     "Total BH",
     "Total KM",
-    # Yearly columns appended dynamically per cycle
+    # Yearly columns appended dynamically per cycle: FTE 20XX, BH 20XX, KM 20XX, K€ 20XX
 ]
 
 GRID_FILTERS = [
@@ -182,17 +167,19 @@ GRID_FILTERS = [
     {"field": "assignee", "type": "dropdown", "visible_to": "pmo_admin_only"},
 ]
 
+GRID_DEFAULT_GROUPING = "pl_number"  # §4 — rows grouped by Project Line, not by status
+
 
 # ──────────────────────────────────────────────
-# 7. Estimation Review Business Rules (§10)
+# 6. Estimation Review Business Rules (§10)
 # ──────────────────────────────────────────────
 
 ESTIMATION_REVIEW_RULES: list[dict] = [
     {"id": "ERev-BR-01", "rule": "Read-only page — no data can be edited from Estimation Review"},
     {"id": "ERev-BR-02", "rule": "Sent = irreversible — Sent status cannot be cancelled from WP5"},
     {"id": "ERev-BR-03", "rule": "Approved = terminal — Approved status cannot be changed by any WP5 action"},
-    {"id": "ERev-BR-04", "rule": "Send eligibility — Only status=Estimated rows are sent; all others silently skipped"},
-    {"id": "ERev-BR-05", "rule": "Send scope — 'Send all eligible' operates on the current filtered view only"},
+    {"id": "ERev-BR-04", "rule": "Grid grouping — Rows are grouped by Project Line (PL); sorting by status is not the default"},
+    {"id": "ERev-BR-05", "rule": "CSV export modes — Two modes: 'selected' (checked rows only) and 'all_filtered' (current filtered view)"},
     {"id": "ERev-BR-06", "rule": "Engineer scoping — Engineers see only their own (PL, Métier) rows"},
     {"id": "ERev-BR-07", "rule": "Comments read-only — Rejection comments are not shown in this grid"},
     {"id": "ERev-BR-08", "rule": "No approval gestures — No approval checkboxes; approval is fully status-derived"},
@@ -208,17 +195,10 @@ ALL_BUSINESS_RULES.extend(ESTIMATION_REVIEW_RULES)
 
 
 # ──────────────────────────────────────────────
-# 8. Pending Definitions (§12)
+# 7. Pending Definitions (§12)
 # ──────────────────────────────────────────────
 
 PENDING_DEFINITIONS = [
-    {
-        "id": "ERev-01",
-        "topic": "Send to HVT trigger mechanism — manual PMO button vs automatic on status=Estimated",
-        "current_decision": "Manual PMO button",
-        "blocking": True,
-        "notes": "Must be confirmed with Product Owner before implementation",
-    },
     {
         "id": "ERev-02",
         "topic": "Exact HVT payload fields for Stage 2 submission",

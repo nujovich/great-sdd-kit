@@ -10,12 +10,12 @@ from great_sdd.signatures.pre_estimation import Signature, Field
 
 CHECK_ESTIMATION_REVIEW_PERMISSION = Signature(
     name="CheckEstimationReviewPermission",
-    description="Check if a user role has permission to view or send to HVT "
-                "in Estimation Review. All roles are read-only. Only PMO/Admin "
-                "can send to HVT. Engineers see only their own rows.",
+    description="Check if a user role has permission to view or export in "
+                "Estimation Review. Page is read-only for all roles. "
+                "Engineers see only their own rows.",
     inputs=[
         Field("role", "User role: Admin, Engineer, PMO, RCRC, or CPO"),
-        Field("action", "Requested action: view, send_to_hvt, export_csv"),
+        Field("action", "Requested action: view, export_selected, export_all_filtered"),
     ],
     outputs=[
         Field("allowed", "boolean: true if the action is permitted", field_type="boolean", is_output=True),
@@ -36,20 +36,6 @@ DERIVE_APPROVAL_COLUMNS = Signature(
     ],
 )
 
-CHECK_SEND_ELIGIBILITY = Signature(
-    name="CheckSendEligibility",
-    description="Check if a (PL, Métier) row is eligible for sending to HVT. "
-                "Only rows with status=Estimated are eligible.",
-    inputs=[
-        Field("status", "Current status of the row"),
-        Field("role", "Role of the user attempting to send"),
-    ],
-    outputs=[
-        Field("eligible", "boolean: true if status=Estimated and user can send", field_type="boolean", is_output=True),
-        Field("reason", "explanation if not eligible", is_output=True),
-    ],
-)
-
 PROCESS_HVT_CALLBACK_SIG = Signature(
     name="ProcessHVTCallback",
     description="Process an HVT callback for CPO approval or rejection. "
@@ -65,20 +51,6 @@ PROCESS_HVT_CALLBACK_SIG = Signature(
         Field("transition_valid", "boolean", field_type="boolean", is_output=True),
         Field("error_message", "error if transition invalid", is_output=True),
         Field("notify_engineer", "bool: true if engineer should be notified (rejection)", field_type="boolean", is_output=True),
-    ],
-)
-
-GENERATE_HVT_PAYLOAD = Signature(
-    name="GenerateHVTPayload",
-    description="Generate the HVT payload for a (PL, Métier) pair being sent. "
-                "Includes yearly workload summary: FTE, BH, KM per calendar year.",
-    inputs=[
-        Field("project_line", "PL Number"),
-        Field("metier", "Métier of the estimation"),
-        Field("yearly_summary_json", "JSON with yearly FTE, BH, KM breakdown"),
-    ],
-    outputs=[
-        Field("payload_json", "JSON payload ready to send to HVT"),
     ],
 )
 

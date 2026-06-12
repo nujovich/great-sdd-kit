@@ -2,9 +2,7 @@
 GREAT Estimation Review — Signature-Driven Modules.
 
 Each module honors a Signature contract from signatures/estimation_review.py.
-All modules are read-only by spec. The only write actions are:
-- PMO/Admin: "Send all eligible to HVT"
-- PMO/Admin: CSV export
+All modules are read-only by spec. The only write action is CSV export.
 """
 from __future__ import annotations
 
@@ -25,7 +23,6 @@ from great_sdd.specs.pre_estimation_specs import (
 )
 from great_sdd.specs.estimation_review_specs import (
     ESTIMATION_REVIEW_PERMISSIONS,
-    SEND_ELIGIBLE_STATUSES,
     ENGINEER_APPROVAL_MAP,
     CPO_APPROVAL_MAP,
     process_hvt_callback,
@@ -35,9 +32,7 @@ from great_sdd.specs.estimation_review_specs import (
 from great_sdd.signatures.estimation_review import (
     CHECK_ESTIMATION_REVIEW_PERMISSION,
     DERIVE_APPROVAL_COLUMNS,
-    CHECK_SEND_ELIGIBILITY,
     PROCESS_HVT_CALLBACK_SIG,
-    GENERATE_HVT_PAYLOAD,
     EXPORT_CSV,
 )
 
@@ -64,11 +59,11 @@ class EstimationReviewPermissionChecker(SignatureModule):
         if not perm.can_view:
             return {"allowed": False, "reason": f"{role} has no access to Estimation Review"}
 
-        if action == "send_to_hvt" and not perm.can_send_to_hvt:
-            return {"allowed": False, "reason": f"Only PMO/Admin can send to HVT. {role} cannot."}
+        if action == "export_selected" and not perm.can_export_selected:
+            return {"allowed": False, "reason": f"{role} cannot export selected rows"}
 
-        if action == "export_csv" and not perm.can_export_csv:
-            return {"allowed": False, "reason": f"{role} cannot export CSV"}
+        if action == "export_all_filtered" and not perm.can_export_all_filtered:
+            return {"allowed": False, "reason": f"{role} cannot export all filtered rows"}
 
         return {"allowed": True, "reason": f"{role} is authorized to {action} in Estimation Review"}
 
@@ -99,46 +94,6 @@ class ApprovalColumnDeriver(SignatureModule):
             "engineer_approval": approvals["engineer_approval"],
             "cpo_approval": approvals["cpo_approval"],
         }
-
-
-class SendEligibilityChecker(SignatureModule):
-    """Check if rows are eligible for Send to HVT.
-    Signature: CHECK_SEND_ELIGIBILITY
-    """
-
-    signature = CHECK_SEND_ELIGIBILITY
-
-    def forward_impl(self, status: str, role: str) -> dict:
-        # Check role permission
-        perm_check = EstimationReviewPermissionChecker(self.lm).forward(role=role, action="send_to_hvt")
-        if not perm_check["allowed"]:
-            return {"eligible": False, "reason": perm_check["reason"]}
-
-        # Check status
-        try:
-            status_enum = LineStatus(status)
-        except ValueError:
-            return {"eligible": False, "reason": f"Invalid status: {status}"}
-
-        if status_enum not in SEND_ELIGIBLE_STATUSES:
-            return {
-                "eligible": False,
-                "reason": f"Only Estimated rows are eligible. Current status: {status}",
-            }
-
-        return {"eligible": True, "reason": ""}
-
-    def find_eligible_rows(self, rows: list[dict], role: str) -> tuple[list[dict], list[dict]]:
-        """Split rows into eligible and ineligible for Send to HVT."""
-        eligible = []
-        skipped = []
-        for row in rows:
-            result = self.forward(status=row.get("status", "to_do"), role=role)
-            if result["eligible"]:
-                eligible.append(row)
-            else:
-                skipped.append({"row": row, "reason": result["reason"]})
-        return eligible, skipped
 
 
 class HVTCallbackProcessor(SignatureModule):
@@ -184,29 +139,6 @@ class HVTCallbackProcessor(SignatureModule):
             "error_message": "",
             "notify_engineer": result["notify_engineer"],
         }
-
-
-class HVTPayloadGenerator(SignatureModule):
-    """Generate HVT payload for a (PL, Métier) pair.
-    Signature: GENERATE_HVT_PAYLOAD
-    """
-
-    signature = GENERATE_HVT_PAYLOAD
-
-    def forward_impl(self, project_line: str, metier: str,
-                     yearly_summary_json: str = "{}") -> dict:
-        try:
-            yearly_summary = json.loads(yearly_summary_json) if isinstance(yearly_summary_json, str) else yearly_summary_json
-        except (json.JSONDecodeError, TypeError):
-            yearly_summary = {}
-
-        payload = {
-            "project_line": project_line,
-            "metier": metier,
-            "workload_summary": yearly_summary,
-        }
-
-        return {"payload_json": json.dumps(payload, indent=2)}
 
 
 class CSVExporter(SignatureModule):

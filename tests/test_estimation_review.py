@@ -18,7 +18,6 @@ from great_sdd.specs.pre_estimation_specs import (
 )
 from great_sdd.specs.estimation_review_specs import (
     ESTIMATION_REVIEW_PERMISSIONS,
-    SEND_ELIGIBLE_STATUSES,
     ENGINEER_APPROVAL_MAP,
     CPO_APPROVAL_MAP,
     process_hvt_callback,
@@ -31,10 +30,8 @@ from great_sdd.specs.estimation_review_specs import (
 from great_sdd.modules.estimation_review import (
     EstimationReviewPermissionChecker,
     ApprovalColumnDeriver,
-    SendEligibilityChecker,
     HVTCallbackProcessor,
     CSVExporter,
-    HVTPayloadGenerator,
 )
 
 
@@ -50,22 +47,6 @@ class TestEstimationReviewPermissions:
         for role in Role:
             assert role in ESTIMATION_REVIEW_PERMISSIONS, f"{role} missing"
 
-    def test_pmo_can_send_to_hvt(self):
-        """PMO can send to HVT."""
-        assert ESTIMATION_REVIEW_PERMISSIONS[Role.PMO].can_send_to_hvt is True
-
-    def test_admin_can_send_to_hvt(self):
-        """Admin can send to HVT."""
-        assert ESTIMATION_REVIEW_PERMISSIONS[Role.ADMIN].can_send_to_hvt is True
-
-    def test_engineer_cannot_send_to_hvt(self):
-        """Engineer cannot send to HVT."""
-        assert ESTIMATION_REVIEW_PERMISSIONS[Role.ENGINEER].can_send_to_hvt is False
-
-    def test_cpo_cannot_send_to_hvt(self):
-        """CPO cannot send to HVT."""
-        assert ESTIMATION_REVIEW_PERMISSIONS[Role.CPO].can_send_to_hvt is False
-
     def test_engineer_sees_only_own_rows(self):
         """Engineer scope is own_rows_only."""
         assert ESTIMATION_REVIEW_PERMISSIONS[Role.ENGINEER].scope == "own_rows_only"
@@ -75,24 +56,15 @@ class TestEstimationReviewPermissions:
         for role in Role:
             assert ESTIMATION_REVIEW_PERMISSIONS[role].can_view is True
 
-    def test_all_roles_can_export_csv(self):
-        """All roles can export CSV."""
+    def test_all_roles_can_export_selected(self):
+        """All roles can export selected rows to CSV."""
         for role in Role:
-            assert ESTIMATION_REVIEW_PERMISSIONS[role].can_export_csv is True
+            assert ESTIMATION_REVIEW_PERMISSIONS[role].can_export_selected is True
 
-
-class TestSendEligibility:
-    """Spec §6: Send to HVT Eligibility"""
-
-    def test_only_estimated_is_eligible(self):
-        """Only status=Estimated is eligible for sending."""
-        assert SEND_ELIGIBLE_STATUSES == {LineStatus.ESTIMATED}
-
-    def test_other_statuses_not_eligible(self):
-        """Other statuses are not in the eligible set."""
-        for status in LineStatus:
-            if status != LineStatus.ESTIMATED:
-                assert status not in SEND_ELIGIBLE_STATUSES
+    def test_all_roles_can_export_all_filtered(self):
+        """All roles can export all filtered rows to CSV."""
+        for role in Role:
+            assert ESTIMATION_REVIEW_PERMISSIONS[role].can_export_all_filtered is True
 
 
 class TestApprovalColumns:
@@ -185,15 +157,9 @@ class TestEstimationReviewBusinessRules:
 class TestPendingDefinitions:
     """Spec §12: Pending Definitions"""
 
-    def test_three_pending_definitions(self):
-        """There are exactly 3 pending definitions for ER."""
-        assert len(PENDING_DEFINITIONS) == 3
-
-    def test_erev01_is_blocking(self):
-        """ERev-01 is blocking."""
-        erev01 = [p for p in PENDING_DEFINITIONS if p["id"] == "ERev-01"]
-        assert len(erev01) == 1
-        assert erev01[0]["blocking"] is True
+    def test_two_pending_definitions(self):
+        """There are exactly 2 pending definitions for ER."""
+        assert len(PENDING_DEFINITIONS) == 2
 
     def test_erev02_is_blocking(self):
         """ERev-02 is blocking."""
@@ -217,22 +183,6 @@ class TestEstimationReviewPermissionCheckerModule:
 
     def setup_method(self):
         self.checker = EstimationReviewPermissionChecker()
-
-    def test_pmo_can_send_to_hvt(self):
-        result = self.checker.forward(role="PMO", action="send_to_hvt")
-        assert result["allowed"] is True
-
-    def test_admin_can_send_to_hvt(self):
-        result = self.checker.forward(role="Admin", action="send_to_hvt")
-        assert result["allowed"] is True
-
-    def test_engineer_cannot_send_to_hvt(self):
-        result = self.checker.forward(role="Engineer", action="send_to_hvt")
-        assert result["allowed"] is False
-
-    def test_cpo_cannot_send_to_hvt(self):
-        result = self.checker.forward(role="CPO", action="send_to_hvt")
-        assert result["allowed"] is False
 
     def test_all_roles_can_view(self):
         for role_name in ["Admin", "Engineer", "PMO", "RCRC", "CPO"]:
@@ -280,50 +230,6 @@ class TestApprovalColumnDeriverModule:
         assert derived["id"] == "PL-001"
         assert derived["total_fte"] == 1.5
         assert derived["assignee"] == "Ana"
-
-
-class TestSendEligibilityCheckerModule:
-    """Module tests for SendEligibilityChecker."""
-
-    def setup_method(self):
-        self.checker = SendEligibilityChecker()
-
-    def test_estimated_is_eligible_for_pmo(self):
-        result = self.checker.forward(status="estimated", role="PMO")
-        assert result["eligible"] is True
-
-    def test_draft_not_eligible(self):
-        result = self.checker.forward(status="draft", role="PMO")
-        assert result["eligible"] is False
-
-    def test_to_do_not_eligible(self):
-        result = self.checker.forward(status="to_do", role="PMO")
-        assert result["eligible"] is False
-
-    def test_engineer_not_eligible_even_if_estimated(self):
-        """Engineer cannot send even if status is Estimated."""
-        result = self.checker.forward(status="estimated", role="Engineer")
-        assert result["eligible"] is False
-
-    def test_find_eligible_rows(self):
-        rows = [
-            {"id": "PL-001", "status": "estimated"},
-            {"id": "PL-002", "status": "draft"},
-            {"id": "PL-003", "status": "estimated"},
-            {"id": "PL-004", "status": "to_do"},
-        ]
-        eligible, skipped = self.checker.find_eligible_rows(rows, "PMO")
-        assert len(eligible) == 2  # PL-001 and PL-003
-        assert len(skipped) == 2   # PL-002 and PL-004
-
-    def test_no_eligible_rows(self):
-        rows = [
-            {"id": "PL-001", "status": "draft"},
-            {"id": "PL-002", "status": "to_do"},
-        ]
-        eligible, skipped = self.checker.find_eligible_rows(rows, "PMO")
-        assert len(eligible) == 0
-        assert len(skipped) == 2
 
 
 class TestHVTCallbackProcessorModule:
@@ -430,19 +336,6 @@ class TestEstimationReviewPipeline:
         ctx = pipeline.forward(role="CPO", grid_rows=[])
         assert len(ctx.errors) == 0  # CPO can view
 
-    def test_pipeline_detects_eligible_rows(self):
-        from great_sdd.pipeline.estimation_review_pipeline import (
-            EstimationReviewPipeline,
-        )
-        pipeline = EstimationReviewPipeline()
-        rows = [
-            {"id": "PL-001", "status": "estimated", "metier": "H-DESIGN"},
-            {"id": "PL-002", "status": "draft", "metier": "H-DESIGN"},
-        ]
-        ctx = pipeline.forward(role="PMO", grid_rows=rows)
-        assert ctx.has_eligible_rows is True
-        assert len(ctx.eligible_rows) == 1
-
     def test_pipeline_adds_derived_columns(self):
         from great_sdd.pipeline.estimation_review_pipeline import (
             EstimationReviewPipeline,
@@ -456,33 +349,6 @@ class TestEstimationReviewPipeline:
         assert len(ctx.derived_columns) == 2
         assert ctx.derived_columns[0]["engineer_approval"] == "✓"
         assert ctx.derived_columns[1]["cpo_approval"] == "✓ Approved"
-
-    def test_send_to_hvt(self):
-        from great_sdd.pipeline.estimation_review_pipeline import (
-            EstimationReviewPipeline,
-        )
-        pipeline = EstimationReviewPipeline()
-        rows = [
-            {"id": "PL-001", "status": "estimated", "metier": "H-DESIGN",
-             "yearly_aggregation": {"2024": {"fte": 1.0, "bh": 0, "km": 0}}},
-            {"id": "PL-002", "status": "draft", "metier": "H-DESIGN"},
-        ]
-        result = pipeline.send_to_hvt("PMO", rows)
-        assert result["success"] is True
-        assert result["sent_count"] == 1  # Only PL-001
-        assert result["skipped_count"] == 1
-        assert len(result["payloads"]) == 1
-        payload = json.loads(result["payloads"][0])
-        assert payload["project_line"] == "PL-001"
-
-    def test_engineer_cannot_send_to_hvt(self):
-        from great_sdd.pipeline.estimation_review_pipeline import (
-            EstimationReviewPipeline,
-        )
-        pipeline = EstimationReviewPipeline()
-        result = pipeline.send_to_hvt("Engineer", [{"id": "PL-001", "status": "estimated"}])
-        assert result["success"] is False
-        assert result["sent_count"] == 0
 
     def test_process_hvt_callback_approval(self):
         from great_sdd.pipeline.estimation_review_pipeline import (

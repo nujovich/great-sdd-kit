@@ -3,8 +3,7 @@ GREAT Estimation Review — Pipeline.
 
 Read-only governance pipeline for WP5. Orchestrates:
   1. Permission check → 2. Grid rendering (with derived approval columns)
-  → 3. Send-to-HVT eligibility → 4. HVT payload generation
-  → 5. HVT callback processing → 6. CSV export
+  → 3. HVT callback processing → 4. CSV export
 """
 from __future__ import annotations
 
@@ -17,10 +16,8 @@ from great_sdd.modules.base import LMClient
 from great_sdd.modules.estimation_review import (
     EstimationReviewPermissionChecker,
     ApprovalColumnDeriver,
-    SendEligibilityChecker,
     HVTCallbackProcessor,
     CSVExporter,
-    HVTPayloadGenerator,
 )
 from great_sdd.specs.estimation_review_specs import (
     ESTIMATION_REVIEW_RULES,
@@ -44,17 +41,9 @@ class EstimationReviewContext:
     derived_columns: list = field(default_factory=list)
 
     # Stage 3
-    eligible_rows: list = field(default_factory=list)
-    skipped_rows: list = field(default_factory=list)
-    has_eligible_rows: bool = False
-
-    # Stage 4
-    hvt_payloads: list = field(default_factory=list)
-
-    # Stage 5
     callback_results: list = field(default_factory=list)
 
-    # Stage 6
+    # Stage 4
     csv_content: str = ""
     csv_row_count: int = 0
 
@@ -71,10 +60,8 @@ class EstimationReviewPipeline:
         self.lm = lm
         self.permission_checker = EstimationReviewPermissionChecker(lm)
         self.column_deriver = ApprovalColumnDeriver(lm)
-        self.eligibility_checker = SendEligibilityChecker(lm)
         self.callback_processor = HVTCallbackProcessor(lm)
         self.csv_exporter = CSVExporter(lm)
-        self.hvt_payload_generator = HVTPayloadGenerator(lm)
 
     def forward(
         self,
@@ -104,69 +91,7 @@ class EstimationReviewPipeline:
             self.column_deriver.derive_row(row) for row in grid_rows
         ]
 
-        # ── Stage 3: Check Send Eligibility (§6) ──
-        logger.info("ER Stage 3: Checking send eligibility")
-        eligible, skipped = self.eligibility_checker.find_eligible_rows(
-            ctx.derived_columns, role
-        )
-        ctx.eligible_rows = eligible
-        ctx.skipped_rows = skipped
-        ctx.has_eligible_rows = len(eligible) > 0
-
-        # ── Stage 4: Generate HVT Payloads (§6.4) — only if send triggered ──
-        # Actual send happens when PMO/Admin explicitly calls send_to_hvt()
-        # Here we pre-compute what would be sent
-
         return ctx
-
-    def send_to_hvt(self, role: str, rows: list[dict]) -> dict:
-        """
-        Execute the Send to HVT action (§6.2).
-
-        Args:
-            role: User role (must be PMO or Admin)
-            rows: List of grid rows to send
-
-        Returns:
-            dict with:
-              - success: bool
-              - sent_count: int
-              - payloads: list of HVT payloads sent
-              - errors: list of errors
-        """
-        # Check permission
-        perm = self.permission_checker.forward(role=role, action="send_to_hvt")
-        if not perm["allowed"]:
-            return {"success": False, "sent_count": 0, "payloads": [], "errors": [perm["reason"]]}
-
-        # Filter to eligible rows only
-        eligible, skipped = self.eligibility_checker.find_eligible_rows(rows, role)
-
-        if not eligible:
-            return {
-                "success": False,
-                "sent_count": 0,
-                "payloads": [],
-                "errors": ["No eligible rows (status=Estimated) found to send."],
-            }
-
-        # Generate HVT payloads
-        payloads = []
-        for row in eligible:
-            yearly = row.get("yearly_aggregation", {})
-            payload_result = self.hvt_payload_generator.forward(
-                project_line=row.get("id", ""),
-                metier=row.get("metier", ""),
-                yearly_summary_json=json.dumps(yearly),
-            )
-            payloads.append(payload_result["payload_json"])
-
-        return {
-            "success": True,
-            "sent_count": len(eligible),
-            "skipped_count": len(skipped),
-            "payloads": payloads,
-        }
 
     def process_callback(self, project_line: str, metier: str,
                           approved: bool, comment: str = "") -> dict:
