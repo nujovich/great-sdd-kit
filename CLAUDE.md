@@ -1,6 +1,6 @@
 # GREAT System — SDD Pipeline
 
-Lee AGENTS.md para entender las reglas de negocio del sistema antes de generar cualquier código.
+@AGENTS.md
 
 Este repositorio contiene especificaciones ejecutables del sistema GREAT usando el patrón SDD (Specification-Driven Development).
 
@@ -37,5 +37,3 @@ python -m great_sdd.conformance.collection export --out great-collections.zip   
 
 Cobertura actual: **55/55 reglas cubribles (100%)**; las 40 restantes son exclusiones
 documentadas (LM-only o sin superficie de función). Fixtures estampados en `sdd_version 2.0.0`.
-
-Carga AGENTS.md completo antes de empezar cualquier tarea.

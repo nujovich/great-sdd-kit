@@ -421,6 +421,44 @@ contra la cual generar un fixture.
 | `EMAIL-BR-04` | Email logs retained for the duration of the active cycle | Log retention for active cycle — persistence policy. |
 <!-- END QUARANTINE -->
 
+## Checklist de conformance para una nueva vista
+
+Una vista está conforme con el SDD cuando cumple los 8 pasos en orden.
+No hay pasos opcionales: los primeros 5 dan cobertura funcional; los últimos 3 dan cobertura de oracle y contrato de API.
+
+| # | Artefacto | Dónde | Criterio de completitud |
+|---|-----------|-------|------------------------|
+| 1 | **Specs** | `great_sdd/specs/<vista>_specs.py` | Cada regla tiene `RuleSpec` con ID, severity y criteria |
+| 2 | **Signatures** | `great_sdd/signatures/<vista>.py` | Contratos input/output declarados con `SignatureModule` |
+| 3 | **Módulo** | `great_sdd/modules/<vista>.py` | Lógica pura que referencia las specs como oracle |
+| 4 | **Pipeline** | `great_sdd/pipeline/<vista>_pipeline.py` | Módulos orquestados en orden; blueprint del endpoint |
+| 5 | **Tests** | `tests/test_<vista>.py` | Cada regla tiene al menos un test que la ejercita |
+| 6 | **Tests de conformance** | `great_sdd/conformance/` | Probes deterministas para las reglas con superficie de función |
+| 7 | **Módulo de conformance** | `great_sdd/conformance/<vista>.py` | Probes registrados + golden fixtures regenerados y committeados |
+| 8 | **Contrato de endpoint** | `great_sdd/conformance/endpoints/<vista>.py` | HTTP binding (método, path, JSON Schema, ejemplos por response code) |
+
+```
+                          Vista nueva
+                               │
+          ┌────────────────────┴────────────────────┐
+          │  Cobertura funcional (pasos 1–5)        │
+          │                                         │
+          │  Specs → Signatures → Módulo            │
+          │       → Pipeline → Tests                │
+          │                                         │
+          ├─────────────────────────────────────────┤
+          │  Oracle + contrato (pasos 6–8)          │
+          │                                         │
+          │  Tests conformance → Módulo conformance │
+          │       → Contrato de endpoint            │
+          └─────────────────────────────────────────┘
+                               │
+                    ✓ Vista SDD-conforme
+```
+
+> Una vista que llega al paso 5 pero no tiene conformance no es una vista SDD: es una vista testeada.
+> El paso 8 es lo que habilita la exportación a las collections Bruno/Postman con ejemplos reales.
+
 ## Stack
 
 | Componente | Tecnología |
