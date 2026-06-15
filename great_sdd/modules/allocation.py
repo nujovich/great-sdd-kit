@@ -421,6 +421,7 @@ class AllocationSaveValidator(SignatureModule):
         }
 
 
+# DEPRECATED: HIW-176 — diversity dropdown removed from Allocation view
 class DiversityDropdownHandler(SignatureModule):
     """Handle diversity dropdown for H-DESIGN, H-TESTING, H-CUSTOMER (§7).
     Signature: CHECK_DROPDOWN_DIVERSITY

@@ -181,8 +181,8 @@ def test_rule_inventory_canonical_counts():
     from great_sdd.conformance.rule_inventory import (
         business_rule_ids, pending_marker_ids, rule_count)
     brs = business_rule_ids()
-    assert rule_count() == 92
-    assert len(brs) == 92
+    assert rule_count() == 100
+    assert len(brs) == 100
     assert "BR-01" in brs and "ALLOC-BR-17" in brs and "EMAIL-BR-04" in brs
     assert set(pending_marker_ids()) == {
         "ALLOC-01", "ERev-01", "ERev-02", "ERev-03",

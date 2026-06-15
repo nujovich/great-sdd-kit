@@ -147,6 +147,22 @@
   {
     "expected_output": {
       "child_jus_json": [],
+      "error": "Split requires at least 2 societes."
+    },
+    "input": {
+      "ju_json": "{\"ju_id\": \"j1\", \"fte_yearly\": {\"2026\": 1.0}}",
+      "splits_json": "[{\"societe\": \"A\", \"percentage\": 100}]"
+    },
+    "rule_ids": [
+      "ALLOC-BR-11",
+      "ALLOC-BR-22",
+      "ALLOC-BR-23"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "child_jus_json": [],
       "error": "Split percentages must sum to 100%. Got: 90%"
     },
     "input": {
@@ -154,7 +170,9 @@
       "splits_json": "[{\"societe\": \"A\", \"percentage\": 60}, {\"societe\": \"B\", \"percentage\": 30}]"
     },
     "rule_ids": [
-      "ALLOC-BR-11"
+      "ALLOC-BR-11",
+      "ALLOC-BR-22",
+      "ALLOC-BR-23"
     ],
     "sdd_version": "2.0.0"
   },
@@ -189,7 +207,9 @@
       "splits_json": "[{\"societe\": \"A\", \"percentage\": 60}, {\"societe\": \"B\", \"percentage\": 40}]"
     },
     "rule_ids": [
-      "ALLOC-BR-11"
+      "ALLOC-BR-11",
+      "ALLOC-BR-22",
+      "ALLOC-BR-23"
     ],
     "sdd_version": "2.0.0"
   },

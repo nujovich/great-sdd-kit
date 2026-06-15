@@ -125,7 +125,7 @@ def calculate_tsa_ke(fte: float, societe: str, year: str) -> float:
 # ──────────────────────────────────────────────
 
 METIER_ALLOCATION_CONFIG: dict[str, dict] = {
-    "H-DESIGN":    {"unit_types": ["man_day", "number"], "has_diversity_dropdown": True},
+    "H-DESIGN":    {"unit_types": ["man_day", "number"], "has_diversity_dropdown": False},
     "H-TUNING":    {"unit_types": ["man_day", "number"], "has_diversity_dropdown": False},
     "H-SOFTWARE":  {"unit_types": ["man_day", "number"], "has_diversity_dropdown": False},
     "H-PROJECT":   {"unit_types": ["man_day", "number", "bench_hours", "kilometres", "k_euros"],
@@ -133,8 +133,8 @@ METIER_ALLOCATION_CONFIG: dict[str, dict] = {
     "H-NP":        {"unit_types": ["man_day", "number", "bench_hours", "kilometres", "k_euros"],
                      "has_diversity_dropdown": False, "extra_routing": True, "same_as": "H-PROJECT"},
     "H-TESTING":   {"unit_types": ["bench_hours", "kilometres", "k_euros"],
-                     "has_diversity_dropdown": True, "testing_specific": True},
-    "H-CUSTOMER":  {"unit_types": ["man_day"], "has_diversity_dropdown": True,
+                     "has_diversity_dropdown": False, "testing_specific": True},
+    "H-CUSTOMER":  {"unit_types": ["man_day"], "has_diversity_dropdown": False,
                      "fallback_societe": "Horse Spain S.L.-VALLADOLID"},
 }
 
@@ -191,6 +191,8 @@ ALLOCATION_GRID_COLUMNS = [
     {"field": "ju_description", "editable": False},
     {"field": "ju_code", "editable": False},
     {"field": "total_fte", "editable": False},
+    {"field": "fte_yearly", "editable": False, "note": "One column per active year, e.g. 'FTE 2024'"},
+    {"field": "ke_yearly", "editable": False, "calculated": True, "note": "One column per active year, e.g. 'K€ 2024'"},
 ]
 
 ALLOCATION_FILTERS = [
@@ -228,16 +230,24 @@ ALLOCATION_RULES_LIST: list[dict] = [
     {"id": "ALLOC-BR-05", "rule": "Dirty-row tracking — Only modified rows sent to backend on save"},
     {"id": "ALLOC-BR-06", "rule": "TSA/TC without societe blocks save — Missing societe on TSA/TC prevents saving"},
     {"id": "ALLOC-BR-07", "rule": "FTE without societe non-blocking — Highlighted but does not block save"},
-    {"id": "ALLOC-BR-08", "rule": "Diversity dropdown non-blocking — Unresolved diversity does not block save"},
+    {"id": "ALLOC-BR-08", "rule": "Diversity dropdown removed — No diversity dropdown in Allocation view"},
     {"id": "ALLOC-BR-09", "rule": "Bulk assignment overwrites — Always overwrites existing societes on checked rows"},
     {"id": "ALLOC-BR-10", "rule": "Bulk assignment: societe only — Never changes cost type"},
     {"id": "ALLOC-BR-11", "rule": "Split: percentages must sum to 100%"},
     {"id": "ALLOC-BR-12", "rule": "Split undo: full delete only — Restores original single row"},
     {"id": "ALLOC-BR-13", "rule": "TC: societe mandatory — Blocks save if missing"},
-    {"id": "ALLOC-BR-14", "rule": "Filter persistence — Preserved after all in-page actions"},
+    {"id": "ALLOC-BR-14", "rule": "Filter persistence — Preserved after all in-page actions; reset only on page navigation."},
     {"id": "ALLOC-BR-15", "rule": "Active cycle only"},
     {"id": "ALLOC-BR-16", "rule": "No finalization action — Final Review reads whatever is saved"},
     {"id": "ALLOC-BR-17", "rule": "JU metier routing — Bench Hours/Kilometres → H-TESTING; else → match project_line.metier"},
+    {"id": "ALLOC-BR-18", "rule": "Page subtitle is 'Assignment of approved job units to societes and cost types.'"},
+    {"id": "ALLOC-BR-19", "rule": "Unified grid — Single flat grid; no tabs per PL/métier, no row expansion. Rows sorted by PL Number · Métier · Owner N2 · JU Code ascending."},
+    {"id": "ALLOC-BR-20", "rule": "TC popup trigger — Selecting Cost Type=TC opens a K€ distribution popup immediately"},
+    {"id": "ALLOC-BR-21", "rule": "TC popup running total — Popup shows running total K€ as user edits yearly values; changes persist only on confirm"},
+    {"id": "ALLOC-BR-22", "rule": "Split minimum — At least 2 societes required per split"},
+    {"id": "ALLOC-BR-23", "rule": "Split FTE invariant — Sum of child FTEs equals original JU FTE after split and after undo"},
+    {"id": "ALLOC-BR-24", "rule": "Split live preview — FTE and K€ per child row update in real-time as percentages change"},
+    {"id": "ALLOC-BR-25", "rule": "Bulk selection scope — Row selection and 'Check all' operate on the current filtered view only"},
 ]
 
 
@@ -343,6 +353,8 @@ def apply_split(ju_fte_yearly: dict[str, float], splits: list[dict]) -> list[dic
     Returns:
         List of split rows with proportional FTE
     """
+    if len(splits) < 2:
+        raise ValueError("Split requires at least 2 societes.")
     total_pct = sum(s["percentage"] for s in splits)
     if abs(total_pct - 100.0) > 0.01:
         raise ValueError(f"Split percentages must sum to 100%. Got: {total_pct}%")
