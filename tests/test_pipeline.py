@@ -874,3 +874,34 @@ def test_business_rules_count_20():
     from great_sdd.specs.pre_estimation_specs import BUSINESS_RULES
     assert len(BUSINESS_RULES) == 20
     assert BUSINESS_RULES[-1]["id"] == "BR-20"
+
+
+def test_legacy_copy_rules():
+    from great_sdd.specs.pre_estimation_specs import merge_legacy_estimation
+    current = {
+        "j1": {"variable": 4.0, "fixed": 1.0, "inductor_id": "I1"},
+        "j2": {"variable": 2.0, "fixed": 0.0, "inductor_id": "I1"},
+        "j4": {"variable": 1.0, "fixed": 0.0, "inductor_id": "I1"},
+        "j5": {"variable": 3.0, "fixed": 0.0, "inductor_id": "I2"},
+    }
+    historical = [
+        {"ju_id": "j1", "variable": 2.0, "fixed": 0.0, "occurrence": 5.0},  # changed coeffs, total 10
+        {"ju_id": "j2", "variable": 2.0, "fixed": 0.0, "occurrence": 3.0},  # unchanged
+        {"ju_id": "j3", "variable": 1.0, "fixed": 0.0, "occurrence": 4.0},  # orphan
+    ]
+    out = merge_legacy_estimation(historical, current)
+    occ = {o["ju_id"]: o["occurrence"] for o in out["job_units"]}
+    assert occ["j2"] == 3.0                       # rule 1
+    assert abs(occ["j1"] - 2.25) < 1e-9           # rule 2: (10-1)/4
+    assert occ["j4"] == 0.0                        # rule 4
+    assert "j5" not in occ                         # rule 5: new inductor not added
+    assert any(c["ju_id"] == "j3" for c in out["custom_jus"])  # rule 3
+
+
+def test_legacy_copy_rule2_zero_variable_guard():
+    from great_sdd.specs.pre_estimation_specs import merge_legacy_estimation
+    current = {"jz": {"variable": 0.0, "fixed": 0.0, "inductor_id": "I9"}}
+    historical = [{"ju_id": "jz", "variable": 2.0, "fixed": 0.0, "occurrence": 5.0}]
+    out = merge_legacy_estimation(historical, current)
+    occ = {o["ju_id"]: o["occurrence"] for o in out["job_units"]}
+    assert occ["jz"] == 0.0  # current variable 0 -> occurrence 0, no divide-by-zero

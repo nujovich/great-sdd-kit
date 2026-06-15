@@ -1,0 +1,287 @@
+meta {
+  name: GET /project-lines
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/project-lines
+  body: none
+  auth: bearer
+}
+
+params:query {
+  assignee: 
+  metier: 
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  GET /project-lines
+
+  ## Scenarios
+  - no active cycle (404)
+  - Engineer — assignee=oid-engineer-2 (200)
+  - PMO — metier=H-DESIGN (200)
+  - CPO — forbidden (403)
+  - Engineer — all (200)
+  - PMO — all (200)
+  - no JWT / role (401)
+
+  `GET {{baseUrl}}/project-lines`
+
+  Auth: Bearer `{{token}}`.
+
+  ## Request schema
+
+  ```json
+  {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false,
+    "properties": {
+      "assignee": {
+        "description": "Filter by assignee OID (PMO/Admin/RCRC).",
+        "type": "string"
+      },
+      "metier": {
+        "description": "Filter by project line métier (PMO/Admin/RCRC).",
+        "enum": [
+          "H-DESIGN",
+          "H-TUNING",
+          "H-SOFTWARE",
+          "H-CUSTOMER",
+          "H-PROJECT",
+          "H-NP"
+        ],
+        "type": "string"
+      }
+    },
+    "title": "ListProjectLinesQuery",
+    "type": "object"
+  }
+  ```
+
+  ## Response schema
+
+  ```json
+  {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+      "ProjectLine": {
+        "properties": {
+          "alliance_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "assignee": {
+            "description": "Entra OID (from column assignee_oid).",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "client": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "co_date": {
+            "format": "date",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "energy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "engineering": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "estimate_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "injection_system": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "market": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metier": {
+            "enum": [
+              "H-DESIGN",
+              "H-TUNING",
+              "H-SOFTWARE",
+              "H-CUSTOMER",
+              "H-PROJECT",
+              "H-NP"
+            ],
+            "type": "string"
+          },
+          "organ_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pc_date": {
+            "format": "date",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pl_name": {
+            "type": "string"
+          },
+          "pl_number": {
+            "type": "string"
+          },
+          "project_ranking": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "request_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sop_date": {
+            "format": "date",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sp_date": {
+            "format": "date",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "standard_emissions": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "To do",
+              "Draft",
+              "Estimated",
+              "Sent",
+              "Rejected",
+              "Approved"
+            ],
+            "type": "string"
+          },
+          "total_days": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "total_keuro": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "vehicle_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "pl_number",
+          "pl_name",
+          "status",
+          "metier"
+        ],
+        "type": "object"
+      }
+    },
+    "properties": {
+      "data": {
+        "items": {
+          "$ref": "#/definitions/ProjectLine"
+        },
+        "type": "array"
+      },
+      "filterOptions": {
+        "properties": {
+          "assignees": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "metiers": {
+            "items": {
+              "enum": [
+                "H-DESIGN",
+                "H-TUNING",
+                "H-SOFTWARE",
+                "H-CUSTOMER",
+                "H-PROJECT",
+                "H-NP"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "assignees",
+          "metiers"
+        ],
+        "type": "object"
+      }
+    },
+    "required": [
+      "data",
+      "filterOptions"
+    ],
+    "title": "ProjectLinesResponse",
+    "type": "object"
+  }
+  ```
+
+}

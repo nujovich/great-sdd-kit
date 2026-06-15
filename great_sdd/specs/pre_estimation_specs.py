@@ -480,3 +480,47 @@ def aggregate_yearly(monthly_values: list[float], start_year: int) -> dict[str, 
             yearly[year] = {"fte": 0.0, "bh": 0.0, "km": 0.0, "total": 0.0}
         yearly[year]["total"] += val
     return yearly
+
+
+# ──────────────────────────────────────────────
+# 12.2 Copy from Legacy Cycle
+# ──────────────────────────────────────────────
+def merge_legacy_estimation(historical: list[dict], current: dict[str, dict]) -> dict:
+    """Merge a historical-cycle estimation into the current workload standard (§12.2).
+
+    Rules:
+      1. Unchanged JU (same variable & fixed)  -> keep historical occurrence.
+      2. Coefficients changed                  -> apply current coeffs, recalc occurrence
+                                                   to preserve historical total.
+      3. Orphaned JU (absent from current)     -> emit as a custom JU.
+      4. New JU under a touched inductor        -> add with occurrence 0.
+      5. New inductor (no historical JU)        -> not auto-added.
+    """
+    job_units: list[dict] = []
+    custom_jus: list[dict] = []
+    touched_inductors: set[str] = set()
+    seen_ju: set[str] = set()
+
+    for h in historical:
+        cur = current.get(h["ju_id"])
+        if cur is None:
+            custom_jus.append({"ju_id": h["ju_id"], "variable": h["variable"],
+                               "fixed": h["fixed"], "occurrence": h["occurrence"]})
+            continue
+        changed = cur["variable"] != h["variable"] or cur["fixed"] != h["fixed"]
+        if not changed:
+            occ = h["occurrence"]
+        else:
+            historical_total = h["variable"] * h["occurrence"] + h["fixed"]
+            occ = max(0.0, (historical_total - cur["fixed"]) / cur["variable"]) if cur["variable"] > 0 else 0.0
+        job_units.append({"ju_id": h["ju_id"], "occurrence": occ})
+        seen_ju.add(h["ju_id"])
+        touched_inductors.add(cur["inductor_id"])
+
+    # Rule 4: fill remaining JUs of touched inductors at occurrence 0.
+    for ju_id, meta in current.items():
+        if meta["inductor_id"] in touched_inductors and ju_id not in seen_ju:
+            job_units.append({"ju_id": ju_id, "occurrence": 0.0})
+            seen_ju.add(ju_id)
+
+    return {"job_units": job_units, "custom_jus": custom_jus}

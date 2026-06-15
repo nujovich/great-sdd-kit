@@ -1,0 +1,284 @@
+{
+  "info": {
+    "description": "Generated from great_sdd conformance endpoint fixtures. Set {{baseUrl}} and {{token}} before sending.",
+    "name": "GREAT API — conformance collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET /project-lines",
+      "request": {
+        "description": "`GET {{baseUrl}}/project-lines`\n\nAuth: Bearer `{{token}}`.\n\n## Request schema\n\n```json\n{\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"assignee\": {\n      \"description\": \"Filter by assignee OID (PMO/Admin/RCRC).\",\n      \"type\": \"string\"\n    },\n    \"metier\": {\n      \"description\": \"Filter by project line métier (PMO/Admin/RCRC).\",\n      \"enum\": [\n        \"H-DESIGN\",\n        \"H-TUNING\",\n        \"H-SOFTWARE\",\n        \"H-CUSTOMER\",\n        \"H-PROJECT\",\n        \"H-NP\"\n      ],\n      \"type\": \"string\"\n    }\n  },\n  \"title\": \"ListProjectLinesQuery\",\n  \"type\": \"object\"\n}\n```\n\n## Response schema\n\n```json\n{\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n  \"definitions\": {\n    \"ProjectLine\": {\n      \"properties\": {\n        \"alliance_code\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"assignee\": {\n          \"description\": \"Entra OID (from column assignee_oid).\",\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"client\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"co_date\": {\n          \"format\": \"date\",\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"energy\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"engineering\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"estimate_type\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"id\": {\n          \"format\": \"uuid\",\n          \"type\": \"string\"\n        },\n        \"injection_system\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"market\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"metier\": {\n          \"enum\": [\n            \"H-DESIGN\",\n            \"H-TUNING\",\n            \"H-SOFTWARE\",\n            \"H-CUSTOMER\",\n            \"H-PROJECT\",\n            \"H-NP\"\n          ],\n          \"type\": \"string\"\n        },\n        \"organ_type\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"pc_date\": {\n          \"format\": \"date\",\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"pl_name\": {\n          \"type\": \"string\"\n        },\n        \"pl_number\": {\n          \"type\": \"string\"\n        },\n        \"project_ranking\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"request_type\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"sop_date\": {\n          \"format\": \"date\",\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"sp_date\": {\n          \"format\": \"date\",\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"standard_emissions\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"status\": {\n          \"enum\": [\n            \"To do\",\n            \"Draft\",\n            \"Estimated\",\n            \"Sent\",\n            \"Rejected\",\n            \"Approved\"\n          ],\n          \"type\": \"string\"\n        },\n        \"total_days\": {\n          \"type\": [\n            \"integer\",\n            \"null\"\n          ]\n        },\n        \"total_keuro\": {\n          \"type\": [\n            \"number\",\n            \"null\"\n          ]\n        },\n        \"vehicle_code\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        }\n      },\n      \"required\": [\n        \"id\",\n        \"pl_number\",\n        \"pl_name\",\n        \"status\",\n        \"metier\"\n      ],\n      \"type\": \"object\"\n    }\n  },\n  \"properties\": {\n    \"data\": {\n      \"items\": {\n        \"$ref\": \"#/definitions/ProjectLine\"\n      },\n      \"type\": \"array\"\n    },\n    \"filterOptions\": {\n      \"properties\": {\n        \"assignees\": {\n          \"items\": {\n            \"type\": \"string\"\n          },\n          \"type\": \"array\"\n        },\n        \"metiers\": {\n          \"items\": {\n            \"enum\": [\n              \"H-DESIGN\",\n              \"H-TUNING\",\n              \"H-SOFTWARE\",\n              \"H-CUSTOMER\",\n              \"H-PROJECT\",\n              \"H-NP\"\n            ],\n            \"type\": \"string\"\n          },\n          \"type\": \"array\"\n        }\n      },\n      \"required\": [\n        \"assignees\",\n        \"metiers\"\n      ],\n      \"type\": \"object\"\n    }\n  },\n  \"required\": [\n    \"data\",\n    \"filterOptions\"\n  ],\n  \"title\": \"ProjectLinesResponse\",\n  \"type\": \"object\"\n}\n```\n",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "project-lines"
+          ],
+          "query": [
+            {
+              "disabled": true,
+              "key": "assignee",
+              "value": ""
+            },
+            {
+              "disabled": true,
+              "key": "metier",
+              "value": ""
+            }
+          ],
+          "raw": "{{baseUrl}}/project-lines"
+        }
+      },
+      "response": [
+        {
+          "_postman_previewlanguage": "text",
+          "body": "",
+          "code": 404,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "name": "no active cycle (404)",
+          "originalRequest": {
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "project-lines"
+              ],
+              "query": [],
+              "raw": "{{baseUrl}}/project-lines"
+            }
+          },
+          "status": "Not Found"
+        },
+        {
+          "_postman_previewlanguage": "json",
+          "body": "{\n  \"data\": [\n    {\n      \"alliance_code\": null,\n      \"assignee\": \"oid-engineer-1\",\n      \"client\": null,\n      \"co_date\": null,\n      \"energy\": null,\n      \"engineering\": null,\n      \"estimate_type\": null,\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"injection_system\": null,\n      \"market\": null,\n      \"metier\": \"H-SOFTWARE\",\n      \"organ_type\": null,\n      \"pc_date\": null,\n      \"pl_name\": \"Auth refactor\",\n      \"pl_number\": \"PL-001\",\n      \"project_ranking\": null,\n      \"request_type\": null,\n      \"sop_date\": null,\n      \"sp_date\": null,\n      \"standard_emissions\": null,\n      \"status\": \"Rejected\",\n      \"total_days\": null,\n      \"total_keuro\": null,\n      \"vehicle_code\": null\n    },\n    {\n      \"alliance_code\": null,\n      \"assignee\": \"oid-engineer-1\",\n      \"client\": null,\n      \"co_date\": null,\n      \"energy\": null,\n      \"engineering\": null,\n      \"estimate_type\": null,\n      \"id\": \"33333333-3333-4333-8333-333333333333\",\n      \"injection_system\": null,\n      \"market\": null,\n      \"metier\": \"H-NP\",\n      \"organ_type\": null,\n      \"pc_date\": null,\n      \"pl_name\": \"NP line\",\n      \"pl_number\": \"PL-003\",\n      \"project_ranking\": null,\n      \"request_type\": null,\n      \"sop_date\": null,\n      \"sp_date\": null,\n      \"standard_emissions\": null,\n      \"status\": \"To do\",\n      \"total_days\": null,\n      \"total_keuro\": null,\n      \"vehicle_code\": null\n    }\n  ],\n  \"filterOptions\": {\n    \"assignees\": [\n      \"oid-engineer-1\"\n    ],\n    \"metiers\": [\n      \"H-NP\",\n      \"H-SOFTWARE\"\n    ]\n  }\n}",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "name": "Engineer — assignee=oid-engineer-2 (200)",
+          "originalRequest": {
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "project-lines"
+              ],
+              "query": [
+                {
+                  "key": "assignee",
+                  "value": "oid-engineer-2"
+                }
+              ],
+              "raw": "{{baseUrl}}/project-lines?assignee=oid-engineer-2"
+            }
+          },
+          "status": "OK"
+        },
+        {
+          "_postman_previewlanguage": "json",
+          "body": "{\n  \"data\": [\n    {\n      \"alliance_code\": null,\n      \"assignee\": \"oid-engineer-2\",\n      \"client\": null,\n      \"co_date\": null,\n      \"energy\": null,\n      \"engineering\": null,\n      \"estimate_type\": null,\n      \"id\": \"22222222-2222-4222-8222-222222222222\",\n      \"injection_system\": null,\n      \"market\": null,\n      \"metier\": \"H-DESIGN\",\n      \"organ_type\": null,\n      \"pc_date\": null,\n      \"pl_name\": \"OAuth integration\",\n      \"pl_number\": \"PL-002\",\n      \"project_ranking\": null,\n      \"request_type\": null,\n      \"sop_date\": null,\n      \"sp_date\": null,\n      \"standard_emissions\": null,\n      \"status\": \"To do\",\n      \"total_days\": null,\n      \"total_keuro\": null,\n      \"vehicle_code\": null\n    }\n  ],\n  \"filterOptions\": {\n    \"assignees\": [\n      \"oid-engineer-1\",\n      \"oid-engineer-2\",\n      \"oid-pmo\"\n    ],\n    \"metiers\": [\n      \"H-DESIGN\",\n      \"H-NP\",\n      \"H-PROJECT\",\n      \"H-SOFTWARE\"\n    ]\n  }\n}",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "name": "PMO — metier=H-DESIGN (200)",
+          "originalRequest": {
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "project-lines"
+              ],
+              "query": [
+                {
+                  "key": "metier",
+                  "value": "H-DESIGN"
+                }
+              ],
+              "raw": "{{baseUrl}}/project-lines?metier=H-DESIGN"
+            }
+          },
+          "status": "OK"
+        },
+        {
+          "_postman_previewlanguage": "text",
+          "body": "",
+          "code": 403,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "name": "CPO — forbidden (403)",
+          "originalRequest": {
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "project-lines"
+              ],
+              "query": [],
+              "raw": "{{baseUrl}}/project-lines"
+            }
+          },
+          "status": "Forbidden"
+        },
+        {
+          "_postman_previewlanguage": "json",
+          "body": "{\n  \"data\": [\n    {\n      \"alliance_code\": null,\n      \"assignee\": \"oid-engineer-1\",\n      \"client\": null,\n      \"co_date\": null,\n      \"energy\": null,\n      \"engineering\": null,\n      \"estimate_type\": null,\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"injection_system\": null,\n      \"market\": null,\n      \"metier\": \"H-SOFTWARE\",\n      \"organ_type\": null,\n      \"pc_date\": null,\n      \"pl_name\": \"Auth refactor\",\n      \"pl_number\": \"PL-001\",\n      \"project_ranking\": null,\n      \"request_type\": null,\n      \"sop_date\": null,\n      \"sp_date\": null,\n      \"standard_emissions\": null,\n      \"status\": \"Rejected\",\n      \"total_days\": null,\n      \"total_keuro\": null,\n      \"vehicle_code\": null\n    },\n    {\n      \"alliance_code\": null,\n      \"assignee\": \"oid-engineer-1\",\n      \"client\": null,\n      \"co_date\": null,\n      \"energy\": null,\n      \"engineering\": null,\n      \"estimate_type\": null,\n      \"id\": \"33333333-3333-4333-8333-333333333333\",\n      \"injection_system\": null,\n      \"market\": null,\n      \"metier\": \"H-NP\",\n      \"organ_type\": null,\n      \"pc_date\": null,\n      \"pl_name\": \"NP line\",\n      \"pl_number\": \"PL-003\",\n      \"project_ranking\": null,\n      \"request_type\": null,\n      \"sop_date\": null,\n      \"sp_date\": null,\n      \"standard_emissions\": null,\n      \"status\": \"To do\",\n      \"total_days\": null,\n      \"total_keuro\": null,\n      \"vehicle_code\": null\n    }\n  ],\n  \"filterOptions\": {\n    \"assignees\": [\n      \"oid-engineer-1\"\n    ],\n    \"metiers\": [\n      \"H-NP\",\n      \"H-SOFTWARE\"\n    ]\n  }\n}",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "name": "Engineer — all (200)",
+          "originalRequest": {
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "project-lines"
+              ],
+              "query": [],
+              "raw": "{{baseUrl}}/project-lines"
+            }
+          },
+          "status": "OK"
+        },
+        {
+          "_postman_previewlanguage": "json",
+          "body": "{\n  \"data\": [\n    {\n      \"alliance_code\": null,\n      \"assignee\": \"oid-engineer-1\",\n      \"client\": null,\n      \"co_date\": null,\n      \"energy\": null,\n      \"engineering\": null,\n      \"estimate_type\": null,\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"injection_system\": null,\n      \"market\": null,\n      \"metier\": \"H-SOFTWARE\",\n      \"organ_type\": null,\n      \"pc_date\": null,\n      \"pl_name\": \"Auth refactor\",\n      \"pl_number\": \"PL-001\",\n      \"project_ranking\": null,\n      \"request_type\": null,\n      \"sop_date\": null,\n      \"sp_date\": null,\n      \"standard_emissions\": null,\n      \"status\": \"Rejected\",\n      \"total_days\": null,\n      \"total_keuro\": null,\n      \"vehicle_code\": null\n    },\n    {\n      \"alliance_code\": null,\n      \"assignee\": \"oid-engineer-2\",\n      \"client\": null,\n      \"co_date\": null,\n      \"energy\": null,\n      \"engineering\": null,\n      \"estimate_type\": null,\n      \"id\": \"22222222-2222-4222-8222-222222222222\",\n      \"injection_system\": null,\n      \"market\": null,\n      \"metier\": \"H-DESIGN\",\n      \"organ_type\": null,\n      \"pc_date\": null,\n      \"pl_name\": \"OAuth integration\",\n      \"pl_number\": \"PL-002\",\n      \"project_ranking\": null,\n      \"request_type\": null,\n      \"sop_date\": null,\n      \"sp_date\": null,\n      \"standard_emissions\": null,\n      \"status\": \"To do\",\n      \"total_days\": null,\n      \"total_keuro\": null,\n      \"vehicle_code\": null\n    },\n    {\n      \"alliance_code\": null,\n      \"assignee\": \"oid-engineer-1\",\n      \"client\": null,\n      \"co_date\": null,\n      \"energy\": null,\n      \"engineering\": null,\n      \"estimate_type\": null,\n      \"id\": \"33333333-3333-4333-8333-333333333333\",\n      \"injection_system\": null,\n      \"market\": null,\n      \"metier\": \"H-NP\",\n      \"organ_type\": null,\n      \"pc_date\": null,\n      \"pl_name\": \"NP line\",\n      \"pl_number\": \"PL-003\",\n      \"project_ranking\": null,\n      \"request_type\": null,\n      \"sop_date\": null,\n      \"sp_date\": null,\n      \"standard_emissions\": null,\n      \"status\": \"To do\",\n      \"total_days\": null,\n      \"total_keuro\": null,\n      \"vehicle_code\": null\n    },\n    {\n      \"alliance_code\": null,\n      \"assignee\": \"oid-pmo\",\n      \"client\": null,\n      \"co_date\": null,\n      \"energy\": null,\n      \"engineering\": null,\n      \"estimate_type\": null,\n      \"id\": \"44444444-4444-4444-8444-444444444444\",\n      \"injection_system\": null,\n      \"market\": null,\n      \"metier\": \"H-PROJECT\",\n      \"organ_type\": null,\n      \"pc_date\": null,\n      \"pl_name\": \"Infra deploy\",\n      \"pl_number\": \"PL-004\",\n      \"project_ranking\": null,\n      \"request_type\": null,\n      \"sop_date\": null,\n      \"sp_date\": null,\n      \"standard_emissions\": null,\n      \"status\": \"Draft\",\n      \"total_days\": null,\n      \"total_keuro\": null,\n      \"vehicle_code\": null\n    }\n  ],\n  \"filterOptions\": {\n    \"assignees\": [\n      \"oid-engineer-1\",\n      \"oid-engineer-2\",\n      \"oid-pmo\"\n    ],\n    \"metiers\": [\n      \"H-DESIGN\",\n      \"H-NP\",\n      \"H-PROJECT\",\n      \"H-SOFTWARE\"\n    ]\n  }\n}",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "name": "PMO — all (200)",
+          "originalRequest": {
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "project-lines"
+              ],
+              "query": [],
+              "raw": "{{baseUrl}}/project-lines"
+            }
+          },
+          "status": "OK"
+        },
+        {
+          "_postman_previewlanguage": "text",
+          "body": "",
+          "code": 401,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "name": "no JWT / role (401)",
+          "originalRequest": {
+            "header": [],
+            "method": "GET",
+            "url": {
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "project-lines"
+              ],
+              "query": [],
+              "raw": "{{baseUrl}}/project-lines"
+            }
+          },
+          "status": "Unauthorized"
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "/api/v1"
+    },
+    {
+      "key": "token",
+      "value": "<JWT>"
+    }
+  ]
+}

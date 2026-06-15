@@ -1,0 +1,347 @@
+"""Export Bruno + Postman collections from conformance endpoint fixtures.
+
+Reads each fixtures/endpoints/*.json plus the per-endpoint HTTP_BINDING and
+REQUEST_SCHEMA/RESPONSE_SCHEMA declared on its oracle module, and emits:
+  - postman_collection.json (Postman Collection v2.1)
+  - bruno/ (native .bru files + bruno.json)
+  - examples.json (every conformance case per endpoint, human-readable)
+
+The N logical conformance cases (PMO->200, CPO->403, ...) collapse into ONE HTTP
+request per endpoint with one saved example per case. Deterministic, byte-stable,
+stdlib-only. Does NOT enter the business-rule census.
+"""
+from __future__ import annotations
+
+import argparse
+import io
+import json
+import sys
+import zipfile
+from pathlib import Path
+
+from sdd.base_conformance import canonical_json
+from great_sdd.conformance.generate import ENDPOINTS_DIR
+from great_sdd.conformance.endpoints import project_lines as _project_lines_ep
+
+DEFAULT_OUT = ENDPOINTS_DIR / "collections"
+
+# endpoint name -> oracle module exposing HTTP_BINDING / REQUEST_SCHEMA / RESPONSE_SCHEMA
+_ENDPOINT_MODULES = {
+    "GET /project-lines": _project_lines_ep,
+}
+
+
+def _load_endpoint_fixtures(fixtures_dir: Path) -> list:
+    """Parsed endpoint fixtures from <fixtures_dir>/*.json (non-recursive)."""
+    return [json.loads(fp.read_text())
+            for fp in sorted(Path(fixtures_dir).glob("*.json"))]
+
+
+def load_endpoints(fixtures_dir: Path = ENDPOINTS_DIR) -> list:
+    """List of {name, fixture, module} for each endpoint fixture found."""
+    fixtures_dir = Path(fixtures_dir)
+    if not fixtures_dir.is_dir():
+        raise ValueError(f"fixtures dir not found: {fixtures_dir}")
+    endpoints = []
+    for fx in _load_endpoint_fixtures(fixtures_dir):
+        name = fx["endpoint"]
+        if name not in _ENDPOINT_MODULES:
+            raise ValueError(
+                f"No oracle module registered for endpoint {name!r}; "
+                f"add it to _ENDPOINT_MODULES in collection.py.")
+        endpoints.append({"name": name, "fixture": fx,
+                          "module": _ENDPOINT_MODULES[name]})
+    return endpoints
+
+
+def _scenario_label(case: dict, status: int) -> str:
+    """Human-readable label for a conformance case, by status + request."""
+    role = case.get("role")
+    if status == 401:
+        return "no JWT / role (401)"
+    if status == 403:
+        return f"{role} — forbidden (403)"
+    if status == 404:
+        return "no active cycle (404)"
+    query = case.get("query") or {}
+    bits = [f"{k}={query[k]}" for k in ("assignee", "metier") if query.get(k)]
+    suffix = ", ".join(bits) if bits else "all"
+    return f"{role} — {suffix} (200)"
+
+
+def build_examples(endpoints: list) -> dict:
+    """endpoint name -> [{scenario, request, response:{status, body}}] for every case."""
+    out = {}
+    for ep in endpoints:
+        rows = []
+        for case in ep["fixture"]["cases"]:
+            status = case["expected"]["status"]
+            rows.append({
+                "scenario": _scenario_label(case["request"], status),
+                "request": case["request"],
+                "response": {"status": status, "body": case["expected"]["body"]},
+            })
+        out[ep["name"]] = rows
+    return out
+
+
+def _markdown_docs(binding: dict, request_schema: dict, response_schema: dict) -> str:
+    """Markdown for a request description: both JSON Schemas + auth note."""
+    return (
+        f"`{binding['method']} {{{{baseUrl}}}}{binding['path']}`\n\n"
+        f"Auth: Bearer `{{{{token}}}}`.\n\n"
+        "## Request schema\n\n```json\n"
+        + canonical_json(request_schema).rstrip()
+        + "\n```\n\n## Response schema\n\n```json\n"
+        + canonical_json(response_schema).rstrip()
+        + "\n```\n"
+    )
+
+
+def _pm_url(binding: dict, query: dict = None, template: bool = False) -> dict:
+    """Postman url object: {{baseUrl}} + path + query params.
+
+    template=True (the saved request) lists every optional param as disabled —
+    shown for discoverability but NOT sent. Otherwise (a concrete example) include
+    only the params actually present in `query`, with their values.
+    """
+    query = query or {}
+    qp = binding.get("query_params", [])
+    if template:
+        qitems = [{"key": k, "value": "", "disabled": True} for k in qp]
+    else:
+        qitems = [{"key": k, "value": str(query[k])}
+                  for k in qp if query.get(k) is not None]
+    sent = [q for q in qitems if not q.get("disabled")]
+    raw = "{{baseUrl}}" + binding["path"]
+    if sent:
+        raw += "?" + "&".join(f"{q['key']}={q['value']}" for q in sent)
+    return {
+        "raw": raw,
+        "host": ["{{baseUrl}}"],
+        "path": [seg for seg in binding["path"].split("/") if seg],
+        "query": qitems,
+    }
+
+
+def _pm_headers(binding: dict, authenticated: bool = True) -> list:
+    """Bearer auth header; empty for an unauthenticated example (authenticated=False)."""
+    if authenticated and binding.get("auth") == "bearer":
+        return [{"key": "Authorization", "value": "Bearer {{token}}"}]
+    return []
+
+
+_PM_STATUS_TEXT = {200: "OK", 401: "Unauthorized", 403: "Forbidden", 404: "Not Found"}
+
+
+def build_postman(endpoints: list) -> dict:
+    """Postman Collection v2.1: one item per endpoint, one saved example per case."""
+    items = []
+    for ep in endpoints:
+        binding = ep["module"].HTTP_BINDING
+        desc = _markdown_docs(binding, ep["module"].REQUEST_SCHEMA,
+                              ep["module"].RESPONSE_SCHEMA)
+        headers = _pm_headers(binding)
+        responses = []
+        for case in ep["fixture"]["cases"]:
+            req = case["request"]
+            status = case["expected"]["status"]
+            body = case["expected"]["body"]
+            has_body = body is not None
+            responses.append({
+                "name": _scenario_label(req, status),
+                "originalRequest": {
+                    "method": binding["method"],
+                    "header": _pm_headers(binding, authenticated=req.get("role") is not None),
+                    "url": _pm_url(binding, (req.get("query") or {})),
+                },
+                "status": _PM_STATUS_TEXT.get(status, ""),
+                "code": status,
+                "_postman_previewlanguage": "json" if has_body else "text",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": canonical_json(body).rstrip() if has_body else "",
+            })
+        items.append({
+            "name": ep["name"],
+            "request": {"method": binding["method"], "header": headers,
+                        "url": _pm_url(binding, template=True), "description": desc},
+            "response": responses,
+        })
+    return {
+        "info": {
+            "name": "GREAT API — conformance collection",
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+            "description": "Generated from great_sdd conformance endpoint fixtures. "
+                           "Set {{baseUrl}} and {{token}} before sending.",
+        },
+        "variable": [
+            {"key": "baseUrl", "value": "/api/v1"},
+            {"key": "token", "value": "<JWT>"},
+        ],
+        "item": items,
+    }
+
+
+def _bru_slug(name: str) -> str:
+    """Filename slug from an endpoint name, e.g. 'GET /project-lines' -> 'project-lines'."""
+    return name.split(" ", 1)[-1].strip("/").replace("/", "_") or "endpoint"
+
+
+def _indent_docs(text: str) -> str:
+    """Indent docs content 2 spaces so embedded JSON braces never start a line.
+
+    Bruno's .bru grammar closes a `docs {` block at the first newline+`}`; a bare
+    `}` at column 0 (from pretty-printed JSON Schema) would truncate it. Indenting
+    matches Bruno's own writer, which outdents on read.
+    """
+    return "\n".join("  " + line if line else line for line in text.split("\n"))
+
+
+def _bru_file(ep: dict, seq: int) -> str:
+    """Native Bruno .bru content for one endpoint."""
+    binding = ep["module"].HTTP_BINDING
+    method = binding["method"].lower()
+    url = "{{baseUrl}}" + binding["path"]
+    query_block = ""
+    if binding.get("query_params"):
+        lines = "\n".join(f"  {k}: " for k in binding["query_params"])
+        query_block = f"\nparams:query {{\n{lines}\n}}\n"
+    # scenarios + schemas go in docs (Bruno has no saved-example concept)
+    scenarios = "\n".join(
+        f"- {_scenario_label(c['request'], c['expected']['status'])}"
+        for c in ep["fixture"]["cases"])
+    docs = (
+        f"{ep['name']}\n\n## Scenarios\n{scenarios}\n\n"
+        + _markdown_docs(binding, ep["module"].REQUEST_SCHEMA,
+                         ep["module"].RESPONSE_SCHEMA)
+    )
+    return (
+        f"meta {{\n  name: {ep['name']}\n  type: http\n  seq: {seq}\n}}\n\n"
+        f"{method} {{\n  url: {url}\n  body: none\n  auth: bearer\n}}\n"
+        f"{query_block}\n"
+        f"headers {{\n  Authorization: Bearer {{{{token}}}}\n}}\n\n"
+        f"auth:bearer {{\n  token: {{{{token}}}}\n}}\n\n"
+        f"docs {{\n{_indent_docs(docs)}\n}}\n"
+    )
+
+
+def build_bruno(endpoints: list) -> dict:
+    """Relative path -> file content for a native Bruno collection folder."""
+    files = {
+        "bruno.json": canonical_json({
+            "version": "1",
+            "name": "GREAT API — conformance collection",
+            "type": "collection",
+        }).rstrip() + "\n",
+    }
+    for seq, ep in enumerate(sorted(endpoints, key=lambda e: e["name"]), start=1):
+        files[f"{_bru_slug(ep['name'])}.bru"] = _bru_file(ep, seq)
+    return files
+
+
+def _artifact_blobs(endpoints: list) -> dict:
+    """Relative path -> file content (str) for ALL collection artifacts."""
+    blobs = {
+        "postman_collection.json": canonical_json(build_postman(endpoints)),
+        "examples.json": canonical_json(build_examples(endpoints)),
+    }
+    for rel, content in build_bruno(endpoints).items():
+        blobs[f"bruno/{rel}"] = content
+    return blobs
+
+
+def write_collections(endpoints: list, out_dir: Path) -> list:
+    """Write every artifact under out_dir. Returns the relative paths written.
+
+    NOTE: does not prune stale files (e.g. a .bru for an endpoint later removed
+    from _ENDPOINT_MODULES) — drift-check covers content, not orphans.
+    """
+    out_dir = Path(out_dir)
+    written = []
+    for rel, content in _artifact_blobs(endpoints).items():
+        path = out_dir / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        written.append(rel)
+    return sorted(written)
+
+
+def check_collections(endpoints: list, out_dir: Path) -> list:
+    """Return artifacts that drift from disk (empty == in sync)."""
+    out_dir = Path(out_dir)
+    drift = []
+    for rel, content in _artifact_blobs(endpoints).items():
+        path = out_dir / rel
+        on_disk = path.read_text(encoding="utf-8") if path.exists() else ""
+        if on_disk != content:
+            drift.append(rel)
+    return sorted(drift)
+
+
+def _cmd_generate(args) -> int:
+    endpoints = load_endpoints(Path(args.fixtures_dir))
+    out_dir = Path(args.out)
+    if args.check:
+        drift = check_collections(endpoints, out_dir)
+        if drift:
+            print(f"COLLECTION DRIFT in: {', '.join(drift)}. "
+                  f"Run: python -m great_sdd.conformance.collection generate", file=sys.stderr)
+            return 1
+        print(f"checked collections for {len(endpoints)} endpoint(s) in {out_dir}.")
+        return 0
+    written = write_collections(endpoints, out_dir)
+    print(f"wrote {len(written)} collection artifact(s) for "
+          f"{len(endpoints)} endpoint(s) -> {out_dir}.")
+    return 0
+
+
+# Fixed timestamp so the zip is byte-identical across runs (no now()).
+_ZIP_DATE_TIME = (1980, 1, 1, 0, 0, 0)
+
+
+def build_zip_bytes(endpoints: list) -> bytes:
+    """A deterministic .zip of every collection artifact (sorted, fixed mtime)."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for rel, content in sorted(_artifact_blobs(endpoints).items()):
+            info = zipfile.ZipInfo(filename=rel, date_time=_ZIP_DATE_TIME)
+            info.compress_type = zipfile.ZIP_DEFLATED
+            zf.writestr(info, content.encode("utf-8"))
+    return buf.getvalue()
+
+
+def _cmd_export(args) -> int:
+    endpoints = load_endpoints(Path(args.fixtures_dir))
+    out = Path(args.out)
+    if out.parent != Path(""):
+        out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(build_zip_bytes(endpoints))
+    print(f"wrote collection bundle for {len(endpoints)} endpoint(s) -> {out}.")
+    return 0
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(
+        description="Export Bruno/Postman collections from conformance endpoint fixtures.")
+    sub = ap.add_subparsers(dest="command", required=True)
+
+    g = sub.add_parser("generate", help="Write collection artifacts to disk.")
+    g.add_argument("--fixtures-dir", default=str(ENDPOINTS_DIR),
+                   help="Dir of endpoint fixtures (*.json).")
+    g.add_argument("--out", default=str(DEFAULT_OUT), help="Output dir for artifacts.")
+    g.add_argument("--check", action="store_true",
+                   help="Verify committed artifacts are in sync (exit 1 on drift).")
+    g.set_defaults(func=_cmd_generate)
+
+    e = sub.add_parser("export", help="Bundle the collections into a portable .zip.")
+    e.add_argument("--fixtures-dir", default=str(ENDPOINTS_DIR),
+                   help="Dir of endpoint fixtures (*.json).")
+    e.add_argument("--out", default="great-collections.zip", help="Output .zip path (overwrites if it exists).")
+    e.set_defaults(func=_cmd_export)
+
+    args = ap.parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
