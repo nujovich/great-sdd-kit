@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.0] — 2026-06-11
+
+### Added
+- Add §12.2 legacy-cycle copy merge rules (`merge_legacy_estimation`) + pytest.
+
+---
+
 ## [2.0.0] — 2026-06-10
 
 ### ⚠ BREAKING CHANGES (HIW-174 — Pre-Estimation PRD alignment)

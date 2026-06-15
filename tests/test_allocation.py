@@ -110,7 +110,7 @@ def test_hproject_no_routing():
     assert route_hproject_hnp("X99", "Engine", "XYZ") == ""
 
 def test_16_rules():
-    assert len(ALLOCATION_RULES_LIST) == 17
+    assert len(ALLOCATION_RULES_LIST) == 25
 
 
 # ──────────────────────────────────────────────
@@ -255,18 +255,19 @@ def test_split_handler_invalid():
     )
     assert "100%" in result["error"]
 
-def test_diversity_dropdown():
-    """CHECK_DROPDOWN_DIVERSITY — ALLOC-BR-08: non-blocking"""
-    d = DiversityDropdownHandler()
-    jus = [
-        {"ju_code": "J1", "metier": "H-DESIGN", "_rule_ju_list": ["J1"], "diversity_resolved": False},
-        {"ju_code": "J2", "metier": "H-SOFTWARE", "_rule_ju_list": [], "diversity_resolved": True},
-    ]
-    result = d.forward(job_units_json=json.dumps(jus))
-    flagged = json.loads(result["flagged_jus_json"])
-    assert flagged[0]["_needs_diversity"] is True
-    assert flagged[0]["diversity_resolved"] is False
-    assert result["unresolved_count"] == "1"
+# HIW-176: removed per ticket
+# def test_diversity_dropdown():
+#     """CHECK_DROPDOWN_DIVERSITY — ALLOC-BR-08: non-blocking"""
+#     d = DiversityDropdownHandler()
+#     jus = [
+#         {"ju_code": "J1", "metier": "H-DESIGN", "_rule_ju_list": ["J1"], "diversity_resolved": False},
+#         {"ju_code": "J2", "metier": "H-SOFTWARE", "_rule_ju_list": [], "diversity_resolved": True},
+#     ]
+#     result = d.forward(job_units_json=json.dumps(jus))
+#     flagged = json.loads(result["flagged_jus_json"])
+#     assert flagged[0]["_needs_diversity"] is True
+#     assert flagged[0]["diversity_resolved"] is False
+#     assert result["unresolved_count"] == "1"
 
 
 # ──────────────────────────────────────────────
@@ -422,12 +423,13 @@ def test_alloc_br_07_fte_warns():
     warnings = json.loads(result["warnings_json"])
     assert len(warnings) == 1
 
-def test_alloc_br_08_diversity_non_blocking():
-    """ALLOC-BR-08: Unresolved diversity does not block save"""
-    v = AllocationSaveValidator()
-    jus = [{"ju_code": "J1", "cost_type": "FTE", "societe": "Horse Spain"}]
-    result = v.forward(job_units_json=json.dumps(jus))
-    assert result["can_save"] is True
+# HIW-176: removed per ticket
+# def test_alloc_br_08_diversity_non_blocking():
+#     """ALLOC-BR-08: Unresolved diversity does not block save"""
+#     v = AllocationSaveValidator()
+#     jus = [{"ju_code": "J1", "cost_type": "FTE", "societe": "Horse Spain"}]
+#     result = v.forward(job_units_json=json.dumps(jus))
+#     assert result["can_save"] is True
 
 def test_alloc_br_09_bulk_overwrites():
     """ALLOC-BR-09: Bulk assign always overwrites existing societes"""
@@ -455,3 +457,10 @@ def test_alloc_br_13_tc_requires_societe():
     assert result["can_save"] is False
     errors = json.loads(result["errors_json"])
     assert "TC" in errors[0]
+
+
+def test_alloc_br_22_split_minimum():
+    from great_sdd.modules.allocation import apply_split
+    import pytest
+    with pytest.raises(ValueError, match="at least 2"):
+        apply_split(ju_fte_yearly={"2024": 1.0}, splits=[{"societe": "A", "percentage": 100}])

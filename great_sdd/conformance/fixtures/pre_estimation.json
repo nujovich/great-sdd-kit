@@ -1,0 +1,612 @@
+[
+  {
+    "expected_output": {
+      "error_message": "Cannot transition from 'approved' to 'draft'",
+      "is_valid": false
+    },
+    "input": {
+      "current_status": "approved",
+      "has_saved_draft_in_session": true,
+      "target_status": "draft"
+    },
+    "rule_ids": [
+      "BR-02",
+      "BR-04",
+      "BR-15",
+      "BR-16",
+      "BR-17",
+      "ERev-BR-03"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "error_message": "",
+      "is_valid": true
+    },
+    "input": {
+      "current_status": "draft",
+      "has_saved_draft_in_session": false,
+      "target_status": "draft"
+    },
+    "rule_ids": [
+      "BR-02",
+      "BR-04",
+      "BR-15",
+      "BR-16",
+      "BR-17",
+      "ERev-BR-03"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "error_message": "Draft gate (BR-02): 'Save as Definitive' requires 'Save as Draft' first in this session",
+      "is_valid": false
+    },
+    "input": {
+      "current_status": "draft",
+      "has_saved_draft_in_session": false,
+      "target_status": "estimated"
+    },
+    "rule_ids": [
+      "BR-02",
+      "BR-04",
+      "BR-15",
+      "BR-16",
+      "BR-17",
+      "ERev-BR-03"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "error_message": "",
+      "is_valid": true
+    },
+    "input": {
+      "current_status": "draft",
+      "has_saved_draft_in_session": true,
+      "target_status": "estimated"
+    },
+    "rule_ids": [
+      "BR-02",
+      "BR-04",
+      "BR-15",
+      "BR-16",
+      "BR-17",
+      "ERev-BR-03"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "error_message": "Cannot transition from 'sent' to 'draft'",
+      "is_valid": false
+    },
+    "input": {
+      "current_status": "sent",
+      "has_saved_draft_in_session": true,
+      "target_status": "draft"
+    },
+    "rule_ids": [
+      "BR-02",
+      "BR-04",
+      "BR-15",
+      "BR-16",
+      "BR-17",
+      "ERev-BR-03"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "error_message": "",
+      "is_valid": true
+    },
+    "input": {
+      "current_status": "to_do",
+      "has_saved_draft_in_session": false,
+      "target_status": "draft"
+    },
+    "rule_ids": [
+      "BR-02",
+      "BR-04",
+      "BR-15",
+      "BR-16",
+      "BR-17",
+      "ERev-BR-03"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "allowed": true,
+      "reason": "Engineer is authorized to edit this line"
+    },
+    "input": {
+      "action": "edit",
+      "current_user": "u1",
+      "line_assignee": "u1",
+      "role": "Engineer"
+    },
+    "rule_ids": [
+      "BR-03"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "allowed": false,
+      "reason": "Engineers can only access their assigned lines. This line is assigned to u2."
+    },
+    "input": {
+      "action": "edit",
+      "current_user": "u1",
+      "line_assignee": "u2",
+      "role": "Engineer"
+    },
+    "rule_ids": [
+      "BR-03"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "allowed": false,
+      "reason": "CPO has no access to Pre-Estimation view"
+    },
+    "input": {
+      "action": "view",
+      "current_user": "u1",
+      "line_assignee": "u1",
+      "role": "CPO"
+    },
+    "rule_ids": [
+      "BR-03"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "is_compatible": false
+    },
+    "input": {
+      "lines": [
+        {
+          "injection_system": null
+        },
+        {
+          "injection_system": "X"
+        }
+      ]
+    },
+    "rule_ids": [
+      "BR-06",
+      "BR-07"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "is_compatible": true
+    },
+    "input": {
+      "lines": [
+        {
+          "injection_system": null
+        },
+        {
+          "injection_system": null
+        }
+      ]
+    },
+    "rule_ids": [
+      "BR-06",
+      "BR-07"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "is_compatible": true
+    },
+    "input": {
+      "lines": [
+        {
+          "organ_type": "A"
+        },
+        {
+          "organ_type": "A"
+        }
+      ]
+    },
+    "rule_ids": [
+      "BR-06",
+      "BR-07"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "is_compatible": false
+    },
+    "input": {
+      "lines": [
+        {
+          "organ_type": "A"
+        },
+        {
+          "organ_type": "B"
+        }
+      ]
+    },
+    "rule_ids": [
+      "BR-06",
+      "BR-07"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "monthly_distribution_json": [
+        {
+          "bh": 0.0,
+          "fte": 1.0,
+          "km": 0.0,
+          "month": 1
+        },
+        {
+          "bh": 0.0,
+          "fte": 1.0,
+          "km": 0.0,
+          "month": 2
+        },
+        {
+          "bh": 0.0,
+          "fte": 1.0,
+          "km": 0.0,
+          "month": 3
+        },
+        {
+          "bh": 0.0,
+          "fte": 1.0,
+          "km": 0.0,
+          "month": 4
+        },
+        {
+          "bh": 0.0,
+          "fte": 1.0,
+          "km": 0.0,
+          "month": 5
+        },
+        {
+          "bh": 0.0,
+          "fte": 1.0,
+          "km": 0.0,
+          "month": 6
+        },
+        {
+          "bh": 0.0,
+          "fte": 1.0,
+          "km": 0.0,
+          "month": 7
+        },
+        {
+          "bh": 0.0,
+          "fte": 1.0,
+          "km": 0.0,
+          "month": 8
+        },
+        {
+          "bh": 0.0,
+          "fte": 1.0,
+          "km": 0.0,
+          "month": 9
+        },
+        {
+          "bh": 0.0,
+          "fte": 1.0,
+          "km": 0.0,
+          "month": 10
+        },
+        {
+          "bh": 0.0,
+          "fte": 1.0,
+          "km": 0.0,
+          "month": 11
+        },
+        {
+          "bh": 0.0,
+          "fte": 1.0,
+          "km": 0.0,
+          "month": 12
+        }
+      ],
+      "yearly_aggregation_json": {
+        "2026": {
+          "bh": 0.0,
+          "fte": 0.0,
+          "km": 0.0,
+          "total": 12.0
+        }
+      }
+    },
+    "input": {
+      "project_duration_months": "12",
+      "sp_date": "2026-01-01",
+      "total_bh": "0.0",
+      "total_fte": "12.0",
+      "total_km": "0.0"
+    },
+    "rule_ids": [
+      "BR-08"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "can_save": true,
+      "validation_errors_json": []
+    },
+    "input": {
+      "has_saved_draft_in_session": false,
+      "line_json": "{\"sp_date\": \"2026-01-01\", \"status\": \"to_do\", \"inductors\": [{\"is_custom\": true}]}",
+      "save_type": "draft"
+    },
+    "rule_ids": [
+      "BR-08",
+      "BR-11",
+      "BR-12"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "can_save": true,
+      "validation_errors_json": []
+    },
+    "input": {
+      "has_saved_draft_in_session": false,
+      "line_json": "{\"sp_date\": \"2026-01-01\", \"status\": \"to_do\", \"inductors\": [{\"selected_cran\": \"Simple\"}]}",
+      "save_type": "draft"
+    },
+    "rule_ids": [
+      "BR-08",
+      "BR-11",
+      "BR-12"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "can_save": false,
+      "validation_errors_json": [
+        "SP date is mandatory (BR-08). Saving is blocked.",
+        "No inductors with selected cran or Custom JUs found. Add at least one."
+      ]
+    },
+    "input": {
+      "has_saved_draft_in_session": false,
+      "line_json": "{\"sp_date\": \"\", \"status\": \"to_do\", \"inductors\": []}",
+      "save_type": "draft"
+    },
+    "rule_ids": [
+      "BR-08",
+      "BR-11",
+      "BR-12"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "inductor_selections_json": [
+        {
+          "job_units": [
+            {
+              "cran": "Simple",
+              "description": "UI Development",
+              "fixed": 0.5,
+              "occurrence": 1.0,
+              "short_name": "UI-DEV",
+              "unit_type": "man_day",
+              "variable": 1.5
+            },
+            {
+              "cran": "Simple",
+              "description": "UI Component",
+              "fixed": 0.25,
+              "occurrence": 1.0,
+              "short_name": "UI-COMP",
+              "unit_type": "man_day",
+              "variable": 0.5
+            }
+          ],
+          "name": "Pantallas UI",
+          "selected_cran": "Simple"
+        },
+        {
+          "job_units": [
+            {
+              "cran": "Atom",
+              "description": "Component Development",
+              "fixed": 0.0,
+              "occurrence": 1.0,
+              "short_name": "CMP-DEV",
+              "unit_type": "man_day",
+              "variable": 1.0
+            }
+          ],
+          "name": "Componentes reutilizables",
+          "selected_cran": "Atom"
+        }
+      ]
+    },
+    "input": {
+      "available_inductors_json": "[]",
+      "line_description": "",
+      "metier": "H-SOFTWARE"
+    },
+    "rule_ids": [
+      "BR-12"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "inductor_selections_json": [
+        {
+          "job_units": [
+            {
+              "cran": "Simple",
+              "description": "API Development",
+              "fixed": 0.5,
+              "occurrence": 1.0,
+              "short_name": "API-DEV",
+              "unit_type": "man_day",
+              "variable": 2.0
+            },
+            {
+              "cran": "Simple",
+              "description": "API Testing",
+              "fixed": 0.25,
+              "occurrence": 1.0,
+              "short_name": "API-TEST",
+              "unit_type": "man_day",
+              "variable": 1.0
+            }
+          ],
+          "name": "API endpoints",
+          "selected_cran": "Complex"
+        }
+      ]
+    },
+    "input": {
+      "available_inductors_json": "[]",
+      "line_description": "complex REST API",
+      "metier": "H-DESIGN"
+    },
+    "rule_ids": [
+      "BR-12"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "inductor_selections_json": []
+    },
+    "input": {
+      "available_inductors_json": "[]",
+      "line_description": "x",
+      "metier": "Nonexistent"
+    },
+    "rule_ids": [
+      "BR-12"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "breakdown_json": [
+        {
+          "description": "",
+          "fixed": 1.0,
+          "occurrence": 3,
+          "short_name": "A",
+          "total": 7.0,
+          "unit_type": "man_day",
+          "variable": 2.0
+        },
+        {
+          "description": "",
+          "fixed": 0.0,
+          "occurrence": 0,
+          "short_name": "B",
+          "total": 0.0,
+          "unit_type": "bench_hours",
+          "variable": 5.0
+        }
+      ],
+      "total_bh": "0.0",
+      "total_fte": "0.03",
+      "total_km": "0.0"
+    },
+    "input": {
+      "job_units_json": "[{\"short_name\": \"A\", \"variable\": 2.0, \"occurrence\": 3, \"fixed\": 1.0, \"unit_type\": \"man_day\"}, {\"short_name\": \"B\", \"variable\": 5.0, \"occurrence\": 0, \"fixed\": 0.0, \"unit_type\": \"bench_hours\"}]"
+    },
+    "rule_ids": [
+      "BR-13"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "can_create_custom_ju": true,
+      "reason": "Admin can create Custom JUs",
+      "role": "Admin"
+    },
+    "input": {
+      "role": "Admin"
+    },
+    "rule_ids": [
+      "BR-20"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "can_create_custom_ju": false,
+      "reason": "CPO cannot create Custom JUs",
+      "role": "CPO"
+    },
+    "input": {
+      "role": "CPO"
+    },
+    "rule_ids": [
+      "BR-20"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "can_create_custom_ju": true,
+      "reason": "Engineer can create Custom JUs",
+      "role": "Engineer"
+    },
+    "input": {
+      "role": "Engineer"
+    },
+    "rule_ids": [
+      "BR-20"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "can_create_custom_ju": false,
+      "reason": "PMO cannot create Custom JUs",
+      "role": "PMO"
+    },
+    "input": {
+      "role": "PMO"
+    },
+    "rule_ids": [
+      "BR-20"
+    ],
+    "sdd_version": "2.0.0"
+  },
+  {
+    "expected_output": {
+      "can_create_custom_ju": false,
+      "reason": "RCRC cannot create Custom JUs",
+      "role": "RCRC"
+    },
+    "input": {
+      "role": "RCRC"
+    },
+    "rule_ids": [
+      "BR-20"
+    ],
+    "sdd_version": "2.0.0"
+  }
+]
