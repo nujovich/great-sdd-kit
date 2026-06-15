@@ -6,7 +6,7 @@ Las reglas de negocio del sistema GREAT están codificadas como **especificacion
 
 > **Última actualización:** 10 junio 2026 — taxonomía métier `H-*` (HIW-174, v2.0.0) +
 > capa de conformance (oracle determinista, golden fixtures cross-language).
-> 321 tests, 30 módulos, 6 vistas, 92 reglas de negocio.
+> 321 tests, 30 módulos, 6 vistas, 100 reglas de negocio.
 
 ## ¿Qué es esto?
 
@@ -15,7 +15,7 @@ Un kit SDD (Spec-Driven Development) que convierte documentos de negocio (PRDs, 
 1. **Specs estructuradas** — Reglas de negocio con ID, severity, criterios de aceptación
 2. **Módulos SDD** — Lógica pura importable como librería
 3. **Pipelines** — Orquestación de módulos como blueprint de endpoints
-4. **Tests ejecutables** — 321 tests que verifican las 92 reglas
+4. **Tests ejecutables** — 321 tests que verifican las 100 reglas
 5. **Conformance** — el SDD como *oracle* determinista: golden fixtures JSON que cualquier
    consumidor (Python o TypeScript) usa como contrato para probar que cumple las reglas
 
@@ -23,7 +23,7 @@ Un kit SDD (Spec-Driven Development) que convierte documentos de negocio (PRDs, 
 Documento (PRD/Épica/Story)
         │
         ▼
-great_sdd/specs/      ← 92 reglas estructuradas (6 archivos)
+great_sdd/specs/      ← 100 reglas estructuradas (6 archivos)
         │
         ▼
 great_sdd/modules/    ← 30 módulos SDD (lógica pura)
@@ -35,7 +35,7 @@ great_sdd/pipeline/   ← 6 pipelines (blueprint de endpoints)
 tests/                ← 321 tests (pytest)
         │
         ▼
-pytest tests/ -v      ← ¿Cumple las 92 reglas? Sí → Merge.
+pytest tests/ -v      ← ¿Cumple las 100 reglas? Sí → Merge.
         │
         ▼
 great_sdd/conformance/ ← oracle determinista → golden fixtures (contrato cross-language)
@@ -74,10 +74,10 @@ great-sdd-kit/
 ├── great_sdd/                      ← Dominio: Sistema GREAT
 │   ├── __init__.py
 │   ├── demo.py                      ← Demo runner
-│   ├── specs/                       ← 6 archivos, 92 reglas de negocio
+│   ├── specs/                       ← 6 archivos, 100 reglas de negocio
 │   │   ├── pre_estimation_specs.py      ← 17 reglas (vista Pre-Estimation)
 │   │   ├── estimation_review_specs.py   ← 10 reglas (vista Estimation Review)
-│   │   ├── allocation_specs.py          ← 16 reglas (vista Allocation)
+│   │   ├── allocation_specs.py          ← 25 reglas (vista Allocation)
 │   │   ├── final_review_specs.py        ← 10 reglas (vista Final Review)
 │   │   ├── management_view_specs.py     ← 8 reglas (vista Management)
 │   │   └── transversal_specs.py         ← 13 reglas (ciclos, versiones, emails)
@@ -103,7 +103,7 @@ great-sdd-kit/
 │       ├── management_view_pipeline.py     ← Pipeline de Management View
 │       └── transversal_pipeline.py         ← Pipeline transversal
 │
-└── tests/                           ← 321 tests que verifican las 92 reglas
+└── tests/                           ← 321 tests que verifican las 100 reglas
     ├── sample_data.py                  ← Datos de prueba
     ├── test_pipeline.py                ← Tests de pipeline core
     ├── test_pre_estimation.py          ← Tests de Pre-Estimation
@@ -235,7 +235,7 @@ python -m pytest tests/test_pre_estimation.py -v  # Solo Pre-Estimation (68 test
 python -m pytest tests/test_pipeline.py -v        # Pipeline core
 ```
 
-Cada test verifica una o más reglas de negocio. Si tu código pasa los 321 tests, cumple las 92 reglas.
+Cada test verifica una o más reglas de negocio. Si tu código pasa los 321 tests, cumple las 100 reglas.
 
 ## Integración en tu proyecto
 
@@ -352,7 +352,7 @@ ver [`great_sdd/conformance/README.md`](great_sdd/conformance/README.md).
 
 ### Cobertura
 
-De las **92 reglas de negocio**, **55 tienen superficie determinista y están
+De las **100 reglas de negocio**, **57 tienen superficie determinista y están
 cubiertas por probes reales** (100% de lo cubrible). Las restantes quedan **documentadas
 como exclusiones** — nada se descarta en silencio; cada exclusión aparece en el reporte de
 coverage y en `great_sdd/conformance/fixtures/_inventory.json`.
@@ -375,7 +375,7 @@ texto/ranking generado por el modelo.
 | `VALIDATE_LINE_SELECTION:explanation` | incompatibility_reason prose is LM-only; the is_compatible DECISION is covered via are_lines_compatible (BR-06/BR-07). |
 | `SELECT_INDUCTOR_CRAN:semantic-ranking` | Free-text best-fit ranking from arbitrary natural language is LM-only. The deterministic refactor covers keyword/substring selection + documented full-standard fallback, not semantic ranking. |
 
-#### ⚪ Sin superficie de función (37) — `NO_FUNCTION_SURFACE_RULES`
+#### ⚪ Sin superficie de función (43) — `NO_FUNCTION_SURFACE_RULES`
 
 Reglas deterministas pero de política / UI / persistencia, sin función pura ejecutable
 contra la cual generar un fixture.
@@ -399,6 +399,12 @@ contra la cual generar un fixture.
 | `ALLOC-BR-14` | Filter persistence — Preserved after all in-page actions | Filter persistence — UI/view-state policy. |
 | `ALLOC-BR-15` | Active cycle only | Active cycle only — cycle scoping/query policy. |
 | `ALLOC-BR-16` | No finalization action — Final Review reads whatever is saved | No finalization action — absence of behavior; nothing to probe. |
+| `ALLOC-BR-18` | Page subtitle text — 'Assignment of approved job units to societes and cost types.' | Page subtitle text — UI string constant; no callable. |
+| `ALLOC-BR-19` | Unified grid — Single flat grid; no tabs per PL/métier, no row expansion | Unified grid layout — UI/view policy; no callable. |
+| `ALLOC-BR-20` | TC popup trigger — Selecting Cost Type=TC opens a K€ distribution popup immediately | TC popup trigger — UI interaction on cost_type change; no callable. |
+| `ALLOC-BR-21` | TC popup running total — Popup shows running total K€ as user edits yearly values | TC popup running total — UI real-time display; no callable. |
+| `ALLOC-BR-24` | Split live preview — FTE and K€ per child row update in real-time as percentages change | Split live preview — real-time UI rendering; no callable. |
+| `ALLOC-BR-25` | Bulk selection scope — Row selection and 'Check all' operate on the current filtered view only | Bulk selection scope — UI/view-state policy; no callable. |
 | `FR-BR-01` | Read-only page — No data can be edited from Final Review | Read-only page — UI policy. |
 | `FR-BR-02` | No approval columns — Approval workflow complete before this page | No approval columns — UI rendering policy. |
 | `FR-BR-05` | No prototype data — Prototype costs do not appear in Final Review | No prototype data shown — UI rendering policy. |

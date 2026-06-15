@@ -23,7 +23,7 @@ NON_DETERMINISTIC_RULES: dict[str, str] = {
 
 # Deterministic business rules with no pure-function surface to execute
 # (policy / UI / data-lifecycle / timestamped persistence). Each key MUST be a
-# real business-rule id. Covered + these = the full 92 (see test_conformance).
+# real business-rule id. Covered + these = the full 100 (see test_conformance).
 NO_FUNCTION_SURFACE_RULES: dict[str, str] = {
     # Pre-Estimation
     "BR-01": "No-deletion policy — enforced at persistence/UI layer; no callable.",
@@ -45,6 +45,12 @@ NO_FUNCTION_SURFACE_RULES: dict[str, str] = {
     "ALLOC-BR-14": "Filter persistence — UI/view-state policy.",
     "ALLOC-BR-15": "Active cycle only — cycle scoping/query policy.",
     "ALLOC-BR-16": "No finalization action — absence of behavior; nothing to probe.",
+    "ALLOC-BR-18": "Page subtitle text — UI string constant; no callable.",
+    "ALLOC-BR-19": "Unified grid layout — UI/view policy; no callable.",
+    "ALLOC-BR-20": "TC popup trigger — UI interaction on cost_type change; no callable.",
+    "ALLOC-BR-21": "TC popup running total — UI real-time display; no callable.",
+    "ALLOC-BR-24": "Split live preview — real-time UI rendering; no callable.",
+    "ALLOC-BR-25": "Bulk selection scope — UI/view-state policy; no callable.",
     # Final Review
     "FR-BR-01": "Read-only page — UI policy.",
     "FR-BR-02": "No approval columns — UI rendering policy.",
