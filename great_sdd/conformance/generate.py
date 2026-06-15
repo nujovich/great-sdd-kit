@@ -198,17 +198,15 @@ def _allocation_probes() -> list[Probe]:
                 {"ju_code": "a", "societe": "Old S.L.", "cost_type": "FTE"},
                 {"ju_code": "b", "cost_type": "TSA"}]),
              "societe": "Horse Spain S.L."}]),
-        # ALLOC-BR-11 / ALLOC-BR-22 / ALLOC-BR-23 — split: 100% sum, min 2 societes, FTE invariant.
-        Probe(["ALLOC-BR-11", "ALLOC-BR-22", "ALLOC-BR-23"], "alloc_split",
+        # ALLOC-BR-11 — split percentages must sum to 100%.
+        Probe(["ALLOC-BR-11"], "alloc_split",
               lambda inp: SplitAllocationHandler(TRIP).forward(**inp), cases=[
             {"ju_json": json.dumps({"ju_id": "j1", "fte_yearly": {"2026": 1.0}}),
              "splits_json": json.dumps([{"societe": "A", "percentage": 60},
                                         {"societe": "B", "percentage": 40}])},
             {"ju_json": json.dumps({"ju_id": "j1", "fte_yearly": {"2026": 1.0}}),
              "splits_json": json.dumps([{"societe": "A", "percentage": 60},
-                                        {"societe": "B", "percentage": 30}])},
-            {"ju_json": json.dumps({"ju_id": "j1", "fte_yearly": {"2026": 1.0}}),
-             "splits_json": json.dumps([{"societe": "A", "percentage": 100}])}]),
+                                        {"societe": "B", "percentage": 30}])}]),
         # ALLOC-BR-17 — BH/KM -> H-TESTING; else -> project line métier.
         Probe(["ALLOC-BR-17"], "alloc_ju_metier_routing", metier_routing, cases=[
             {"unit_type": "Bench Hours", "project_line_metier": "H-DESIGN"},

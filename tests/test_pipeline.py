@@ -896,3 +896,12 @@ def test_legacy_copy_rules():
     assert occ["j4"] == 0.0                        # rule 4
     assert "j5" not in occ                         # rule 5: new inductor not added
     assert any(c["ju_id"] == "j3" for c in out["custom_jus"])  # rule 3
+
+
+def test_legacy_copy_rule2_zero_variable_guard():
+    from great_sdd.specs.pre_estimation_specs import merge_legacy_estimation
+    current = {"jz": {"variable": 0.0, "fixed": 0.0, "inductor_id": "I9"}}
+    historical = [{"ju_id": "jz", "variable": 2.0, "fixed": 0.0, "occurrence": 5.0}]
+    out = merge_legacy_estimation(historical, current)
+    occ = {o["ju_id"]: o["occurrence"] for o in out["job_units"]}
+    assert occ["jz"] == 0.0  # current variable 0 -> occurrence 0, no divide-by-zero

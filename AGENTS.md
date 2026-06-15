@@ -38,12 +38,12 @@ Este repositorio es un **SDD Kit**: las reglas de negocio están codificadas com
 │   └── base_pipeline.py   ← Base class para pipelines
 │
 ├── great_sdd/            ← Dominio: Sistema GREAT
-│   ├── specs/             ← 6 archivos, 100 reglas de negocio
+│   ├── specs/             ← 6 archivos, 92 reglas de negocio
 │   ├── modules/           ← 30 módulos con lógica pura
 │   ├── pipeline/          ← 6 pipelines (uno por vista)
 │   └── signatures/        ← Contratos input/output
 │
-└── tests/                 ← 321 tests que verifican las 100 reglas
+└── tests/                 ← 321 tests que verifican las 92 reglas
 ```
 
 ## Cómo usar este kit
@@ -60,7 +60,7 @@ No adivines reglas de negocio. No las inventes. No las saques de tu training dat
 |---------|-----------|
 | `great_sdd/specs/pre_estimation_specs.py` | 17 reglas, state machine, 6 métiers, fórmulas |
 | `great_sdd/specs/estimation_review_specs.py` | 10 reglas, flujo HVT, columnas de aprobación |
-| `great_sdd/specs/allocation_specs.py` | 25 reglas, tasas K€, societes, split allocation |
+| `great_sdd/specs/allocation_specs.py` | 16 reglas, tasas K€, societes, split allocation |
 | `great_sdd/specs/final_review_specs.py` | 10 reglas, Stage 3 HVT, agregación |
 | `great_sdd/specs/management_view_specs.py` | 8 reglas, dashboard con charts |
 | `great_sdd/specs/transversal_specs.py` | 13 reglas, ciclos, versiones, emails |
@@ -99,7 +99,7 @@ Pre-Estimation endpoint:
 
 ### 5. Los tests verifican las reglas
 
-321 tests. Si tu código los pasa, cumple las 100 reglas de negocio.
+321 tests. Si tu código los pasa, cumple las 92 reglas de negocio.
 
 ```bash
 pytest tests/ -v              # Todos los tests
