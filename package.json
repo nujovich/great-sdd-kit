@@ -1,6 +1,6 @@
 {
   "name": "great-sdd-kit",
-  "version": "2.1.0",
+  "version": "2.2.1",
   "dependencies": {
     "pptxgenjs": "^4.0.1"
   }

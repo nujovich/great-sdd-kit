@@ -14,6 +14,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.1] — 2026-06-16
+
+### Changed (HIW-178 — Management View aligned with PRD)
+- RCRC granted read-only access to the Management View. `MANAGEMENT_ACCESS[RCRC] = True`
+  and `MGMT-BR-01` reworded to "PMO, Admin and RCRC only — Engineer and CPO cannot access".
+- Conformance fixtures regenerated; project version bumped to 2.2.1 (`pyproject.toml`,
+  `package.json`). Canonical rule count unchanged at 100.
+
+---
+
+## [2.2.0] — 2026-06-15
+
+### Added (HIW-176 — Allocation PRD alignment)
+- 8 new Allocation rules `ALLOC-BR-18`..`ALLOC-BR-25` (page subtitle, unified flat grid,
+  TC popup trigger/running total, split minimum of 2 societes, split FTE invariant,
+  split live preview, bulk selection scope). Allocation rules: 17 → 25; total 92 → 100.
+- `fte_yearly` / `ke_yearly` per-active-year columns in the Allocation grid spec.
+
+### Changed
+- `ALLOC-BR-08`: diversity dropdown removed from the Allocation view.
+- `ALLOC-BR-14`: filter persistence clarified — reset only on page navigation.
+
+---
+
 ## [2.1.0] — 2026-06-11
 
 ### Added

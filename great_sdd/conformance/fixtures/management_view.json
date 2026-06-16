@@ -10,7 +10,7 @@
     "rule_ids": [
       "MGMT-BR-01"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -23,7 +23,7 @@
     "rule_ids": [
       "MGMT-BR-01"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -36,7 +36,7 @@
     "rule_ids": [
       "MGMT-BR-01"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -49,12 +49,12 @@
     "rule_ids": [
       "MGMT-BR-01"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
-      "allowed": false,
-      "reason": "RCRC has no access to Management View"
+      "allowed": true,
+      "reason": "RCRC can access Management View"
     },
     "input": {
       "role": "RCRC"
@@ -62,7 +62,7 @@
     "rule_ids": [
       "MGMT-BR-01"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -111,7 +111,7 @@
     "rule_ids": [
       "MGMT-BR-02"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -140,7 +140,7 @@
     "rule_ids": [
       "MGMT-BR-03"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -171,6 +171,6 @@
     "rule_ids": [
       "MGMT-BR-04"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   }
 ]
