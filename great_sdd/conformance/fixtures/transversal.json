@@ -26,7 +26,7 @@
       "CYCLE-BR-01",
       "CYCLE-BR-04"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -39,7 +39,7 @@
     "rule_ids": [
       "CYCLE-BR-02"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -52,7 +52,7 @@
     "rule_ids": [
       "CYCLE-BR-02"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -65,7 +65,7 @@
     "rule_ids": [
       "DEL-BR-01"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -84,7 +84,7 @@
     "rule_ids": [
       "DEL-BR-02"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -97,7 +97,7 @@
     "rule_ids": [
       "DEL-BR-05"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -118,7 +118,7 @@
       "DEL-BR-07",
       "DEL-BR-10"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -131,7 +131,7 @@
     "rule_ids": [
       "DEL-BR-09"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -158,7 +158,7 @@
     "rule_ids": [
       "EMAIL-BR-03"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -191,7 +191,7 @@
     "rule_ids": [
       "TABLE-BR-01"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -207,7 +207,7 @@
     "rule_ids": [
       "TABLE-BR-02"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -221,7 +221,7 @@
     "rule_ids": [
       "TABLE-BR-03"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -236,7 +236,7 @@
     "rule_ids": [
       "WL-BR-01"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -251,7 +251,7 @@
     "rule_ids": [
       "WL-BR-01"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -265,7 +265,7 @@
     "rule_ids": [
       "WL-BR-02"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   },
   {
     "expected_output": {
@@ -277,6 +277,6 @@
     "rule_ids": [
       "WL-BR-02"
     ],
-    "sdd_version": "2.0.0"
+    "sdd_version": "2.2.1"
   }
 ]

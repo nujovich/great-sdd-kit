@@ -19,9 +19,9 @@ from great_sdd.specs.pre_estimation_specs import LineStatus, Role
 def test_access():
     assert MANAGEMENT_ACCESS[Role.ADMIN] is True
     assert MANAGEMENT_ACCESS[Role.PMO] is True
+    assert MANAGEMENT_ACCESS[Role.RCRC] is True
     assert MANAGEMENT_ACCESS[Role.CPO] is False
     assert MANAGEMENT_ACCESS[Role.ENGINEER] is False
-    assert MANAGEMENT_ACCESS[Role.RCRC] is False
 
 def test_excluded_metiers():
     assert "H-NP" in MGMT_EXCLUDED_METIERS
@@ -53,6 +53,7 @@ def test_access_checker():
     c = ManagementAccessChecker()
     assert c.forward("Admin")["allowed"] is True
     assert c.forward("PMO")["allowed"] is True
+    assert c.forward("RCRC")["allowed"] is True
     assert c.forward("CPO")["allowed"] is False
     assert c.forward("Engineer")["allowed"] is False
 

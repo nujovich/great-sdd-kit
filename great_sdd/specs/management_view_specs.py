@@ -2,7 +2,7 @@
 GREAT System — Management View Spec Registry.
 
 Read-only operational dashboard with status distribution pie chart
-and status evolution timeline for PMO and Admin.
+and status evolution timeline for PMO, Admin and RCRC.
 """
 from __future__ import annotations
 
@@ -21,9 +21,9 @@ from great_sdd.specs.estimation_review_specs import ALL_BUSINESS_RULES
 MANAGEMENT_ACCESS: dict[Role, bool] = {
     Role.ADMIN:    True,
     Role.PMO:      True,
+    Role.RCRC:     True,
     Role.CPO:      False,
     Role.ENGINEER: False,
-    Role.RCRC:     False,
 }
 
 
@@ -103,7 +103,7 @@ def compute_pie_chart(pairs_by_status: dict[str, int]) -> list[PieChartSlice]:
 # ──────────────────────────────────────────────
 
 MANAGEMENT_RULES: list[dict] = [
-    {"id": "MGMT-BR-01", "rule": "PMO and Admin only — No other role can access"},
+    {"id": "MGMT-BR-01", "rule": "PMO, Admin and RCRC only — Engineer and CPO cannot access"},
     {"id": "MGMT-BR-02", "rule": "(PL, Métier) pair counting — Both charts count pairs, not unique PL Numbers"},
     {"id": "MGMT-BR-03", "rule": "Full status model — All 6 statuses from the PRD model are shown"},
     {"id": "MGMT-BR-04", "rule": "H-NP and H-PROJECT excluded — Consistent with Pre-Estimation filter"},
